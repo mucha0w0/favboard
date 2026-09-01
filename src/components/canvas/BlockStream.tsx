@@ -30,7 +30,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { BlockRenderer } from "./BlockRenderer";
 
 interface BlockStreamProps {
@@ -84,6 +84,14 @@ function blockClass(type: BlockType): string {
   }
 }
 
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export function BlockStream({
   blocks,
   editable = false,
@@ -95,6 +103,7 @@ export function BlockStream({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | null>(null);
+  const dndReady = useIsClient();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -146,19 +155,32 @@ export function BlockStream({
     onReorder(arrayMove(blocks, index, newIndex));
   }
 
-  const content = (
-    <div className="document-body w-full">
-      {blocks.length === 0 && editable && (
-        <p className="py-12 text-[15px] leading-relaxed text-stone-400">
-          下の ＋ から、商品・テキスト・見出しなどを追加できます
-        </p>
-      )}
+  function renderBlockList(sortable: boolean) {
+    return (
+      <div className="document-body w-full">
+        {blocks.length === 0 && editable && (
+          <p className="py-12 text-[15px] leading-relaxed text-stone-400">
+            下の ＋ から、商品・テキスト・見出しなどを追加できます
+          </p>
+        )}
 
-      <SortableContext
-        items={blocks.map((b) => b.id)}
-        strategy={verticalListSortingStrategy}
-        disabled={!editable}
-      >
+        {sortable ? (
+          <SortableContext
+            items={blocks.map((b) => b.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {renderBlocks(true)}
+          </SortableContext>
+        ) : (
+          renderBlocks(false)
+        )}
+      </div>
+    );
+  }
+
+  function renderBlocks(sortable: boolean) {
+    return (
+      <>
         {blocks.map((block, index) => (
           <div key={block.id}>
             {editable && onInsertBlock && (
@@ -168,22 +190,35 @@ export function BlockStream({
                 disabled={activeId !== null}
               />
             )}
-            <SortableBlockItem
-              block={block}
-              editable={editable}
-              isDragging={activeId === block.id}
-              showDropIndicator={
-                activeId !== null &&
-                overId === block.id &&
-                activeId !== block.id
-              }
-              onEditBlock={onEditBlock}
-              onDeleteBlock={onDeleteBlock}
-              onMoveUp={() => moveBlock(block.id, "up")}
-              onMoveDown={() => moveBlock(block.id, "down")}
-              canMoveUp={index > 0}
-              canMoveDown={index < blocks.length - 1}
-            />
+            {sortable ? (
+              <SortableBlockItem
+                block={block}
+                editable={editable}
+                isDragging={activeId === block.id}
+                showDropIndicator={
+                  activeId !== null &&
+                  overId === block.id &&
+                  activeId !== block.id
+                }
+                onEditBlock={onEditBlock}
+                onDeleteBlock={onDeleteBlock}
+                onMoveUp={() => moveBlock(block.id, "up")}
+                onMoveDown={() => moveBlock(block.id, "down")}
+                canMoveUp={index > 0}
+                canMoveDown={index < blocks.length - 1}
+              />
+            ) : (
+              <StaticBlockItem
+                block={block}
+                editable={editable}
+                onEditBlock={onEditBlock}
+                onDeleteBlock={onDeleteBlock}
+                onMoveUp={() => moveBlock(block.id, "up")}
+                onMoveDown={() => moveBlock(block.id, "down")}
+                canMoveUp={index > 0}
+                canMoveDown={index < blocks.length - 1}
+              />
+            )}
           </div>
         ))}
         {editable && onInsertBlock && blocks.length > 0 && (
@@ -193,11 +228,14 @@ export function BlockStream({
             disabled={activeId !== null}
           />
         )}
-      </SortableContext>
-    </div>
-  );
+      </>
+    );
+  }
 
-  if (!editable) return content;
+  if (!editable) return renderBlockList(false);
+
+  // DndContext generates client-only aria IDs — defer until mount to avoid hydration mismatch.
+  if (!dndReady) return renderBlockList(false);
 
   return (
     <DndContext
@@ -209,7 +247,7 @@ export function BlockStream({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      {content}
+      {renderBlockList(true)}
       <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
         {activeBlock ? (
           <div
@@ -227,8 +265,9 @@ export function BlockStream({
 function BlockPreview({ block }: { block: Block }) {
   return (
     <div className={blockClass(block.type)}>
-      <div className="flex gap-2 pl-8 pr-8">
-        <div className="min-w-0 flex-1">
+      <div className="flex gap-1 sm:gap-2 pr-2 sm:pr-3">
+        <div className="w-7 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1 py-1">
           <BlockRenderer block={block} editable />
         </div>
       </div>
@@ -289,6 +328,57 @@ function InsertZone({
   );
 }
 
+function StaticBlockItem({
+  block,
+  editable,
+  onEditBlock,
+  onDeleteBlock,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
+}: {
+  block: Block;
+  editable: boolean;
+  onEditBlock?: (block: Block) => void;
+  onDeleteBlock?: (blockId: string) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}) {
+  return (
+    <div data-block-id={block.id} className={`relative ${blockClass(block.type)}`}>
+      <div
+        className={`group/block relative flex gap-1 rounded-lg border border-transparent sm:gap-2 ${
+          editable
+            ? "pr-2 hover:border-stone-200 hover:bg-white/60 sm:pr-3"
+            : "pr-6 sm:pr-8"
+        }`}
+      >
+        {editable && (
+          <div
+            className="mt-1 flex h-9 w-7 shrink-0 items-center justify-center self-start rounded-md text-stone-300"
+            aria-hidden
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
+        )}
+        <BlockItem
+          block={block}
+          editable={editable}
+          onEditBlock={onEditBlock}
+          onDeleteBlock={onDeleteBlock}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+        />
+      </div>
+    </div>
+  );
+}
+
 function SortableBlockItem({
   block,
   editable,
@@ -323,7 +413,7 @@ function SortableBlockItem({
   } = useSortable({ id: block.id, disabled: !editable });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: isDragging ? undefined : CSS.Transform.toString(transform),
     transition: isSortableDragging ? undefined : transition,
     opacity: isDragging ? 0 : 1,
   };
