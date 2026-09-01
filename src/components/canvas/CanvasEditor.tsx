@@ -43,6 +43,9 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   const [error, setError] = useState("");
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [isNewBlock, setIsNewBlock] = useState(false);
+  const [pendingInsertIndex, setPendingInsertIndex] = useState<number | null>(
+    null,
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const isDirty = useMemo(
@@ -111,14 +114,20 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
     await persist(blocks, title);
   }
 
-  function handleAddBlock(type: BlockType) {
+  function handleAddBlock(type: BlockType, index?: number) {
     const newBlock = createBlock(type);
     if (type === "product" || type === "heading" || type === "text") {
       setEditingBlock(newBlock);
       setIsNewBlock(true);
+      setPendingInsertIndex(index ?? blocks.length);
       setDialogOpen(true);
     } else {
-      const nextBlocks = [...blocks, newBlock];
+      const insertAt = index ?? blocks.length;
+      const nextBlocks = [
+        ...blocks.slice(0, insertAt),
+        newBlock,
+        ...blocks.slice(insertAt),
+      ];
       setBlocks(nextBlocks);
       persist(nextBlocks, title);
     }
@@ -139,8 +148,14 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
     let nextBlocks: Block[];
 
     if (isNewBlock && editingBlock?.id === blockId) {
-      nextBlocks = [...blocks, { ...editingBlock, data }];
+      const insertAt = pendingInsertIndex ?? blocks.length;
+      nextBlocks = [
+        ...blocks.slice(0, insertAt),
+        { ...editingBlock, data },
+        ...blocks.slice(insertAt),
+      ];
       setIsNewBlock(false);
+      setPendingInsertIndex(null);
     } else {
       nextBlocks = blocks.map((b) =>
         b.id === blockId ? { ...b, data: { ...b.data, ...data } } : b,
@@ -154,6 +169,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
 
   function handleDialogCancel() {
     setIsNewBlock(false);
+    setPendingInsertIndex(null);
     setEditingBlock(null);
   }
 
@@ -272,6 +288,11 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onBlur={() => {
+              if (title !== canvas.title) {
+                persist(blocks, title);
+              }
+            }}
             placeholder="タイトル"
             className="mb-10 w-full border-none bg-transparent text-[1.75rem] font-bold leading-tight text-stone-900 placeholder:text-stone-300 outline-none sm:text-[2rem]"
           />
@@ -282,6 +303,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             onEditBlock={handleEditBlock}
             onDeleteBlock={handleDeleteBlock}
             onReorder={handleReorder}
+            onInsertBlock={handleAddBlock}
           />
 
           <InsertMenu onAdd={handleAddBlock} disabled={saving} />
