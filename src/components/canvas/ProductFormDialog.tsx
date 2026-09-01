@@ -5,9 +5,16 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { type Block, type BlockData, type OgpData } from "@/lib/types";
+import {
+  PRODUCT_SIZES,
+  type Block,
+  type BlockData,
+  type OgpData,
+  type ProductSize,
+} from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface ProductFormDialogProps {
   block: Block | null;
@@ -26,30 +33,68 @@ export function ProductFormDialog({
   onSave,
   onCancel,
 }: ProductFormDialogProps) {
-  const [productUrl, setProductUrl] = useState("");
-  const [title, setTitle] = useState("");
-  const [brand, setBrand] = useState("");
-  const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [comment, setComment] = useState("");
-  const [text, setText] = useState("");
+  function handleClose() {
+    onCancel?.();
+    onOpenChange(false);
+  }
+
+  const typeLabel =
+    block?.type === "heading"
+      ? "見出し"
+      : block?.type === "text"
+        ? "テキスト"
+        : block?.type === "product"
+          ? "商品"
+          : "ブロック";
+
+  const dialogTitle = isNew ? `${typeLabel}を追加` : `${typeLabel}を編集`;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (next ? onOpenChange(true) : handleClose())}
+      title={dialogTitle}
+    >
+      {block && (
+        <ProductFormFields
+          key={block.id}
+          block={block}
+          onSave={onSave}
+          onOpenChange={onOpenChange}
+          onCancel={onCancel}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+function ProductFormFields({
+  block,
+  onSave,
+  onOpenChange,
+  onCancel,
+}: {
+  block: Block;
+  onSave: (blockId: string, data: BlockData) => void;
+  onOpenChange: (open: boolean) => void;
+  onCancel?: () => void;
+}) {
+  const [productUrl, setProductUrl] = useState(block.data.product_url || "");
+  const [title, setTitle] = useState(block.data.title || "");
+  const [brand, setBrand] = useState(block.data.brand || "");
+  const [price, setPrice] = useState(block.data.price || "");
+  const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
+  const [comment, setComment] = useState(block.data.comment || "");
+  const [headingText, setHeadingText] = useState(block.data.text || "");
+  const [bodyText, setBodyText] = useState(block.data.body || "");
+  const [productSize, setProductSize] = useState<ProductSize>(
+    block.data.product_size || "standard",
+  );
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState("");
 
-  const isProduct = block?.type === "product";
-  const isHeading = block?.type === "heading";
-
-  useEffect(() => {
-    if (!block) return;
-    setProductUrl(block.data.product_url || "");
-    setTitle(block.data.title || "");
-    setBrand(block.data.brand || "");
-    setPrice(block.data.price || "");
-    setImageUrl(block.data.image_url || "");
-    setComment(block.data.comment || "");
-    setText(block.data.text || "");
-    setFetchError("");
-  }, [block]);
+  const isHeading = block.type === "heading";
+  const isText = block.type === "text";
 
   function handleClose() {
     onCancel?.();
@@ -83,10 +128,11 @@ export function ProductFormDialog({
   }
 
   function handleApply() {
-    if (!block) return;
     if (isHeading) {
-      if (!text.trim()) return;
-      onSave(block.id, { text: text.trim() });
+      if (!headingText.trim()) return;
+      onSave(block.id, { text: headingText.trim() });
+    } else if (isText) {
+      onSave(block.id, { body: bodyText });
     } else {
       onSave(block.id, {
         title: title.trim() || "Untitled Product",
@@ -95,42 +141,70 @@ export function ProductFormDialog({
         image_url: imageUrl.trim(),
         product_url: productUrl.trim(),
         comment: comment.trim(),
+        product_size: productSize,
       });
     }
     onOpenChange(false);
   }
 
-  const dialogTitle = isHeading
-    ? isNew
-      ? "見出しを追加"
-      : "見出しを編集"
-    : isProduct
-      ? isNew
-        ? "商品を追加"
-        : "商品を編集"
-      : "ブロックを編集";
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => (next ? onOpenChange(true) : handleClose())}
-      title={dialogTitle}
-    >
+    <>
       {isHeading ? (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="heading-text">テキスト</Label>
+            <Label htmlFor="heading-text">見出し</Label>
             <Input
               id="heading-text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
+              value={headingText}
+              onChange={(e) => setHeadingText(e.target.value)}
               placeholder="カテゴリ名やセクションタイトル"
               autoFocus
             />
           </div>
         </div>
+      ) : isText ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="body-text">本文</Label>
+            <Textarea
+              id="body-text"
+              value={bodyText}
+              onChange={(e) => setBodyText(e.target.value)}
+              placeholder="長文のテキストを入力…"
+              rows={10}
+              autoFocus
+              className="min-h-[200px] leading-relaxed"
+            />
+          </div>
+        </div>
       ) : (
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>カードサイズ</Label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {PRODUCT_SIZES.map(({ value, label, description }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setProductSize(value)}
+                  className={cn(
+                    "rounded-lg border px-3 py-2.5 text-left transition-colors",
+                    productSize === value
+                      ? "border-stone-800 bg-stone-50 ring-1 ring-stone-800"
+                      : "border-stone-200 hover:border-stone-300",
+                  )}
+                >
+                  <span className="block text-sm font-semibold text-stone-800">
+                    {label}
+                  </span>
+                  <span className="mt-0.5 block text-[10px] leading-tight text-stone-400">
+                    {description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="product-url">商品URL</Label>
             <div className="flex gap-2">
@@ -139,7 +213,6 @@ export function ProductFormDialog({
                 value={productUrl}
                 onChange={(e) => setProductUrl(e.target.value)}
                 placeholder="https://..."
-                autoFocus
               />
               <Button
                 type="button"
@@ -158,9 +231,6 @@ export function ProductFormDialog({
             {fetchError && (
               <p className="text-xs text-red-500">{fetchError}</p>
             )}
-            <p className="text-xs text-zinc-400">
-              URLからタイトル・画像を取得できます
-            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="title">タイトル</Label>
@@ -217,6 +287,6 @@ export function ProductFormDialog({
         </Button>
         <Button onClick={handleApply}>適用</Button>
       </div>
-    </Dialog>
+    </>
   );
 }

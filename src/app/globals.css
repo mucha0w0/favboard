@@ -48,3 +48,7 @@ body {
 .document-body .block-divider {
   margin: 2.5rem 0;
 }
+
+.document-body .block-text {
+  margin: 1.5rem 0;
+}

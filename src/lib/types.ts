@@ -1,4 +1,6 @@
-export type BlockType = "product" | "heading" | "divider";
+export type BlockType = "product" | "heading" | "divider" | "text";
+
+export type ProductSize = "compact" | "standard" | "large" | "banner";
 
 /** @deprecated Legacy bento layout — ignored in card stack mode */
 export interface BlockLayout {
@@ -15,7 +17,11 @@ export interface BlockData {
   image_url?: string;
   product_url?: string;
   comment?: string;
+  /** 見出し用 */
   text?: string;
+  /** 本文用（長文） */
+  body?: string;
+  product_size?: ProductSize;
 }
 
 export interface Block {
@@ -42,4 +48,19 @@ export interface OgpData {
   image?: string;
   description?: string;
   siteName?: string;
+}
+
+export const PRODUCT_SIZES: {
+  value: ProductSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: "compact", label: "S", description: "コンパクト（横並び）" },
+  { value: "standard", label: "M", description: "標準（縦型）" },
+  { value: "large", label: "L", description: "ラージ（大きめ画像）" },
+  { value: "banner", label: "ワイド", description: "ワイド（横長画像）" },
+];
+
+export function getProductSize(block: Block): ProductSize {
+  return block.data.product_size || "standard";
 }

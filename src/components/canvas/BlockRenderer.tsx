@@ -2,6 +2,7 @@ import { type Block } from "@/lib/types";
 import { DividerBlock } from "./blocks/DividerBlock";
 import { HeadingBlock } from "./blocks/HeadingBlock";
 import { ProductBlock } from "./blocks/ProductBlock";
+import { TextBlock } from "./blocks/TextBlock";
 
 interface BlockRendererProps {
   block: Block;
@@ -16,8 +17,10 @@ export function BlockRenderer({ block, editable }: BlockRendererProps) {
       );
     case "heading":
       return <HeadingBlock block={block} />;
+    case "text":
+      return <TextBlock block={block} showPlaceholders={editable} />;
     case "divider":
-      return <DividerBlock block={block} />;
+      return <DividerBlock />;
     default:
       return null;
   }

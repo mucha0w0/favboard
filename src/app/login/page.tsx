@@ -21,11 +21,13 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
+  const authErrorMessage =
+    searchParams.get("error") === "auth"
+      ? "認証に失敗しました。もう一度お試しください。"
+      : "";
+  const displayMessage = message || authErrorMessage;
 
   useEffect(() => {
-    if (searchParams.get("error") === "auth") {
-      setMessage("認証に失敗しました。もう一度お試しください。");
-    }
     fetch("/api/auth/mode")
       .then((r) => r.json())
       .then((data) => setIsLocalMode(data.mode === "local"))
@@ -107,12 +109,12 @@ function LoginForm() {
           </p>
         </div>
 
-        {message && (
+        {displayMessage && (
           <Alert
-            variant={message.includes("送信") ? "info" : "error"}
+            variant={displayMessage.includes("送信") ? "info" : "error"}
             className="mb-4"
           >
-            {message}
+            {displayMessage}
           </Alert>
         )}
 

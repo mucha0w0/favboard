@@ -1,7 +1,7 @@
 "use client";
 
 import { type BlockType } from "@/lib/types";
-import { Minus, Package, Plus, Type } from "lucide-react";
+import { AlignLeft, Minus, Package, Plus, Type } from "lucide-react";
 import { useState } from "react";
 
 interface InsertMenuProps {
@@ -11,6 +11,7 @@ interface InsertMenuProps {
 
 const ITEMS: { type: BlockType; label: string; icon: typeof Package }[] = [
   { type: "product", label: "商品", icon: Package },
+  { type: "text", label: "テキスト", icon: AlignLeft },
   { type: "heading", label: "見出し", icon: Type },
   { type: "divider", label: "区切り線", icon: Minus },
 ];
@@ -23,7 +24,7 @@ export function InsertMenu({ onAdd, disabled }: InsertMenuProps) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[160px] rounded-xl border border-stone-200 bg-white py-1 shadow-lg">
+          <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[168px] rounded-xl border border-stone-200 bg-white py-1 shadow-lg">
             {ITEMS.map(({ type, label, icon: Icon }) => (
               <button
                 key={type}

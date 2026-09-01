@@ -113,7 +113,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
 
   function handleAddBlock(type: BlockType) {
     const newBlock = createBlock(type);
-    if (type === "product" || type === "heading") {
+    if (type === "product" || type === "heading" || type === "text") {
       setEditingBlock(newBlock);
       setIsNewBlock(true);
       setDialogOpen(true);
@@ -122,6 +122,11 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
       setBlocks(nextBlocks);
       persist(nextBlocks, title);
     }
+  }
+
+  async function handleReorder(nextBlocks: Block[]) {
+    setBlocks(nextBlocks);
+    await persist(nextBlocks, title);
   }
 
   function handleEditBlock(block: Block) {
@@ -276,6 +281,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             editable
             onEditBlock={handleEditBlock}
             onDeleteBlock={handleDeleteBlock}
+            onReorder={handleReorder}
           />
 
           <InsertMenu onAdd={handleAddBlock} disabled={saving} />
