@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Visual Wishlist Canvas
 
-## Getting Started
+代払い（決済・ギフト）機能を持たない、純粋な物欲・こだわり・関心のポートフォリオ共有ツール。
 
-First, run the development server:
+カードを縦に並べて、商品の画像・ブランド・価格・こだわりコメントをリスト形式で公開できます。
+
+## 技術スタック
+
+- **Framework**: Next.js 16 (App Router, TypeScript)
+- **Styling**: Tailwind CSS v4, shadcn/ui 風コンポーネント
+- **Layout**: 縦積みカードスタック（無制限追加）
+- **Backend / Database**: Supabase (PostgreSQL, Auth, RLS)
+- **OGP Fetcher**: open-graph-scraper
+- **Deployment**: Vercel
+
+## セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 2. Supabase プロジェクトの作成
+
+1. [Supabase](https://supabase.com) で新規プロジェクトを作成
+2. SQL Editor で `supabase/migrations/001_canvases.sql` を実行
+3. Authentication → Providers で Email を有効化
+
+### 3. ワンコマンドセットアップ（Windows）
+
+```powershell
+.\setup.ps1
+npm run dev
+```
+
+http://localhost:3000/login を開き「はじめる」をクリック
+
+> **Supabase 未設定でも使えます。** プレースホルダーのままならローカル開発モードが有効になり、データは `.data/` フォルダに保存されます。
+
+### 4. 環境変数（Supabase 本番利用時）
+
+`.env.example` を `.env.local` にコピーして値を設定:
+
+**Windows (PowerShell):**
+```powershell
+Copy-Item .env.example .env.local
+```
+
+**macOS / Linux:**
+```bash
+cp .env.example .env.local
+```
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 5. 開発サーバー起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 を開く
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 主要ルート
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| パス | 説明 |
+|------|------|
+| `/` | ランディングページ |
+| `/login` | ログイン / 新規登録 |
+| `/dashboard` | マイキャンバス一覧 |
+| `/edit/[id]` | カードリスト編集 |
+| `/c/[slug]` | 公開閲覧ページ |
+| `/api/ogp` | OGP 自動取得 API |
+| `/api/canvases` | キャンバス CRUD API |
 
-## Learn More
+## コア機能
 
-To learn more about Next.js, take a look at the following resources:
+- **編集画面**: カードを縦に追加、追加数に応じてリストが伸長
+- **ブロック種別**: 商品 / 見出し / 区切り線
+- **OGP 自動補完**: EC サイト URL からタイトル・画像を取得
+- **公開 & シェア**: 固有 slug URL、Twitter OGP 対応
+- **決済排除**: 公式ページへの外部リンクのみ
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Vercel デプロイ
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. GitHub にプッシュ
+2. Vercel でインポート
+3. 環境変数を設定（`NEXT_PUBLIC_APP_URL` は本番 URL に）
+4. Supabase の Auth → URL Configuration に本番 URL を追加
