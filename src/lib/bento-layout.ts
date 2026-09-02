@@ -7,17 +7,19 @@ import {
   isBentoChildType,
 } from "@/lib/types";
 
-export const BENTO_COLS = 6;
-export const DEFAULT_BENTO_ROWS = 4;
+export const BENTO_COLS = 12;
+export const DEFAULT_BENTO_ROWS = 6;
 export const MIN_BENTO_ROWS = 2;
-export const MAX_BENTO_ROWS = 24;
+export const MAX_BENTO_ROWS = 48;
+
+const LEGACY_BENTO_COLS = 6;
 
 const DEFAULT_CHILD_SIZE: Record<
   BentoChildType,
   Pick<BentoCellPlacement, "colSpan" | "rowSpan">
 > = {
   product: { colSpan: 2, rowSpan: 2 },
-  text: { colSpan: 3, rowSpan: 1 },
+  text: { colSpan: 6, rowSpan: 1 },
 };
 
 export function getBentoRows(block: Block): number {
@@ -198,12 +200,22 @@ export function updateChildPlacement(
 }
 
 export function setBentoRows(bento: Block, rows: number): Block {
-  const nextRows = Math.max(MIN_BENTO_ROWS, Math.min(MAX_BENTO_ROWS, rows));
+  const required = requiredBentoRows(bento);
+  const nextRows = Math.max(
+    MIN_BENTO_ROWS,
+    required,
+    Math.min(MAX_BENTO_ROWS, rows),
+  );
   const placements = { ...bento.data.child_placements };
 
   for (const child of getBentoChildren(bento)) {
     const current = getChildPlacement(bento, child.id);
-    placements[child.id] = clampPlacement(current, nextRows);
+    const rowSpan = Math.min(current.rowSpan, nextRows);
+    const row = Math.max(0, Math.min(nextRows - rowSpan, current.row));
+    placements[child.id] = clampPlacement(
+      { ...current, row, rowSpan },
+      nextRows,
+    );
   }
 
   return {
@@ -327,21 +339,61 @@ export function migrateCanvasBlocks(blocks: Block[]): Block[] {
   return result;
 }
 
-function normalizeBentoBlock(block: Block): Block {
-  const rows = Math.max(
-    getBentoRows(block),
-    requiredBentoRows(block),
+function isLegacy6ColGrid(block: Block): boolean {
+  const placements = block.data.child_placements ?? {};
+  const entries = Object.values(placements);
+  if (entries.length === 0) return false;
+  return entries.every(
+    (p) => p.col + p.colSpan <= LEGACY_BENTO_COLS && p.colSpan <= LEGACY_BENTO_COLS,
   );
+}
+
+function migrateLegacy6ColPlacements(
+  block: Block,
+): Record<string, BentoCellPlacement> {
   const placements = { ...block.data.child_placements };
-  for (const child of getBentoChildren(block)) {
-    placements[child.id] = getChildPlacement(
-      { ...block, data: { ...block.data, bento_rows: rows } },
+  for (const [childId, p] of Object.entries(placements)) {
+    const { sizeRowSpan: _legacy, ...rest } = p;
+    placements[childId] = {
+      col: rest.col * 2,
+      row: rest.row,
+      colSpan: rest.colSpan * 2,
+      rowSpan: rest.rowSpan * 2,
+    };
+  }
+  return placements;
+}
+
+function normalizeBentoBlock(block: Block): Block {
+  let working = block;
+  if (isLegacy6ColGrid(block)) {
+    const migratedRows = Math.min(
+      MAX_BENTO_ROWS,
+      Math.max(getBentoRows(block), block.data.bento_rows ?? DEFAULT_BENTO_ROWS) * 2,
+    );
+    working = {
+      ...block,
+      data: {
+        ...block.data,
+        bento_rows: migratedRows,
+        child_placements: migrateLegacy6ColPlacements(block),
+      },
+    };
+  }
+
+  const rows = Math.max(getBentoRows(working), requiredBentoRows(working));
+  const placements = { ...working.data.child_placements };
+  for (const child of getBentoChildren(working)) {
+    const p = getChildPlacement(
+      { ...working, data: { ...working.data, bento_rows: rows } },
       child.id,
     );
+    const { sizeRowSpan: _legacy, ...rest } = p;
+    placements[child.id] = rest;
   }
   return {
-    ...block,
-    data: { ...block.data, bento_rows: rows, child_placements: placements },
+    ...working,
+    data: { ...working.data, bento_rows: rows, child_placements: placements },
   };
 }
 
@@ -351,10 +403,45 @@ export function getProductSizeFromPlacement(
   rowSpan: number,
 ): ProductSize {
   const area = colSpan * rowSpan;
-  if (area <= 4) return "compact";
-  if (area <= 6) return "standard";
-  if (area <= 12) return "large";
+  const maxDim = Math.max(colSpan, rowSpan);
+  if (area <= 4 || maxDim <= 2) return "compact";
+  if (area <= 9 || maxDim <= 3) return "standard";
+  if (area <= 20 || maxDim <= 5) return "large";
   return "xl";
+}
+
+/** ドラッグ中プレビュー用 — 衝突時は clamp のみ返す */
+export function previewChildPlacement(
+  bento: Block,
+  childId: string,
+  placement: BentoCellPlacement,
+  options?: { expandRows?: boolean },
+): { placement: BentoCellPlacement; bentoRows: number; blocked: boolean } {
+  const expandRows = options?.expandRows ?? true;
+  const currentRows = getBentoRows(bento);
+
+  const nextRows = expandRows
+    ? Math.min(
+        MAX_BENTO_ROWS,
+        Math.max(
+          currentRows,
+          requiredBentoRows(bento),
+          placement.row + placement.rowSpan,
+        ),
+      )
+    : currentRows;
+
+  const clamped = clampPlacement(placement, nextRows);
+  const workingBento: Block = {
+    ...bento,
+    data: { ...bento.data, bento_rows: nextRows },
+  };
+
+  if (canPlace(workingBento, clamped, childId)) {
+    return { placement: clamped, bentoRows: nextRows, blocked: false };
+  }
+
+  return { placement: clamped, bentoRows: currentRows, blocked: true };
 }
 
 export function placementStyle(placement: BentoCellPlacement): {
@@ -365,4 +452,27 @@ export function placementStyle(placement: BentoCellPlacement): {
     gridColumn: `${placement.col + 1} / span ${placement.colSpan}`,
     gridRow: `${placement.row + 1} / span ${placement.rowSpan}`,
   };
+}
+
+/** 固定セルサイズの Bento グリッド用 CSS */
+export function bentoGridStyle(rowCount: number): {
+  gridTemplateColumns: string;
+  gridTemplateRows: string;
+} {
+  return {
+    gridTemplateColumns: `repeat(${BENTO_COLS}, minmax(0, 1fr))`,
+    gridTemplateRows: `repeat(${rowCount}, var(--bento-cell-size))`,
+  };
+}
+
+/** コンテナ幅から 1 セルの辺長（px）を算出 — ドラッグのスナップ用 */
+export function measureBentoCellSize(el: HTMLElement): number {
+  const rect = el.getBoundingClientRect();
+  const style = getComputedStyle(el);
+  const gap =
+    parseFloat(style.columnGap) || parseFloat(style.gap) || 0;
+  const padX =
+    parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const contentW = rect.width - padX;
+  return (contentW - gap * (BENTO_COLS - 1)) / BENTO_COLS;
 }

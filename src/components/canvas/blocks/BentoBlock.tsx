@@ -3,12 +3,17 @@
 import {
   BENTO_COLS,
   addBentoChild,
+  bentoGridStyle,
   createBentoChild,
   getBentoChildren,
   getBentoRows,
   getChildPlacement,
+  measureBentoCellSize,
+  MIN_BENTO_ROWS,
   placementStyle,
+  previewChildPlacement,
   removeBentoChild,
+  requiredBentoRows,
   setBentoRows,
   updateChildPlacement,
   updateBentoChildData,
@@ -47,6 +52,7 @@ type DragPreview = {
   childId?: string;
   placement?: BentoCellPlacement;
   bentoRows?: number;
+  blocked?: boolean;
 };
 
 type DragOrigin = {
@@ -57,27 +63,9 @@ type DragOrigin = {
   cellH: number;
 };
 
-function computeCellMetrics(
-  el: HTMLElement,
-  rowCount: number,
-): { cellW: number; cellH: number } {
-  const rect = el.getBoundingClientRect();
-  const style = getComputedStyle(el);
-  const gap =
-    parseFloat(style.columnGap) ||
-    parseFloat(style.gap) ||
-    0;
-  const rowGap = parseFloat(style.rowGap) || gap;
-  const padX =
-    parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-  const padY =
-    parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-  const contentW = rect.width - padX;
-  const contentH = rect.height - padY;
-  return {
-    cellW: (contentW - gap * (BENTO_COLS - 1)) / BENTO_COLS,
-    cellH: (contentH - rowGap * (rowCount - 1)) / rowCount,
-  };
+function computeCellMetrics(el: HTMLElement): { cellW: number; cellH: number } {
+  const cellW = measureBentoCellSize(el);
+  return { cellW, cellH: cellW };
 }
 
 function computePlacementFromDrag(
@@ -178,11 +166,6 @@ export function BentoBlock({
   const children = getBentoChildren(block);
   const rowCount = dragPreview?.bentoRows ?? getBentoRows(block);
 
-  const childExpandsRows = useCallback((bento: Block, childId: string) => {
-    const child = getBentoChildren(bento).find((c) => c.id === childId);
-    return child?.type !== "text";
-  }, []);
-
   const commitBento = useCallback(
     (next: Block) => {
       onUpdateBento?.(block.id, next.data);
@@ -228,31 +211,39 @@ export function BentoBlock({
 
     if (mode.kind === "bento-height") {
       const deltaRows = Math.round(dy / origin.cellH);
-      const nextRows = Math.max(2, bentoStartRows.current + deltaRows);
+      const minRows = Math.max(
+        MIN_BENTO_ROWS,
+        requiredBentoRows(blockRef.current),
+      );
+      const nextRows = Math.max(minRows, bentoStartRows.current + deltaRows);
       applyDragPreview({ bentoRows: nextRows });
       return;
     }
 
+    if (gridRef.current) {
+      const metrics = computeCellMetrics(gridRef.current);
+      origin.cellW = metrics.cellW;
+      origin.cellH = metrics.cellH;
+    }
+
     const preview = computePlacementFromDrag(mode, origin, dx, dy);
-    if (!preview?.placement) return;
+    if (!preview?.placement || !preview.childId) return;
 
     const currentBlock = blockRef.current;
-    const expandRows = childExpandsRows(currentBlock, preview.childId!);
-    const tentative = updateChildPlacement(
+    const expandRows = mode.kind === "move";
+    const resolved = previewChildPlacement(
       currentBlock,
-      preview.childId!,
+      preview.childId,
       preview.placement,
       { expandRows },
     );
 
-    if (tentative !== currentBlock) {
-      const nextPlacement = tentative.data.child_placements?.[preview.childId!];
-      applyDragPreview({
-        childId: preview.childId,
-        placement: nextPlacement,
-        bentoRows: getBentoRows(tentative),
-      });
-    }
+    applyDragPreview({
+      childId: preview.childId,
+      placement: resolved.placement,
+      bentoRows: resolved.bentoRows,
+      blocked: resolved.blocked,
+    });
   };
 
   handlePointerUpRef.current = () => {
@@ -268,13 +259,14 @@ export function BentoBlock({
       } else if (
         preview.childId &&
         preview.placement &&
-        (mode.kind === "move" || mode.kind === "resize")
+        (mode.kind === "move" || mode.kind === "resize") &&
+        !preview.blocked
       ) {
         nextBlock = updateChildPlacement(
           currentBlock,
           preview.childId,
           preview.placement,
-          { expandRows: childExpandsRows(currentBlock, preview.childId) },
+          { expandRows: mode.kind === "move" },
         );
       }
 
@@ -321,7 +313,7 @@ export function BentoBlock({
       didDragRef.current = false;
       if ("childId" in mode) setSelectedId(mode.childId);
 
-      const metrics = computeCellMetrics(gridRef.current, getBentoRows(blockRef.current));
+      const metrics = computeCellMetrics(gridRef.current);
       dragOrigin.current = {
         x: e.clientX,
         y: e.clientY,
@@ -384,11 +376,8 @@ export function BentoBlock({
       <div className="relative">
         {editable && (
           <div
-            className="pointer-events-none absolute inset-0 grid gap-1.5 p-2"
-            style={{
-              gridTemplateColumns: `repeat(${BENTO_COLS}, minmax(0, 1fr))`,
-              gridTemplateRows: `repeat(${rowCount}, minmax(3rem, 1fr))`,
-            }}
+            className="bento-grid pointer-events-none absolute inset-0 grid gap-1 p-1.5"
+            style={bentoGridStyle(rowCount)}
             aria-hidden
           >
             {Array.from({ length: rowCount * BENTO_COLS }).map((_, i) => (
@@ -402,12 +391,8 @@ export function BentoBlock({
 
         <div
           ref={gridRef}
-          className="relative grid gap-1.5 rounded-lg border border-stone-200/80 bg-stone-100/20 p-2"
-          style={{
-            gridTemplateColumns: `repeat(${BENTO_COLS}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${rowCount}, minmax(3rem, 1fr))`,
-            minHeight: `${rowCount * 3}rem`,
-          }}
+          className="bento-grid relative grid gap-1 rounded-lg border border-stone-200/80 bg-stone-100/20 p-1.5"
+          style={bentoGridStyle(rowCount)}
           onClick={() => editable && setSelectedId(null)}
         >
           {children.map((child) => {
@@ -416,14 +401,18 @@ export function BentoBlock({
             const style = placementStyle(placement);
             const isDragging =
               dragPreview?.childId === child.id && dragPreview.placement;
+            const isBlocked =
+              isDragging && dragPreview?.blocked === true;
 
             return (
               <div
                 key={child.id}
-                className={`relative min-h-0 min-w-0 overflow-hidden rounded-md bg-white shadow-sm ring-1 ${
-                  isSelected && editable
-                    ? "ring-stone-400"
-                    : "ring-stone-200/60"
+                className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md bg-white shadow-sm ring-1 ${
+                  isBlocked
+                    ? "ring-red-300"
+                    : isSelected && editable
+                      ? "ring-stone-400"
+                      : "ring-stone-200/60"
                 } ${isDragging ? "z-10 opacity-90" : ""}`}
                 style={style}
                 onClick={(e) => {
@@ -493,21 +482,9 @@ export function BentoBlock({
                         )
                       }
                     />
+                    {/* 上辺・上隅のみ（下方向リサイズ不可） */}
                     <div
-                      className="absolute inset-x-2 bottom-0 z-20 flex h-3 cursor-s-resize touch-none items-end justify-center"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "bottom" },
-                          placement,
-                        )
-                      }
-                    >
-                      <span className="mb-0.5 h-1 w-8 rounded-full bg-stone-300/80" />
-                    </div>
-                    {/* 四隅リサイズ */}
-                    <div
-                      className="absolute left-0 top-0 z-20 h-3 w-3 cursor-nw-resize touch-none"
+                      className="absolute left-0 top-0 z-20 h-4 w-4 cursor-nw-resize touch-none"
                       onPointerDown={(e) =>
                         startDrag(
                           e,
@@ -517,7 +494,7 @@ export function BentoBlock({
                       }
                     />
                     <div
-                      className="absolute right-0 top-0 z-20 h-3 w-3 cursor-ne-resize touch-none"
+                      className="absolute right-0 top-0 z-20 h-4 w-4 cursor-ne-resize touch-none"
                       onPointerDown={(e) =>
                         startDrag(
                           e,
@@ -526,30 +503,20 @@ export function BentoBlock({
                         )
                       }
                     />
-                    <div
-                      className="absolute bottom-0 left-0 z-20 h-3 w-3 cursor-sw-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "sw" },
-                          placement,
-                        )
-                      }
-                    />
-                    <div
-                      className="absolute bottom-0 right-0 z-20 h-3 w-3 cursor-se-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "se" },
-                          placement,
-                        )
-                      }
-                    />
                   </>
                 )}
 
-                <div className="pointer-events-none h-full overflow-auto p-2 **:pointer-events-auto">
+                <div
+                  className={`pointer-events-none flex min-h-0 flex-1 flex-col overflow-hidden **:pointer-events-auto ${
+                    child.type === "product"
+                      ? placement.colSpan * placement.rowSpan <= 4
+                        ? "p-1"
+                        : placement.colSpan * placement.rowSpan <= 9
+                          ? "p-1.5"
+                          : "p-2"
+                      : "p-1.5"
+                  }`}
+                >
                   {child.type === "product" ? (
                     <button
                       type="button"
@@ -618,7 +585,7 @@ export function BentoBlock({
           </button>
           <span className="text-xs text-stone-400">
             {rowCount} 行 · グリッド {BENTO_COLS} 列 ·
-            選択中のアイテムは上下の端をドラッグして縦幅を変更
+            下のグリップで Bento の縦幅を変更
           </span>
         </div>
       )}

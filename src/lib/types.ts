@@ -16,12 +16,14 @@ export interface BlockLayout {
   h: number;
 }
 
-/** Bento 内グリッド上の配置（6列ベース） */
+/** Bento 内グリッド上の配置（12列ベース） */
 export interface BentoCellPlacement {
   col: number;
   row: number;
   colSpan: number;
   rowSpan: number;
+  /** @deprecated 旧データ互換 — 読み取り時は無視し rowSpan のみ使用 */
+  sizeRowSpan?: number;
 }
 
 export interface BlockData {

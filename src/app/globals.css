@@ -72,6 +72,18 @@ body {
   margin: 1.5rem 0;
 }
 
+/* Bento: 列幅ベースの正方形セル — 行数だけで高さが決まる */
+.bento-grid {
+  container-type: inline-size;
+  --bento-cols: 12;
+  --bento-gap: 0.25rem;
+  --bento-pad: 0.375rem;
+  --bento-cell-size: calc(
+    (100cqi - 2 * var(--bento-pad) - (var(--bento-cols) - 1) * var(--bento-gap)) /
+      var(--bento-cols)
+  );
+}
+
 .document-body .block-bento .block-product,
 .document-body .block-bento .block-text {
   margin: 0;
