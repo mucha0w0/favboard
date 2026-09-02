@@ -135,59 +135,27 @@ function ProductExtras({
   );
 }
 
-function ProductHorizontal({
-  showImage,
-  imageUrl,
-  title,
-  onImageError,
-  imageClassName,
-  brandText,
-  titleText,
-  priceText,
-  brand,
-  price,
-  titleClass,
-  comment,
-  product_url,
-}: {
-  showImage: boolean;
-  imageUrl?: string;
-  title?: string;
-  onImageError: () => void;
-  imageClassName: string;
-  brandText: string;
-  titleText: string;
-  priceText: string;
-  brand?: string;
-  price?: string;
-  titleClass?: string;
-  comment?: string;
-  product_url?: string;
-}) {
-  return (
-    <div className="flex gap-4">
-      <ProductImage
-        showImage={showImage}
-        imageUrl={imageUrl}
-        title={title}
-        onError={onImageError}
-        className={imageClassName}
-      />
-      <div className="min-w-0 flex-1">
-        <ProductMeta
-          brandText={brandText}
-          titleText={titleText}
-          priceText={priceText}
-          brand={brand}
-          title={title}
-          price={price}
-          titleClass={titleClass}
-        />
-        <ProductExtras comment={comment} product_url={product_url} />
-      </div>
-    </div>
-  );
-}
+const PRODUCT_SIZE_STYLES: Record<
+  ProductSize,
+  { imageClass: string; titleClass: string }
+> = {
+  compact: {
+    imageClass: "aspect-square w-full max-h-24",
+    titleClass: "text-[11px] leading-tight",
+  },
+  standard: {
+    imageClass: "aspect-[4/3] w-full min-h-36",
+    titleClass: "text-base leading-snug",
+  },
+  large: {
+    imageClass: "aspect-[4/3] w-full min-h-48",
+    titleClass: "text-base leading-snug",
+  },
+  xl: {
+    imageClass: "aspect-[4/3] w-full min-h-56",
+    titleClass: "text-base leading-snug",
+  },
+};
 
 function ProductVertical({
   showImage,
@@ -279,58 +247,17 @@ function ProductCardContent({
     product_url,
   };
 
-  if (layout === "grid") {
-    switch (gridSize ?? size) {
-      case "compact":
-        return (
-          <ProductVertical
-            {...shared}
-            imageClassName="aspect-square w-full max-h-24"
-            titleClass="text-[11px] leading-tight"
-          />
-        );
-      case "standard":
-      default:
-        return (
-          <ProductVertical
-            {...shared}
-            imageClassName="aspect-[4/3] w-full min-h-36"
-            titleClass="text-base leading-snug"
-          />
-        );
-    }
-  }
+  const effectiveSize =
+    layout === "grid" ? (gridSize ?? size) : size;
+  const { imageClass, titleClass } = PRODUCT_SIZE_STYLES[effectiveSize];
 
-  switch (size) {
-    case "compact":
-      return (
-        <ProductHorizontal
-          {...shared}
-          imageClassName="h-16 w-16"
-          titleClass="text-xs"
-        />
-      );
-
-    case "large":
-      return (
-        <ProductVertical {...shared} imageClassName="h-48 w-full" />
-      );
-
-    case "xl":
-      return (
-        <ProductVertical {...shared} imageClassName="h-56 w-full" />
-      );
-
-    case "standard":
-    default:
-      return (
-        <ProductHorizontal
-          {...shared}
-          imageClassName="h-24 w-24"
-          titleClass="text-sm"
-        />
-      );
-  }
+  return (
+    <ProductVertical
+      {...shared}
+      imageClassName={imageClass}
+      titleClass={titleClass}
+    />
+  );
 }
 
 export function ProductBlock({
