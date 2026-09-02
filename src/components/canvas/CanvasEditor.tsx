@@ -167,11 +167,13 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   }
 
   function handleUpdateBento(bentoId: string, data: Partial<BlockData>) {
-    setBlocks((prev) =>
-      prev.map((b) =>
+    setBlocks((prev) => {
+      const next = prev.map((b) =>
         b.id === bentoId ? { ...b, data: { ...b.data, ...data } } : b,
-      ),
-    );
+      );
+      blocksRef.current = next;
+      return next;
+    });
   }
 
   async function handlePersistBento(bentoId: string) {

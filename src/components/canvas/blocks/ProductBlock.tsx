@@ -150,15 +150,22 @@ function ProductExtras({
 
 const PRODUCT_SIZE_STYLES: Record<
   ProductSize,
-  { imageClass: string; titleClass: string; vertical?: boolean }
+  {
+    imageClass: string;
+    titleClass: string;
+    vertical?: boolean;
+    imagePosition?: "left" | "right";
+  }
 > = {
   compact: {
-    imageClass: "h-16 w-16",
+    imageClass: "h-14 w-14 sm:h-16 sm:w-16",
     titleClass: "text-xs leading-tight",
+    imagePosition: "right",
   },
   standard: {
     imageClass: "h-24 w-24 sm:h-28 sm:w-28",
     titleClass: "text-sm leading-snug",
+    imagePosition: "left",
   },
   large: {
     imageClass: "aspect-[4/5] w-full max-w-[200px]",
@@ -189,6 +196,7 @@ function ProductHorizontal({
   gapClass = "gap-4 sm:gap-5",
   showExtras = true,
   lineClamp,
+  imagePosition = "left",
 }: {
   showImage: boolean;
   imageUrl?: string;
@@ -206,9 +214,14 @@ function ProductHorizontal({
   gapClass?: string;
   showExtras?: boolean;
   lineClamp?: number;
+  imagePosition?: "left" | "right";
 }) {
   return (
-    <div className={`group flex h-full min-h-0 ${gapClass}`}>
+    <div
+      className={`group flex h-full min-h-0 items-center ${gapClass} ${
+        imagePosition === "right" ? "flex-row-reverse" : ""
+      }`}
+    >
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
@@ -301,42 +314,91 @@ const GRID_SIZE_STYLES: Record<
   ProductSize,
   {
     imageClass: string;
+    horizontalImageClass?: string;
     titleClass: string;
     vertical?: boolean;
     gapClass?: string;
     showExtras?: boolean;
     lineClamp?: number;
+    imagePosition?: "left" | "right";
   }
 > = {
   compact: {
-    imageClass: "h-full max-h-full aspect-square w-auto max-w-[38%]",
+    imageClass: "h-full max-h-full aspect-square w-auto max-w-[32%]",
     titleClass: "text-[10px] leading-tight",
-    gapClass: "gap-1.5",
-    showExtras: false,
-    lineClamp: 2,
-  },
-  standard: {
-    imageClass: "h-full max-h-full aspect-square w-auto max-w-[42%]",
-    titleClass: "text-xs leading-snug",
-    gapClass: "gap-2",
+    gapClass: "gap-1",
     showExtras: false,
     lineClamp: 3,
+    imagePosition: "right",
+  },
+  standard: {
+    imageClass: "h-full max-h-full aspect-square w-auto max-w-[40%]",
+    titleClass: "text-xs leading-snug",
+    gapClass: "gap-1.5",
+    showExtras: false,
+    lineClamp: 3,
+    imagePosition: "left",
   },
   large: {
     imageClass: "min-h-0 w-full flex-1",
+    horizontalImageClass:
+      "h-full max-h-full aspect-[4/5] w-auto max-w-[46%]",
     titleClass: "text-xs leading-snug",
     vertical: true,
+    gapClass: "gap-2",
     showExtras: true,
     lineClamp: 2,
+    imagePosition: "left",
   },
   xl: {
     imageClass: "min-h-0 w-full flex-1",
+    horizontalImageClass:
+      "h-full max-h-full aspect-[3/4] w-auto max-w-[48%]",
     titleClass: "text-sm leading-snug",
     vertical: true,
+    gapClass: "gap-2.5",
     showExtras: true,
     lineClamp: 3,
+    imagePosition: "left",
   },
 };
+
+/** グリッドセルの縦横比に応じて横並び / 縦並びを決定 */
+function shouldUseVerticalLayout(
+  layout: "inline" | "grid",
+  effectiveSize: ProductSize,
+  cellSpan?: { colSpan: number; rowSpan: number },
+): boolean {
+  if (effectiveSize === "compact" || effectiveSize === "standard") return false;
+
+  if (layout === "inline") {
+    return effectiveSize === "large" || effectiveSize === "xl";
+  }
+
+  if (!cellSpan) return true;
+  return cellSpan.rowSpan > cellSpan.colSpan;
+}
+
+/** 横並び時の写真位置 — 小さいセルはテキスト優先で右寄せ */
+function resolveImagePosition(
+  layout: "inline" | "grid",
+  effectiveSize: ProductSize,
+  cellSpan?: { colSpan: number; rowSpan: number },
+  styleDefault?: "left" | "right",
+): "left" | "right" {
+  if (effectiveSize === "compact") return "right";
+
+  if (
+    layout === "grid" &&
+    cellSpan &&
+    effectiveSize === "standard" &&
+    cellSpan.rowSpan > cellSpan.colSpan
+  ) {
+    return "right";
+  }
+
+  return styleDefault ?? "left";
+}
 
 function ProductCardContent({
   block,
@@ -380,20 +442,28 @@ function ProductCardContent({
       : size;
   const gridStyles = GRID_SIZE_STYLES[effectiveSize];
   const inlineStyles = PRODUCT_SIZE_STYLES[effectiveSize];
-  const imageClass = layout === "grid" ? gridStyles.imageClass : inlineStyles.imageClass;
-  const titleClass = layout === "grid" ? gridStyles.titleClass : inlineStyles.titleClass;
-  const vertical = layout === "grid" ? gridStyles.vertical : inlineStyles.vertical;
+  const useVertical = shouldUseVerticalLayout(layout, effectiveSize, cellSpan);
+  const imageClass =
+    layout === "grid"
+      ? useVertical
+        ? gridStyles.imageClass
+        : (gridStyles.horizontalImageClass ?? gridStyles.imageClass)
+      : inlineStyles.imageClass;
+  const titleClass =
+    layout === "grid" ? gridStyles.titleClass : inlineStyles.titleClass;
   const gapClass = layout === "grid" ? gridStyles.gapClass : undefined;
   const showExtras = layout === "grid" ? gridStyles.showExtras : true;
   const lineClamp = layout === "grid" ? gridStyles.lineClamp : undefined;
-  const useVertical =
-    vertical &&
-    (layout === "inline" ||
-      (layout === "grid" &&
-        cellSpan &&
-        (effectiveSize === "large" ||
-          effectiveSize === "xl" ||
-          cellSpan.rowSpan > cellSpan.colSpan)));
+  const styleImagePosition =
+    layout === "grid"
+      ? gridStyles.imagePosition
+      : inlineStyles.imagePosition;
+  const imagePosition = resolveImagePosition(
+    layout,
+    effectiveSize,
+    cellSpan,
+    styleImagePosition,
+  );
 
   const layoutProps = {
     ...shared,
@@ -411,6 +481,7 @@ function ProductCardContent({
     <ProductHorizontal
       {...layoutProps}
       gapClass={layout === "grid" ? gapClass : undefined}
+      imagePosition={imagePosition}
     />
   );
 }

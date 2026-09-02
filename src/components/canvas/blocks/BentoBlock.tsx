@@ -288,8 +288,8 @@ export function BentoBlock({
 
       if (nextBlock !== currentBlock) {
         commitBento(nextBlock);
+        onPersistBento?.(currentBlock.id);
       }
-      onPersistBento?.(currentBlock.id);
     }
 
     applyDragPreview(null);
