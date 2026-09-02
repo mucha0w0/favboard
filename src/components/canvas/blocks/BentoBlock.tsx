@@ -20,7 +20,14 @@ import {
   updateBentoChildData,
 } from "@/lib/bento-layout";
 import type { BentoCellPlacement, Block, BlockData } from "@/lib/types";
-import { AlignLeft, GripHorizontal, Package, Plus, Trash2 } from "lucide-react";
+import {
+  AlignLeft,
+  GripHorizontal,
+  Package,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BlockRenderer } from "../BlockRenderer";
 
@@ -161,7 +168,6 @@ export function BentoBlock({
   const bentoStartRows = useRef(0);
   const captureTarget = useRef<HTMLElement | null>(null);
   const capturePointerId = useRef<number | null>(null);
-  const didDragRef = useRef(false);
 
   const children = getBentoChildren(block);
   const rowCount = dragPreview?.bentoRows ?? getBentoRows(block);
@@ -204,10 +210,6 @@ export function BentoBlock({
 
     const dx = e.clientX - origin.x;
     const dy = e.clientY - origin.y;
-
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      didDragRef.current = true;
-    }
 
     if (mode.kind === "bento-height") {
       const deltaRows = deltaGridUnits(dy, origin.step);
@@ -338,7 +340,6 @@ export function BentoBlock({
       e.preventDefault();
       e.stopPropagation();
 
-      didDragRef.current = false;
       if ("childId" in mode) setSelectedId(mode.childId);
 
       const measureEl = ghostGridRef.current ?? gridRef.current;
@@ -560,6 +561,20 @@ export function BentoBlock({
                   </>
                 )}
 
+                {editable && child.type === "product" && (
+                  <button
+                    type="button"
+                    className="absolute bottom-1 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-medium text-stone-600 shadow-sm ring-1 ring-stone-200/80 transition-colors hover:bg-white hover:text-stone-900"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditChild?.(block.id, child);
+                    }}
+                  >
+                    <Pencil className="h-3 w-3" />
+                    編集
+                  </button>
+                )}
+
                 <div
                   className={`pointer-events-none flex min-h-0 flex-1 flex-col overflow-hidden **:pointer-events-auto ${
                     child.type === "product"
@@ -572,17 +587,7 @@ export function BentoBlock({
                   }`}
                 >
                   {child.type === "product" ? (
-                    <button
-                      type="button"
-                      className="h-full w-full touch-none text-left"
-                      onClick={() => {
-                        if (didDragRef.current) {
-                          didDragRef.current = false;
-                          return;
-                        }
-                        if (editable) onEditChild?.(block.id, child);
-                      }}
-                    >
+                    <div className="h-full w-full text-left">
                       <BlockRenderer
                         block={child}
                         editable={editable}
@@ -592,7 +597,7 @@ export function BentoBlock({
                           rowSpan: placement.rowSpan,
                         }}
                       />
-                    </button>
+                    </div>
                   ) : (
                     <BlockRenderer
                       block={child}
