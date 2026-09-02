@@ -637,10 +637,6 @@ export function BentoBlock({
             <AlignLeft className="h-3 w-3" />
             テキスト
           </button>
-          <span className="text-xs text-stone-400">
-            {rowCount} 行 · グリッド {BENTO_COLS} 列 ·
-            上下の端をドラッグしてグリッド数で縦幅を変更
-          </span>
         </div>
       )}
 
