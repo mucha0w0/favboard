@@ -467,6 +467,14 @@ export function bentoGridStyle(rowCount: number): {
 
 /** コンテナ幅から 1 セルの辺長（px）を算出 — ドラッグのスナップ用 */
 export function measureBentoCellSize(el: HTMLElement): number {
+  return measureBentoGridMetrics(el).cellSize;
+}
+
+/** グリッドのセル辺長と gap（px）— ドラッグ換算用 */
+export function measureBentoGridMetrics(el: HTMLElement): {
+  cellSize: number;
+  gap: number;
+} {
   const rect = el.getBoundingClientRect();
   const style = getComputedStyle(el);
   const gap =
@@ -474,5 +482,17 @@ export function measureBentoCellSize(el: HTMLElement): number {
   const padX =
     parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
   const contentW = rect.width - padX;
-  return (contentW - gap * (BENTO_COLS - 1)) / BENTO_COLS;
+  const cellSize = (contentW - gap * (BENTO_COLS - 1)) / BENTO_COLS;
+  return { cellSize, gap };
+}
+
+/** ピクセル移動量をグリッド単位に換算（セル + gap を 1 ステップとする） */
+export function deltaGridUnits(
+  deltaPx: number,
+  cellSize: number,
+  gap: number,
+): number {
+  const step = cellSize + gap;
+  if (step <= 0) return 0;
+  return Math.round(deltaPx / step);
 }

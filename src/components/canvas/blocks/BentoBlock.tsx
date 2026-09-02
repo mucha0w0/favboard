@@ -8,7 +8,8 @@ import {
   getBentoChildren,
   getBentoRows,
   getChildPlacement,
-  measureBentoCellSize,
+  deltaGridUnits,
+  measureBentoGridMetrics,
   MIN_BENTO_ROWS,
   placementStyle,
   previewChildPlacement,
@@ -59,14 +60,9 @@ type DragOrigin = {
   x: number;
   y: number;
   placement: BentoCellPlacement;
-  cellW: number;
-  cellH: number;
+  cellSize: number;
+  gap: number;
 };
-
-function computeCellMetrics(el: HTMLElement): { cellW: number; cellH: number } {
-  const cellW = measureBentoCellSize(el);
-  return { cellW, cellH: cellW };
-}
 
 function computePlacementFromDrag(
   mode: DragMode,
@@ -75,9 +71,9 @@ function computePlacementFromDrag(
   dy: number,
   rowCount: number,
 ): DragPreview | null {
-  const { cellW, cellH, placement: startP } = origin;
-  const deltaCol = Math.round(dx / cellW);
-  const deltaRow = Math.round(dy / cellH);
+  const { cellSize, gap, placement: startP } = origin;
+  const deltaCol = deltaGridUnits(dx, cellSize, gap);
+  const deltaRow = deltaGridUnits(dy, cellSize, gap);
 
   if (mode.kind === "move") {
     return {
@@ -214,7 +210,7 @@ export function BentoBlock({
     }
 
     if (mode.kind === "bento-height") {
-      const deltaRows = Math.round(dy / origin.cellH);
+      const deltaRows = deltaGridUnits(dy, origin.cellSize, origin.gap);
       const minRows = Math.max(
         MIN_BENTO_ROWS,
         requiredBentoRows(blockRef.current),
@@ -222,12 +218,6 @@ export function BentoBlock({
       const nextRows = Math.max(minRows, bentoStartRows.current + deltaRows);
       applyDragPreview({ bentoRows: nextRows });
       return;
-    }
-
-    if (gridRef.current) {
-      const metrics = computeCellMetrics(gridRef.current);
-      origin.cellW = metrics.cellW;
-      origin.cellH = metrics.cellH;
     }
 
     const currentBlock = blockRef.current;
@@ -324,13 +314,13 @@ export function BentoBlock({
       didDragRef.current = false;
       if ("childId" in mode) setSelectedId(mode.childId);
 
-      const metrics = computeCellMetrics(gridRef.current);
+      const { cellSize, gap } = measureBentoGridMetrics(gridRef.current);
       dragOrigin.current = {
         x: e.clientX,
         y: e.clientY,
         placement,
-        cellW: metrics.cellW,
-        cellH: metrics.cellH,
+        cellSize,
+        gap,
       };
 
       if (mode.kind === "bento-height") {
