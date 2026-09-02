@@ -8,9 +8,14 @@ import { Share2 } from "lucide-react";
 interface PublicCanvasViewProps {
   canvas: Canvas;
   shareUrl: string;
+  isDraftPreview?: boolean;
 }
 
-export function PublicCanvasView({ canvas, shareUrl }: PublicCanvasViewProps) {
+export function PublicCanvasView({
+  canvas,
+  shareUrl,
+  isDraftPreview = false,
+}: PublicCanvasViewProps) {
   function handleShare() {
     const text = `${canvas.title} — Visual Wishlist`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
@@ -21,16 +26,20 @@ export function PublicCanvasView({ canvas, shareUrl }: PublicCanvasViewProps) {
     <div className="min-h-screen bg-stone-50">
       <header className="sticky top-0 z-30 bg-stone-50/80 backdrop-blur-md">
         <div className="content-column flex items-center justify-between px-4 py-3 sm:px-0">
-          <span className="text-xs text-stone-400">Visual Wishlist</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleShare}
-            className="text-stone-600"
-          >
-            <Share2 className="h-4 w-4" />
-            シェア
-          </Button>
+          <span className="text-xs text-stone-400">
+            {isDraftPreview ? "下書きプレビュー" : "Visual Wishlist"}
+          </span>
+          {!isDraftPreview && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              className="text-stone-600"
+            >
+              <Share2 className="h-4 w-4" />
+              シェア
+            </Button>
+          )}
         </div>
       </header>
 

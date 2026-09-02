@@ -41,8 +41,8 @@ body {
 }
 
 .document-body .block-heading {
-  margin-top: 2.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.25rem;
 }
 
 .document-body .block-heading:first-child {
@@ -50,15 +50,15 @@ body {
 }
 
 .document-body .block-product {
-  margin: 1.25rem 0;
+  margin: 0.5rem 0;
 }
 
 .document-body .block-divider {
-  margin: 2rem 0;
+  margin: 1rem 0;
 }
 
 .document-body .block-text {
-  margin: 1.25rem 0;
+  margin: 0.5rem 0;
 }
 
 /* ボタン以外の入力 — 下線のみ、背景と一体化 */

@@ -275,16 +275,14 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         }
         actions={
           <>
-            {canvas.is_published && (
-              <Link
-                href={publicUrl}
-                target="_blank"
-                className="hidden items-center gap-1 text-xs text-stone-500 hover:text-stone-800 sm:inline-flex"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                プレビュー
-              </Link>
-            )}
+            <Link
+              href={publicUrl}
+              target="_blank"
+              className="hidden items-center gap-1 text-xs text-stone-500 hover:text-stone-800 sm:inline-flex"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              プレビュー
+            </Link>
             <Button
               variant="ghost"
               size="sm"

@@ -73,6 +73,17 @@ export async function localGetCanvasBySlug(
   );
 }
 
+export async function localGetCanvasBySlugForView(
+  slug: string,
+  userId: string | null,
+): Promise<Canvas | null> {
+  const store = await ensureStore();
+  const canvas = store.canvases.find((c) => c.slug === slug) ?? null;
+  if (!canvas) return null;
+  if (!canvas.is_published && canvas.user_id !== userId) return null;
+  return canvas;
+}
+
 export async function localUpdateCanvas(
   id: string,
   userId: string,

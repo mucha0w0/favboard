@@ -316,20 +316,15 @@ function BlockPreview({ block }: { block: Block }) {
   if (block.type === "divider") {
     return (
       <div className={blockClass(block.type)}>
-        <div className="py-1">
-          <BlockRenderer block={block} editable />
-        </div>
+        <BlockRenderer block={block} editable />
       </div>
     );
   }
 
   return (
     <div className={blockClass(block.type)}>
-      <div className="flex gap-1 sm:gap-2 pr-2 sm:pr-3">
-        <div className="w-7 shrink-0" aria-hidden />
-        <div className="min-w-0 flex-1 py-1">
-          <BlockRenderer block={block} editable />
-        </div>
+      <div className="min-w-0">
+        <BlockRenderer block={block} editable />
       </div>
     </div>
   );
@@ -348,12 +343,13 @@ function InsertZone({
 
   return (
     <div
-      className={`group/insert relative flex h-3 items-center justify-center ${
+      className={`group/insert relative h-0 ${
         disabled ? "pointer-events-none" : ""
       }`}
     >
-      <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-transparent transition-colors group-hover/insert:bg-stone-200" />
-      <div className="relative z-10 opacity-0 transition-opacity group-hover/insert:opacity-100">
+      <div className="absolute inset-x-0 top-0 flex h-4 -translate-y-1/2 items-center justify-center">
+        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-transparent transition-colors group-hover/insert:bg-stone-200" />
+        <div className="relative z-10 opacity-0 transition-opacity group-hover/insert:opacity-100">
         <button
           type="button"
           disabled={disabled}
@@ -383,6 +379,7 @@ function InsertZone({
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );
@@ -417,16 +414,10 @@ function StaticBlockItem({
 
   return (
     <div data-block-id={block.id} className={`relative ${blockClass(block.type)}`}>
-      <div
-        className={`group/block relative ${
-          isDivider
-            ? "py-1"
-            : `flex gap-1 sm:gap-2 ${editable ? "pr-2 sm:pr-3" : "pr-6 sm:pr-8"}`
-        }`}
-      >
+      <div className="group/block relative">
         {editable && !isDivider && (
           <div
-            className="mt-1 flex h-9 w-7 shrink-0 items-center justify-center self-start text-stone-300"
+            className="absolute -left-7 top-0.5 flex h-9 w-7 items-center justify-center text-stone-300"
             aria-hidden
           >
             <GripVertical className="h-4 w-4" />
@@ -434,7 +425,7 @@ function StaticBlockItem({
         )}
         {editable && isDivider && (
           <div
-            className="pointer-events-none absolute left-0 top-1/2 flex h-9 w-7 -translate-y-1/2 items-center justify-center text-stone-300"
+            className="pointer-events-none absolute -left-7 top-1/2 flex h-9 w-7 -translate-y-1/2 items-center justify-center text-stone-300"
             aria-hidden
           >
             <GripVertical className="h-4 w-4" />
@@ -514,20 +505,14 @@ function SortableBlockItem({
         data-block-id={block.id}
         className={`relative ${blockClass(block.type)}`}
       >
-        <div
-          className={`group/block relative ${
-            isDivider
-              ? "py-1"
-              : `flex gap-1 sm:gap-2 ${editable ? "pr-2 sm:pr-3" : "pr-6 sm:pr-8"}`
-          }`}
-        >
+        <div className="group/block relative">
           {editable && !isDivider && (
             <button
               type="button"
               ref={setActivatorNodeRef}
               {...attributes}
               {...listeners}
-              className="mt-1 flex h-9 w-7 shrink-0 cursor-grab touch-none items-center justify-center self-start text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
+              className="absolute -left-7 top-0.5 flex h-9 w-7 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
               aria-label="ドラッグして並べ替え"
               onClick={(e) => e.stopPropagation()}
             >
@@ -540,7 +525,7 @@ function SortableBlockItem({
               ref={setActivatorNodeRef}
               {...attributes}
               {...listeners}
-              className="absolute left-0 top-1/2 z-10 flex h-9 w-7 -translate-y-1/2 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
+              className="absolute -left-7 top-1/2 z-10 flex h-9 w-7 -translate-y-1/2 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
               aria-label="ドラッグして並べ替え"
               onClick={(e) => e.stopPropagation()}
             >
@@ -618,7 +603,7 @@ function BlockItem({
 
   return (
     <>
-      <div className={fullWidth ? "w-full" : "min-w-0 flex-1 py-1"}>
+      <div className={fullWidth ? "w-full" : "min-w-0 w-full"}>
         {isProductClickable ? (
           <button
             type="button"

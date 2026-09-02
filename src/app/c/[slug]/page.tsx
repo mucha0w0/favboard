@@ -1,5 +1,9 @@
 import { PublicCanvasView } from "@/components/canvas/PublicCanvasView";
-import { getPublishedCanvasBySlug } from "@/lib/canvas-service";
+import {
+  getAuthUserId,
+  getCanvasBySlugForView,
+  getPublishedCanvasBySlug,
+} from "@/lib/canvas-service";
 import { type Canvas } from "@/lib/types";
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -47,12 +51,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicCanvasPage({ params }: PageProps) {
   const { slug } = await params;
-  const canvas = await getPublishedCanvasBySlug(slug);
+  const userId = await getAuthUserId();
+  const canvas = await getCanvasBySlugForView(slug, userId);
 
   if (!canvas) notFound();
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const shareUrl = `${appUrl}/c/${slug}`;
 
-  return <PublicCanvasView canvas={canvas} shareUrl={shareUrl} />;
+  return (
+    <PublicCanvasView
+      canvas={canvas}
+      shareUrl={shareUrl}
+      isDraftPreview={!canvas.is_published}
+    />
+  );
 }

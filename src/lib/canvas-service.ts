@@ -3,6 +3,7 @@ import {
   localCreateCanvas,
   localDeleteCanvas,
   localGetCanvasBySlug,
+  localGetCanvasBySlugForView,
   localGetCanvasWithAccess,
   localListCanvases,
   localUpdateCanvas,
@@ -102,6 +103,27 @@ export async function getPublishedCanvasBySlug(
     .single();
 
   return (data as Canvas) ?? null;
+}
+
+export async function getCanvasBySlugForView(
+  slug: string,
+  userId: string | null,
+): Promise<Canvas | null> {
+  if (!isSupabaseConfigured()) {
+    return localGetCanvasBySlugForView(slug, userId);
+  }
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("canvases")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (!data) return null;
+  const canvas = data as Canvas;
+  if (!canvas.is_published && canvas.user_id !== userId) return null;
+  return canvas;
 }
 
 export async function updateCanvas(
