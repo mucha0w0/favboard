@@ -53,8 +53,11 @@ export function BentoBlock({
   onPersistBento,
 }: BentoBlockProps) {
   const gridRef = useRef<HTMLDivElement>(null);
+  const blockRef = useRef(block);
+  blockRef.current = block;
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [dragMode, setDragMode] = useState<DragMode | null>(null);
+  const dragModeRef = useRef<DragMode | null>(null);
   const dragOrigin = useRef<{
     x: number;
     y: number;
@@ -84,29 +87,32 @@ export function BentoBlock({
 
   const handlePointerMove = useCallback(
     (e: PointerEvent) => {
-      if (!dragMode || !dragOrigin.current) return;
+      const mode = dragModeRef.current;
+      if (!mode || !dragOrigin.current) return;
+
+      const currentBlock = blockRef.current;
       const { cellW, cellH } = cellMetrics();
       const dx = e.clientX - dragOrigin.current.x;
       const dy = e.clientY - dragOrigin.current.y;
 
-      if (dragMode.kind === "move") {
+      if (mode.kind === "move") {
         const deltaCol = Math.round(dx / cellW);
         const deltaRow = Math.round(dy / cellH);
         const p = dragOrigin.current.placement;
-        const next = updateChildPlacement(block, dragMode.childId, {
+        const next = updateChildPlacement(currentBlock, mode.childId, {
           ...p,
-          col: dragMode.startCol + deltaCol,
-          row: dragMode.startRow + deltaRow,
+          col: mode.startCol + deltaCol,
+          row: mode.startRow + deltaRow,
         });
-        if (next !== block) commitBento(next);
+        if (next !== currentBlock) commitBento(next);
         return;
       }
 
-      if (dragMode.kind === "resize") {
+      if (mode.kind === "resize") {
         const startP = dragOrigin.current.placement;
         const deltaCol = Math.round(dx / cellW);
         const deltaRow = Math.round(dy / cellH);
-        const edge = dragMode.edge;
+        const edge = mode.edge;
 
         let col = startP.col;
         let row = startP.row;
@@ -142,10 +148,7 @@ export function BentoBlock({
           );
         }
         if (affectsBottom) {
-          rowSpan = Math.max(
-            1,
-            Math.min(rowCount - startP.row, startP.rowSpan + deltaRow),
-          );
+          rowSpan = Math.max(1, startP.rowSpan + deltaRow);
         }
         if (affectsTop) {
           row = Math.max(
@@ -156,37 +159,37 @@ export function BentoBlock({
             ),
           );
           rowSpan = startP.row + startP.rowSpan - row;
-          rowSpan = Math.max(1, Math.min(rowCount - row, rowSpan));
+          rowSpan = Math.max(1, rowSpan);
         }
 
-        const next = updateChildPlacement(block, dragMode.childId, {
+        const next = updateChildPlacement(currentBlock, mode.childId, {
           col,
           row,
           colSpan,
           rowSpan,
         });
-        if (next !== block) commitBento(next);
+        if (next !== currentBlock) commitBento(next);
         return;
       }
 
-      if (dragMode.kind === "bento-height") {
+      if (mode.kind === "bento-height") {
         const deltaRows = Math.round(dy / cellH);
         const nextRows = Math.max(2, bentoStartRows.current + deltaRows);
-        commitBento(setBentoRows(block, nextRows));
+        commitBento(setBentoRows(currentBlock, nextRows));
       }
     },
-    [block, cellMetrics, commitBento, dragMode, rowCount],
+    [cellMetrics, commitBento],
   );
 
   const handlePointerUp = useCallback(() => {
-    if (dragMode) {
-      onPersistBento?.(block.id);
+    if (dragModeRef.current) {
+      onPersistBento?.(blockRef.current.id);
     }
-    setDragMode(null);
+    dragModeRef.current = null;
     dragOrigin.current = null;
     window.removeEventListener("pointermove", handlePointerMove);
     window.removeEventListener("pointerup", handlePointerUp);
-  }, [block.id, dragMode, handlePointerMove, onPersistBento]);
+  }, [handlePointerMove, onPersistBento]);
 
   const startDrag = useCallback(
     (
@@ -200,13 +203,13 @@ export function BentoBlock({
       if ("childId" in mode) setSelectedId(mode.childId);
       dragOrigin.current = { x: e.clientX, y: e.clientY, placement };
       if (mode.kind === "bento-height") {
-        bentoStartRows.current = getBentoRows(block);
+        bentoStartRows.current = getBentoRows(blockRef.current);
       }
-      setDragMode(mode);
+      dragModeRef.current = mode;
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
     },
-    [block, editable, handlePointerMove, handlePointerUp],
+    [editable, handlePointerMove, handlePointerUp],
   );
 
   function handleAddChild(type: "product" | "text") {
@@ -315,7 +318,7 @@ export function BentoBlock({
                       }
                     />
                     <div
-                      className="absolute inset-x-2 top-0 z-20 h-2 cursor-n-resize"
+                      className="absolute inset-x-2 top-0 z-20 flex h-3 cursor-n-resize touch-none items-start justify-center"
                       onPointerDown={(e) =>
                         startDrag(
                           e,
@@ -323,7 +326,9 @@ export function BentoBlock({
                           placement,
                         )
                       }
-                    />
+                    >
+                      <span className="mt-0.5 h-1 w-8 rounded-full bg-stone-300/80" />
+                    </div>
                     <div
                       className="absolute inset-y-2 right-0 z-20 w-2 cursor-e-resize"
                       onPointerDown={(e) =>
@@ -335,7 +340,7 @@ export function BentoBlock({
                       }
                     />
                     <div
-                      className="absolute inset-x-2 bottom-0 z-20 h-2 cursor-s-resize"
+                      className="absolute inset-x-2 bottom-0 z-20 flex h-3 cursor-s-resize touch-none items-end justify-center"
                       onPointerDown={(e) =>
                         startDrag(
                           e,
@@ -343,7 +348,9 @@ export function BentoBlock({
                           placement,
                         )
                       }
-                    />
+                    >
+                      <span className="mb-0.5 h-1 w-8 rounded-full bg-stone-300/80" />
+                    </div>
                     {/* 四隅リサイズ */}
                     <div
                       className="absolute left-0 top-0 z-20 h-3 w-3 cursor-nw-resize"
@@ -445,7 +452,7 @@ export function BentoBlock({
           </button>
           <span className="text-xs text-stone-400">
             {rowCount} 行 · グリッド {BENTO_COLS} 列 ·
-            選択中のアイテムは端をドラッグしてサイズ変更
+            選択中のアイテムは上下の端をドラッグして縦幅を変更
           </span>
         </div>
       )}

@@ -161,15 +161,24 @@ export function updateChildPlacement(
   childId: string,
   placement: BentoCellPlacement,
 ): Block {
-  const rows = Math.max(getBentoRows(bento), requiredBentoRows(bento));
+  const rows = Math.max(
+    getBentoRows(bento),
+    requiredBentoRows(bento),
+    placement.row + placement.rowSpan,
+  );
   const next = clampPlacement(placement, rows);
   if (!canPlace(bento, next, childId)) return bento;
+
+  const nextRows = Math.min(
+    MAX_BENTO_ROWS,
+    Math.max(rows, next.row + next.rowSpan),
+  );
 
   return {
     ...bento,
     data: {
       ...bento.data,
-      bento_rows: Math.max(rows, next.row + next.rowSpan),
+      bento_rows: nextRows,
       child_placements: {
         ...bento.data.child_placements,
         [childId]: next,
