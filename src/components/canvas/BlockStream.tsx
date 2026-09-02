@@ -1,9 +1,15 @@
 "use client";
 
 import {
+  applyPairLayoutFromDrag,
+  gridColumnClass,
+  isExactGridPairAt,
+  isRowPair,
+  segmentBlocks,
+} from "@/lib/block-layout";
+import {
   type Block,
   type BlockType,
-  getGridMaxColumns,
   getProductSize,
   isGridProduct,
 } from "@/lib/types";
@@ -15,10 +21,11 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  type DragEndEvent,
+  type DragMoveEvent,
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   SortableContext,
   arrayMove,
@@ -99,82 +106,61 @@ function blockClass(type: BlockType): string {
   }
 }
 
-type BlockSegment =
-  | { type: "single"; block: Block; index: number }
-  | {
-      type: "grid-row";
-      blocks: Block[];
-      size: "compact" | "standard";
-      startIndex: number;
-    };
+const LAYOUT_DRAG_THRESHOLD = 40;
 
-function segmentBlocks(blocks: Block[]): BlockSegment[] {
-  const segments: BlockSegment[] = [];
-  let i = 0;
+function getLayoutDragHint(
+  blocks: Block[],
+  activeId: string,
+  delta: { x: number; y: number },
+): "row" | "stack" | null {
+  const idx = blocks.findIndex((b) => b.id === activeId);
+  if (idx === -1) return null;
 
-  while (i < blocks.length) {
-    const block = blocks[i];
+  const block = blocks[idx];
+  if (!isGridProduct(block)) return null;
 
-    if (!isGridProduct(block)) {
-      segments.push({ type: "single", block, index: i });
-      i++;
-      continue;
-    }
+  const isHorizontal =
+    Math.abs(delta.x) > LAYOUT_DRAG_THRESHOLD &&
+    Math.abs(delta.x) > Math.abs(delta.y) * 1.2;
+  const isVertical =
+    Math.abs(delta.y) > LAYOUT_DRAG_THRESHOLD &&
+    Math.abs(delta.y) > Math.abs(delta.x) * 1.2;
 
-    const runStart = i;
-    const run: Block[] = [];
-    while (i < blocks.length && isGridProduct(blocks[i])) {
-      run.push(blocks[i]);
-      i++;
-    }
+  const size = getProductSize(block);
+  const prev = idx > 0 ? blocks[idx - 1] : undefined;
+  const next = idx < blocks.length - 1 ? blocks[idx + 1] : undefined;
 
-    let rowStart = 0;
-    let absIndex = runStart;
-    while (rowStart < run.length) {
-      const size = getProductSize(run[rowStart]) as "compact" | "standard";
-      const maxCols = getGridMaxColumns(size);
-      const rowBlocks = [run[rowStart]];
-      let j = rowStart + 1;
-
-      while (
-        j < run.length &&
-        getProductSize(run[j]) === size &&
-        rowBlocks.length < maxCols
-      ) {
-        rowBlocks.push(run[j]);
-        j++;
-      }
-
-      segments.push({
-        type: "grid-row",
-        blocks: rowBlocks,
-        size,
-        startIndex: absIndex,
-      });
-
-      absIndex += rowBlocks.length;
-      rowStart = j;
-    }
+  if (isHorizontal) {
+    const canPair =
+      (prev &&
+        isGridProduct(prev) &&
+        getProductSize(prev) === size &&
+        isExactGridPairAt(blocks, idx - 1) &&
+        !isRowPair(prev, block)) ||
+      (next &&
+        isGridProduct(next) &&
+        getProductSize(next) === size &&
+        isExactGridPairAt(blocks, idx) &&
+        !isRowPair(block, next));
+    if (canPair) return "row";
   }
 
-  return segments.flatMap((segment) => {
-    if (segment.type === "grid-row" && segment.blocks.length === 1) {
-      return [
-        {
-          type: "single" as const,
-          block: segment.blocks[0],
-          index: segment.startIndex,
-        },
-      ];
-    }
-    return [segment];
-  });
-}
+  if (isVertical) {
+    const canSplit =
+      (prev &&
+        isGridProduct(prev) &&
+        getProductSize(prev) === size &&
+        isExactGridPairAt(blocks, idx - 1) &&
+        isRowPair(prev, block)) ||
+      (next &&
+        isGridProduct(next) &&
+        getProductSize(next) === size &&
+        isExactGridPairAt(blocks, idx) &&
+        isRowPair(block, next));
+    if (canSplit) return "stack";
+  }
 
-function gridColumnClass(count: number): string {
-  if (count <= 1) return "grid-cols-1";
-  if (count === 2) return "grid-cols-2";
-  return "grid-cols-3";
+  return null;
 }
 
 function useIsClient() {
@@ -198,6 +184,7 @@ export function BlockStream({
 }: BlockStreamProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | null>(null);
+  const [layoutHint, setLayoutHint] = useState<"row" | "stack" | null>(null);
   const [orderedBlocks, setOrderedBlocks] = useState(blocks);
   const orderedBlocksRef = useRef(blocks);
   const dndReady = useIsClient();
@@ -227,10 +214,17 @@ export function BlockStream({
     setOrderedBlocks(blocks);
     orderedBlocksRef.current = blocks;
     setActiveId(id);
+    setLayoutHint(null);
     const node = document.querySelector<HTMLElement>(`[data-block-id="${id}"]`);
     if (node) {
       setActiveWidth(node.getBoundingClientRect().width);
     }
+  }
+
+  function handleDragMove(event: DragMoveEvent) {
+    setLayoutHint(
+      getLayoutDragHint(orderedBlocksRef.current, event.active.id as string, event.delta),
+    );
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -249,23 +243,34 @@ export function BlockStream({
     });
   }
 
-  function handleDragEnd() {
-    const finalBlocks = orderedBlocksRef.current;
-    const orderChanged = finalBlocks.some(
-      (block, index) => block.id !== blocks[index]?.id,
+  function handleDragEnd(event: DragEndEvent) {
+    let finalBlocks = applyPairLayoutFromDrag(
+      orderedBlocksRef.current,
+      event.active.id as string,
+      event.delta,
+    );
+    orderedBlocksRef.current = finalBlocks;
+    setOrderedBlocks(finalBlocks);
+
+    const changed = finalBlocks.some(
+      (block, index) =>
+        block.id !== blocks[index]?.id ||
+        block.data.product_pair_layout !== blocks[index]?.data.product_pair_layout,
     );
 
-    if (orderChanged && onReorder) {
+    if (changed && onReorder) {
       onReorder(finalBlocks);
     }
 
     setActiveId(null);
     setActiveWidth(null);
+    setLayoutHint(null);
   }
 
   function handleDragCancel() {
     setActiveId(null);
     setActiveWidth(null);
+    setLayoutHint(null);
     setOrderedBlocks(blocks);
     orderedBlocksRef.current = blocks;
   }
@@ -360,8 +365,9 @@ export function BlockStream({
             );
           }
 
-          const { blocks: rowBlocks, startIndex } = segment;
+          const { blocks: rowBlocks, startIndex, size } = segment;
           const rowKey = `grid-${rowBlocks.map((b) => b.id).join("-")}`;
+          const colClass = gridColumnClass(rowBlocks.length, size);
 
           if (!sortable) {
             return (
@@ -373,9 +379,7 @@ export function BlockStream({
                     disabled={activeId !== null}
                   />
                 )}
-                <div
-                  className={`product-grid-row grid ${gridColumnClass(rowBlocks.length)} gap-3`}
-                >
+                <div className={`product-grid-row grid ${colClass} gap-3`}>
                   {rowBlocks.map((block, rowIndex) => {
                     const index = startIndex + rowIndex;
                     return (
@@ -384,6 +388,7 @@ export function BlockStream({
                         block={block}
                         editable={editable}
                         inGrid
+                        gridSize={size}
                         onEditBlock={onEditBlock}
                         onUpdateBlockData={onUpdateBlockData}
                         onBlockBlur={onBlockBlur}
@@ -410,9 +415,7 @@ export function BlockStream({
                   disabled={activeId !== null}
                 />
               )}
-              <div
-                className={`product-grid-row grid ${gridColumnClass(rowBlocks.length)} gap-3`}
-              >
+              <div className={`product-grid-row grid ${colClass} gap-3`}>
                 {rowBlocks.map((block, rowIndex) => {
                   const index = startIndex + rowIndex;
                   return (
@@ -421,6 +424,7 @@ export function BlockStream({
                       block={block}
                       editable={editable}
                       inGrid
+                      gridSize={size}
                       onEditBlock={onEditBlock}
                       onUpdateBlockData={onUpdateBlockData}
                       onBlockBlur={onBlockBlur}
@@ -457,20 +461,36 @@ export function BlockStream({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      modifiers={[restrictToVerticalAxis]}
       onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
       {renderBlockList(true)}
+      {layoutHint && activeId && (
+        <LayoutDragHint hint={layoutHint} />
+      )}
       <DragOverlay dropAnimation={null}>
         {activeBlock ? (
           <div
             className="cursor-grabbing opacity-90"
             style={activeWidth ? { width: activeWidth } : undefined}
           >
-            <BlockPreview block={activeBlock} />
+            <BlockPreview
+              block={activeBlock}
+              gridSize={(() => {
+                for (const seg of segmentBlocks(displayBlocks)) {
+                  if (
+                    seg.type === "grid-row" &&
+                    seg.blocks.some((b) => b.id === activeBlock.id)
+                  ) {
+                    return seg.size;
+                  }
+                }
+                return undefined;
+              })()}
+            />
           </div>
         ) : null}
       </DragOverlay>
@@ -478,13 +498,29 @@ export function BlockStream({
   );
 }
 
-function BlockPreview({ block }: { block: Block }) {
-  const productLayout = isGridProduct(block) ? "grid" : "inline";
+function LayoutDragHint({ hint }: { hint: "row" | "stack" }) {
+  return (
+    <div className="pointer-events-none fixed bottom-8 left-1/2 z-50 -translate-x-1/2">
+      <div className="menu-float rounded-full px-4 py-2 text-sm text-stone-600">
+        {hint === "row" ? "横並びに配置" : "縦並びに配置"}
+      </div>
+    </div>
+  );
+}
+
+function BlockPreview({
+  block,
+  gridSize,
+}: {
+  block: Block;
+  gridSize?: "compact" | "standard";
+}) {
+  const productLayout = gridSize ? "grid" : "inline";
 
   if (block.type === "divider") {
     return (
       <div className={blockClass(block.type)}>
-        <BlockRenderer block={block} editable productLayout={productLayout} />
+        <BlockRenderer block={block} editable productLayout={productLayout} gridSize={gridSize} />
       </div>
     );
   }
@@ -492,7 +528,7 @@ function BlockPreview({ block }: { block: Block }) {
   return (
     <div className={blockClass(block.type)}>
       <div className="min-w-0">
-        <BlockRenderer block={block} editable productLayout={productLayout} />
+        <BlockRenderer block={block} editable productLayout={productLayout} gridSize={gridSize} />
       </div>
     </div>
   );
@@ -557,6 +593,7 @@ function StaticBlockItem({
   block,
   editable,
   inGrid = false,
+  gridSize,
   onEditBlock,
   onUpdateBlockData,
   onBlockBlur,
@@ -570,6 +607,7 @@ function StaticBlockItem({
   block: Block;
   editable: boolean;
   inGrid?: boolean;
+  gridSize?: "compact" | "standard";
   onEditBlock?: (block: Block) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -608,6 +646,7 @@ function StaticBlockItem({
           editable={editable}
           fullWidth={isDivider}
           inGrid={inGrid}
+          gridSize={gridSize}
           onEditBlock={onEditBlock}
           onUpdateBlockData={onUpdateBlockData}
           onBlockBlur={onBlockBlur}
@@ -628,6 +667,7 @@ function SortableBlockItem({
   editable,
   insertZone,
   inGrid = false,
+  gridSize,
   onEditBlock,
   onUpdateBlockData,
   onBlockBlur,
@@ -642,6 +682,7 @@ function SortableBlockItem({
   editable: boolean;
   insertZone?: ReactNode;
   inGrid?: boolean;
+  gridSize?: "compact" | "standard";
   onEditBlock?: (block: Block) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -735,6 +776,7 @@ function BlockItem({
   editable,
   fullWidth = false,
   inGrid = false,
+  gridSize,
   onEditBlock,
   onUpdateBlockData,
   onBlockBlur,
@@ -749,6 +791,7 @@ function BlockItem({
   editable: boolean;
   fullWidth?: boolean;
   inGrid?: boolean;
+  gridSize?: "compact" | "standard";
   onEditBlock?: (block: Block) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -776,6 +819,7 @@ function BlockItem({
       block={block}
       editable={editable}
       productLayout={inGrid ? "grid" : "inline"}
+      gridSize={inGrid ? gridSize : undefined}
       onUpdateBlockData={onUpdateBlockData}
       onBlockBlur={onBlockBlur}
       autoFocus={autoFocus}

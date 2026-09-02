@@ -10,6 +10,7 @@ interface ProductBlockProps {
   showPlaceholders?: boolean;
   /** グリッドセル内では縦型カードで表示 */
   layout?: "inline" | "grid";
+  gridSize?: "compact" | "standard";
 }
 
 function normalizeImageUrl(url: string): string {
@@ -247,11 +248,13 @@ function ProductCardContent({
   showPlaceholders,
   size,
   layout,
+  gridSize,
 }: {
   block: Block;
   showPlaceholders: boolean;
   size: ProductSize;
   layout: "inline" | "grid";
+  gridSize?: "compact" | "standard";
 }) {
   const { title, brand, price, image_url, product_url, comment } = block.data;
   const [imageError, setImageError] = useState(false);
@@ -277,13 +280,13 @@ function ProductCardContent({
   };
 
   if (layout === "grid") {
-    switch (size) {
+    switch (gridSize ?? size) {
       case "compact":
         return (
           <ProductVertical
             {...shared}
-            imageClassName="aspect-square w-full"
-            titleClass="text-xs"
+            imageClassName="aspect-square w-full max-h-24"
+            titleClass="text-[11px] leading-tight"
           />
         );
       case "standard":
@@ -291,8 +294,8 @@ function ProductCardContent({
         return (
           <ProductVertical
             {...shared}
-            imageClassName="aspect-[4/3] w-full"
-            titleClass="text-sm"
+            imageClassName="aspect-[4/3] w-full min-h-36"
+            titleClass="text-base leading-snug"
           />
         );
     }
@@ -334,6 +337,7 @@ export function ProductBlock({
   block,
   showPlaceholders = false,
   layout = "inline",
+  gridSize,
 }: ProductBlockProps) {
   const size = getProductSize(block);
 
@@ -343,6 +347,7 @@ export function ProductBlock({
       showPlaceholders={showPlaceholders}
       size={size}
       layout={layout}
+      gridSize={gridSize}
     />
   );
 }

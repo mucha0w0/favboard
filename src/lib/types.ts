@@ -22,6 +22,8 @@ export interface BlockData {
   /** 本文用（長文） */
   body?: string;
   product_size?: ProductSize | "banner";
+  /** 次の同サイズ S/M 商品との並び方（2件ペア時のみ） */
+  product_pair_layout?: "row" | "stack";
 }
 
 export interface Block {
@@ -55,8 +57,8 @@ export const PRODUCT_SIZES: {
   label: string;
   description: string;
 }[] = [
-  { value: "compact", label: "S", description: "コンパクト（横並び）" },
-  { value: "standard", label: "M", description: "標準（横並び）" },
+  { value: "compact", label: "S", description: "コンパクト（最大3列）" },
+  { value: "standard", label: "M", description: "標準（最大2列）" },
   { value: "large", label: "L", description: "ラージ（縦型）" },
   { value: "xl", label: "XL", description: "エクストララージ（大きめ画像）" },
 ];

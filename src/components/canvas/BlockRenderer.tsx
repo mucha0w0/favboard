@@ -8,6 +8,7 @@ interface BlockRendererProps {
   block: Block;
   editable?: boolean;
   productLayout?: "inline" | "grid";
+  gridSize?: "compact" | "standard";
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
   autoFocus?: boolean;
@@ -17,6 +18,7 @@ export function BlockRenderer({
   block,
   editable,
   productLayout = "inline",
+  gridSize,
   onUpdateBlockData,
   onBlockBlur,
   autoFocus,
@@ -28,6 +30,7 @@ export function BlockRenderer({
           block={block}
           showPlaceholders={editable}
           layout={productLayout}
+          gridSize={gridSize}
         />
       );
     case "heading":
