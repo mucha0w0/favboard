@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f5f4;
+  --background: #fafaf9;
   --foreground: #1c1917;
+  --muted: #78716c;
+  --muted-foreground: #a8a29e;
+  --border: #e7e5e4;
+  --surface: #ffffff;
   --content-max: 680px;
+  --radius: 0.5rem;
 }
 
 @theme inline {
@@ -17,6 +22,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #e7e5e4;
+  color: #1c1917;
 }
 
 .content-column {
@@ -27,14 +38,14 @@ body {
 }
 
 .document-body {
-  font-size: 1.0625rem;
-  line-height: 1.9;
-  color: #292524;
+  font-size: 1rem;
+  line-height: 1.85;
+  color: #44403c;
 }
 
 .document-body .block-heading {
-  margin-top: 2.75rem;
-  margin-bottom: 0.75rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .document-body .block-heading:first-child {
@@ -42,13 +53,13 @@ body {
 }
 
 .document-body .block-product {
-  margin: 2rem 0;
+  margin: 1rem 0;
 }
 
 .document-body .block-divider {
-  margin: 2.5rem 0;
+  margin: 2rem 0;
 }
 
 .document-body .block-text {
-  margin: 1.5rem 0;
+  margin: 1.25rem 0;
 }

@@ -7,16 +7,16 @@ interface AlertProps {
 }
 
 const variants = {
-  error: "border-red-200 bg-red-50 text-red-800",
-  success: "border-green-200 bg-green-50 text-green-800",
-  info: "border-zinc-200 bg-zinc-50 text-zinc-700",
+  error: "border-red-200/80 bg-red-50/50 text-red-700",
+  success: "border-stone-200 bg-stone-50 text-stone-700",
+  info: "border-stone-200 bg-stone-50 text-stone-600",
 };
 
 export function Alert({ variant = "info", children, className }: AlertProps) {
   return (
     <div
       className={cn(
-        "rounded-lg border px-3 py-2 text-sm",
+        "rounded-md border px-3 py-2.5 text-sm",
         variants[variant],
         className,
       )}

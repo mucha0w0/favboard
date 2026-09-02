@@ -1,16 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Layers, Link2, Share2 } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-zinc-100">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <span className="text-lg font-bold tracking-tight">
+    <div className="min-h-screen bg-stone-50">
+      <header className="border-b border-stone-200/80">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+          <span className="text-sm font-medium tracking-tight text-stone-900">
             Visual Wishlist
           </span>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1">
             <Link href="/login">
               <Button variant="ghost" size="sm">
                 ログイン
@@ -23,72 +22,71 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main>
-        <section className="mx-auto max-w-5xl px-4 py-24 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-zinc-400">
-            Visual Wishlist Canvas
-          </p>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            物欲を、
+      <main className="mx-auto max-w-3xl px-4">
+        <section className="py-20 sm:py-28">
+          <h1 className="text-3xl font-semibold leading-[1.25] tracking-tight text-stone-900 sm:text-[2.5rem]">
+            欲しいものを、
             <br />
-            ビジュアルポートフォリオに。
+            ひとつのページに。
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-500">
-            代払い機能なし。欲しいもの・こだわりを、note のように縦に綴って共有。
+          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-500">
+            見出し・商品・テキストを縦に綴って、あなただけのウィッシュリストを共有。代払い機能はありません。
           </p>
-          <div className="mt-10 flex justify-center gap-3">
+          <div className="mt-8">
             <Link href="/login">
-              <Button size="lg">無料ではじめる</Button>
+              <Button>無料ではじめる</Button>
             </Link>
           </div>
         </section>
 
-        <section className="border-t border-zinc-200 bg-white py-20">
-          <div className="mx-auto grid max-w-5xl gap-12 px-4 sm:grid-cols-3">
+        <section className="border-t border-stone-200 py-16">
+          <dl className="space-y-10">
             <Feature
-              icon={Layers}
+              number="01"
               title="縦に綴る"
-              description="見出し・商品・区切り線を、文章のように自然な流れで追加。枠線のない一体感のあるレイアウト。"
+              description="見出し・商品・区切り線を、文章の流れのまま追加。枠のない一体感のあるレイアウト。"
             />
             <Feature
-              icon={Link2}
-              title="URL自動補完"
-              description="Amazon・楽天などのURLを貼るだけでOGPからタイトル・画像を自動取得。手動編集も自由。"
+              number="02"
+              title="URLから自動入力"
+              description="商品URLを貼るだけでタイトルと画像を取得。手動での編集も自由にできます。"
             />
             <Feature
-              icon={Share2}
-              title="公開＆シェア"
-              description="固有URLで公開。SNSシェア用OGPも自動設定。決済・代払い機能は一切なし。"
+              number="03"
+              title="公開してシェア"
+              description="固有URLで公開。SNSシェア用のOGPも自動設定されます。"
             />
-          </div>
+          </dl>
         </section>
 
-        <section className="py-16 text-center">
-          <p className="text-sm text-zinc-400">
-            公式ページへのリンクのみ。ねだり・代払い要素は排除。
+        <footer className="border-t border-stone-200 py-10">
+          <p className="text-xs text-stone-400">
+            公式ページへのリンクのみ。ねだり・代払い要素はありません。
           </p>
-        </section>
+        </footer>
       </main>
     </div>
   );
 }
 
 function Feature({
-  icon: Icon,
+  number,
   title,
   description,
 }: {
-  icon: typeof Layers;
+  number: string;
   title: string;
   description: string;
 }) {
   return (
-    <div className="text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100">
-        <Icon className="h-5 w-5 text-zinc-600" />
-      </div>
-      <h3 className="mt-4 font-semibold">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-500">{description}</p>
+    <div className="flex gap-6">
+      <dt className="shrink-0 text-xs tabular-nums text-stone-300">{number}</dt>
+      <dd>
+        <h3 className="font-medium text-stone-900">{title}</h3>
+        <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
+          {description}
+        </p>
+      </dd>
     </div>
   );
 }

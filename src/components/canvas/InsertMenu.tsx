@@ -24,13 +24,13 @@ export function InsertMenu({ onAdd, disabled }: InsertMenuProps) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[168px] rounded-xl border border-stone-200 bg-white py-1 shadow-lg">
+          <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[160px] rounded-md border border-stone-200 bg-white py-1">
             {ITEMS.map(({ type, label, icon: Icon }) => (
               <button
                 key={type}
                 type="button"
                 disabled={disabled}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-50"
                 onClick={() => {
                   onAdd(type);
                   setOpen(false);
@@ -47,7 +47,7 @@ export function InsertMenu({ onAdd, disabled }: InsertMenuProps) {
         type="button"
         disabled={disabled}
         onClick={() => setOpen(!open)}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-600 shadow-sm transition-colors hover:border-stone-400 hover:bg-stone-50 disabled:opacity-50"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-700 disabled:opacity-50"
         aria-label="ブロックを追加"
       >
         <Plus

@@ -50,8 +50,8 @@ function ProductImage({
           onError={onError}
         />
       ) : (
-        <div className="flex h-full min-h-[80px] w-full items-center justify-center text-stone-300">
-          <Package className="h-8 w-8" />
+        <div className="flex h-full min-h-12 w-full items-center justify-center text-stone-300">
+          <Package className="h-5 w-5" />
         </div>
       )}
     </div>
@@ -65,7 +65,7 @@ function ProductMeta({
   brand,
   title,
   price,
-  titleClass = "text-base",
+  titleClass = "text-sm",
 }: {
   brandText: string;
   titleText: string;
@@ -76,10 +76,10 @@ function ProductMeta({
   titleClass?: string;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       <p
-        className={`text-xs font-medium uppercase tracking-wide ${
-          brand?.trim() ? "text-stone-500" : "text-stone-300"
+        className={`text-xs ${
+          brand?.trim() ? "text-stone-400" : "text-stone-300"
         }`}
       >
         {brandText}
@@ -92,7 +92,7 @@ function ProductMeta({
         {titleText}
       </h3>
       <p
-        className={`text-sm font-medium ${
+        className={`text-xs font-medium ${
           price?.trim() ? "text-stone-800" : "text-stone-300"
         }`}
       >
@@ -112,7 +112,7 @@ function ProductExtras({
   return (
     <>
       {comment?.trim() && (
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-500">
+        <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-stone-500">
           {comment}
         </p>
       )}
@@ -121,10 +121,10 @@ function ProductExtras({
           href={product_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800"
+          className="mt-2 inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-800"
           onClick={(e) => e.stopPropagation()}
         >
-          <ExternalLink className="h-3.5 w-3.5" />
+          <ExternalLink className="h-3 w-3" />
           公式ページを見る
         </a>
       )}
@@ -152,13 +152,13 @@ function ProductCardContent({
   switch (size) {
     case "compact":
       return (
-        <div className="flex gap-4 p-4">
+        <div className="flex gap-3 p-3">
           <ProductImage
             showImage={showImage}
             imageUrl={image_url}
             title={title}
             onError={() => setImageError(true)}
-            className="h-24 w-24 rounded-lg"
+            className="h-16 w-16 rounded-md"
           />
           <div className="min-w-0 flex-1">
             <ProductMeta
@@ -168,7 +168,7 @@ function ProductCardContent({
               brand={brand}
               title={title}
               price={price}
-              titleClass="text-sm"
+              titleClass="text-xs"
             />
             <ProductExtras comment={comment} product_url={product_url} />
           </div>
@@ -183,9 +183,9 @@ function ProductCardContent({
             imageUrl={image_url}
             title={title}
             onError={() => setImageError(true)}
-            className="aspect-[3/4] w-full"
+            className="aspect-4/5 w-full"
           />
-          <div className="space-y-1.5 p-5">
+          <div className="space-y-1 p-3 sm:p-4">
             <ProductMeta
               brandText={brandText}
               titleText={titleText}
@@ -193,7 +193,7 @@ function ProductCardContent({
               brand={brand}
               title={title}
               price={price}
-              titleClass="text-lg"
+              titleClass="text-base"
             />
             <ProductExtras comment={comment} product_url={product_url} />
           </div>
@@ -208,9 +208,9 @@ function ProductCardContent({
             imageUrl={image_url}
             title={title}
             onError={() => setImageError(true)}
-            className="aspect-[21/9] w-full"
+            className="aspect-3/1 w-full"
           />
-          <div className="space-y-1.5 p-4 sm:p-5">
+          <div className="space-y-1 p-3 sm:p-4">
             <ProductMeta
               brandText={brandText}
               titleText={titleText}
@@ -233,9 +233,9 @@ function ProductCardContent({
             imageUrl={image_url}
             title={title}
             onError={() => setImageError(true)}
-            className="aspect-[4/3] w-full"
+            className="aspect-3/2 w-full"
           />
-          <div className="space-y-1.5 p-4 sm:p-5">
+          <div className="space-y-1 p-3 sm:p-4">
             <ProductMeta
               brandText={brandText}
               titleText={titleText}
@@ -258,7 +258,7 @@ export function ProductBlock({
   const size = getProductSize(block);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-md border border-stone-200 bg-white">
       <ProductCardContent
         block={block}
         showPlaceholders={showPlaceholders}

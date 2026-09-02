@@ -281,7 +281,7 @@ function ProductFormFields({
           </div>
         </div>
       )}
-      <div className="mt-6 flex justify-end gap-2 border-t border-zinc-100 pt-4">
+      <div className="mt-6 flex justify-end gap-2 border-t border-stone-100 pt-4">
         <Button variant="outline" onClick={handleClose}>
           キャンセル
         </Button>

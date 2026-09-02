@@ -251,7 +251,7 @@ export function BlockStream({
       <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
         {activeBlock ? (
           <div
-            className="cursor-grabbing rounded-xl bg-white shadow-2xl ring-2 ring-stone-300/80"
+            className="cursor-grabbing rounded-md border border-stone-200 bg-white"
             style={activeWidth ? { width: activeWidth } : undefined}
           >
             <BlockPreview block={activeBlock} />
@@ -306,7 +306,7 @@ function InsertZone({
         {open && (
           <>
             <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-            <div className="absolute left-1/2 top-full z-30 mt-1 min-w-[140px] -translate-x-1/2 rounded-lg border border-stone-200 bg-white py-1 shadow-lg">
+            <div className="absolute left-1/2 top-full z-30 mt-1 min-w-[140px] -translate-x-1/2 rounded-md border border-stone-200 bg-white py-1">
               {INSERT_ITEMS.map(({ type, label }) => (
                 <button
                   key={type}
@@ -536,7 +536,7 @@ function BlockItem({
                 className="fixed inset-0 z-10"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute right-0 top-8 z-20 min-w-[140px] rounded-lg border border-stone-200/80 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-8 z-20 min-w-[140px] rounded-md border border-stone-200 bg-white py-1">
                 {block.type !== "divider" && onEditBlock && (
                   <button
                     type="button"

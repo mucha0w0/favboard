@@ -18,8 +18,8 @@ export function PublicCanvasView({ canvas, shareUrl }: PublicCanvasViewProps) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100">
-      <header className="sticky top-0 z-30 border-b border-stone-200/60 bg-stone-100/95 backdrop-blur-sm">
+    <div className="min-h-screen bg-stone-50">
+      <header className="sticky top-0 z-30 border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-md">
         <div className="content-column flex items-center justify-between px-4 py-3 sm:px-0">
           <span className="text-xs text-stone-400">Visual Wishlist</span>
           <Button

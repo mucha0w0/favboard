@@ -87,25 +87,28 @@ function LoginForm() {
 
   if (checkingMode) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <Loader2 className="h-5 w-5 animate-spin text-stone-300" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <Link href="/" className="text-xl font-bold tracking-tight">
+          <Link
+            href="/"
+            className="text-sm font-medium tracking-tight text-stone-900"
+          >
             Visual Wishlist
           </Link>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-3 text-sm text-stone-500">
             {isLocalMode
-              ? "ローカルモード — すぐに使えます"
+              ? "ローカルモード"
               : isSignUp
                 ? "アカウントを作成"
-                : "ログインしてリストを編集"}
+                : "ログイン"}
           </p>
         </div>
 
@@ -119,10 +122,13 @@ function LoginForm() {
         )}
 
         {isLocalMode ? (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="mb-4 text-xs leading-relaxed text-zinc-500">
-              データはこのPCの <code className="text-zinc-700">.data/</code>{" "}
-              フォルダに保存されます。Supabase を設定するとクラウド同期できます。
+          <div className="rounded-lg border border-stone-200 bg-white p-6">
+            <p className="mb-5 text-xs leading-relaxed text-stone-500">
+              データはこのPCの{" "}
+              <code className="rounded bg-stone-100 px-1 py-0.5 text-stone-600">
+                .data/
+              </code>{" "}
+              に保存されます。
             </p>
             <Button
               className="w-full"
@@ -136,10 +142,10 @@ function LoginForm() {
         ) : (
           <form
             onSubmit={handleSupabaseLogin}
-            className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+            className="rounded-lg border border-stone-200 bg-white p-6"
           >
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="email">メールアドレス</Label>
                 <Input
                   id="email"
@@ -149,7 +155,7 @@ function LoginForm() {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="password">パスワード</Label>
                 <Input
                   id="password"
@@ -167,7 +173,7 @@ function LoginForm() {
             </Button>
             <button
               type="button"
-              className="mt-4 w-full text-center text-xs text-zinc-500 hover:text-zinc-900"
+              className="mt-4 w-full text-center text-xs text-stone-400 transition-colors hover:text-stone-700"
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setMessage("");

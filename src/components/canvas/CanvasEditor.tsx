@@ -202,7 +202,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   const publicUrl = `/c/${canvas.slug}`;
 
   return (
-    <div className="min-h-screen bg-stone-100">
+    <div className="min-h-screen bg-stone-50">
       <AppHeader
         backHref="/dashboard"
         backLabel="一覧"
@@ -210,10 +210,8 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         maxWidth="4xl"
         title={
           <div className="flex items-center gap-2 text-xs text-stone-400">
-            {isDirty && <span className="text-amber-600">未保存</span>}
-            {!isDirty && savedFlash && (
-              <span className="text-green-600">保存済</span>
-            )}
+            {isDirty && <span className="text-stone-600">未保存</span>}
+            {!isDirty && savedFlash && <span>保存済</span>}
             {!isDirty && !savedFlash && (
               <span>{canvas.is_published ? "公開中" : "下書き"}</span>
             )}
@@ -252,11 +250,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
               variant={canvas.is_published ? "outline" : "default"}
               onClick={handleTogglePublish}
               disabled={publishing || saving}
-              className={
-                canvas.is_published
-                  ? ""
-                  : "bg-stone-800 hover:bg-stone-700"
-              }
+              className={canvas.is_published ? "" : undefined}
             >
               {publishing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
