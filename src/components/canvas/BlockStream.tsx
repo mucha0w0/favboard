@@ -10,7 +10,6 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
@@ -31,7 +30,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { BlockRenderer } from "./BlockRenderer";
 
 interface BlockStreamProps {
@@ -103,16 +102,7 @@ export function BlockStream({
 }: BlockStreamProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | null>(null);
-  const [orderedBlocks, setOrderedBlocks] = useState(blocks);
-  const orderedBlocksRef = useRef(blocks);
   const dndReady = useIsClient();
-
-  useEffect(() => {
-    if (!activeId) {
-      setOrderedBlocks(blocks);
-      orderedBlocksRef.current = blocks;
-    }
-  }, [blocks, activeId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -122,13 +112,11 @@ export function BlockStream({
   );
 
   const activeBlock = activeId
-    ? orderedBlocks.find((b) => b.id === activeId)
+    ? blocks.find((b) => b.id === activeId)
     : undefined;
 
   function handleDragStart(event: DragStartEvent) {
     const id = event.active.id as string;
-    setOrderedBlocks(blocks);
-    orderedBlocksRef.current = blocks;
     setActiveId(id);
     const node = document.querySelector<HTMLElement>(`[data-block-id="${id}"]`);
     if (node) {
@@ -136,67 +124,38 @@ export function BlockStream({
     }
   }
 
-  function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    setOrderedBlocks((current) => {
-      const oldIndex = current.findIndex((b) => b.id === active.id);
-      const newIndex = current.findIndex((b) => b.id === over.id);
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        return current;
-      }
-      const next = arrayMove(current, oldIndex, newIndex);
-      orderedBlocksRef.current = next;
-      return next;
-    });
-  }
-
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-
-    if (!over || active.id === over.id || !onReorder) {
-      setOrderedBlocks(blocks);
-      orderedBlocksRef.current = blocks;
-      setActiveId(null);
-      setActiveWidth(null);
-      return;
-    }
-
-    const finalBlocks = orderedBlocksRef.current;
-    const orderChanged = finalBlocks.some(
-      (block, index) => block.id !== blocks[index]?.id,
-    );
-    if (orderChanged) {
-      onReorder(finalBlocks);
-    }
-
     setActiveId(null);
     setActiveWidth(null);
+
+    if (!over || active.id === over.id || !onReorder) return;
+
+    const oldIndex = blocks.findIndex((b) => b.id === active.id);
+    const newIndex = blocks.findIndex((b) => b.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    onReorder(arrayMove(blocks, oldIndex, newIndex));
   }
 
   function handleDragCancel() {
     setActiveId(null);
     setActiveWidth(null);
-    setOrderedBlocks(blocks);
-    orderedBlocksRef.current = blocks;
   }
 
   function moveBlock(blockId: string, direction: "up" | "down") {
     if (!onReorder) return;
-    const index = orderedBlocks.findIndex((b) => b.id === blockId);
+    const index = blocks.findIndex((b) => b.id === blockId);
     if (index === -1) return;
     const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= orderedBlocks.length) return;
-    onReorder(arrayMove(orderedBlocks, index, newIndex));
+    if (newIndex < 0 || newIndex >= blocks.length) return;
+    onReorder(arrayMove(blocks, index, newIndex));
   }
-
-  const displayBlocks = editable && activeId ? orderedBlocks : blocks;
 
   function renderBlockList(sortable: boolean) {
     return (
       <div className="document-body w-full">
-        {displayBlocks.length === 0 && editable && (
+        {blocks.length === 0 && editable && (
           <p className="py-12 text-[15px] leading-relaxed text-stone-400">
             下の ＋ から、商品・テキスト・見出しなどを追加できます
           </p>
@@ -204,7 +163,7 @@ export function BlockStream({
 
         {sortable ? (
           <SortableContext
-            items={displayBlocks.map((b) => b.id)}
+            items={blocks.map((b) => b.id)}
             strategy={rectSortingStrategy}
           >
             {renderBlocks(true)}
@@ -219,7 +178,7 @@ export function BlockStream({
   function renderBlocks(sortable: boolean) {
     return (
       <>
-        {displayBlocks.map((block, index) =>
+        {blocks.map((block, index) =>
           sortable ? (
             <SortableBlockItem
               key={block.id}
@@ -239,7 +198,7 @@ export function BlockStream({
               onMoveUp={() => moveBlock(block.id, "up")}
               onMoveDown={() => moveBlock(block.id, "down")}
               canMoveUp={index > 0}
-              canMoveDown={index < displayBlocks.length - 1}
+              canMoveDown={index < blocks.length - 1}
             />
           ) : (
             <div key={block.id}>
@@ -258,14 +217,14 @@ export function BlockStream({
                 onMoveUp={() => moveBlock(block.id, "up")}
                 onMoveDown={() => moveBlock(block.id, "down")}
                 canMoveUp={index > 0}
-                canMoveDown={index < displayBlocks.length - 1}
+                canMoveDown={index < blocks.length - 1}
               />
             </div>
           ),
         )}
-        {editable && onInsertBlock && displayBlocks.length > 0 && (
+        {editable && onInsertBlock && blocks.length > 0 && (
           <InsertZone
-            index={displayBlocks.length}
+            index={blocks.length}
             onInsert={onInsertBlock}
             disabled={activeId !== null}
           />
@@ -285,7 +244,6 @@ export function BlockStream({
       collisionDetection={closestCenter}
       modifiers={[restrictToVerticalAxis]}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
