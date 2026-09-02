@@ -37,6 +37,9 @@ interface BlockStreamProps {
   blocks: Block[];
   editable?: boolean;
   onEditBlock?: (block: Block) => void;
+  onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
+  onBlockBlur?: (blockId: string) => void;
+  focusBlockId?: string | null;
   onDeleteBlock?: (blockId: string) => void;
   onReorder?: (blocks: Block[]) => void;
   onInsertBlock?: (type: BlockType, index: number) => void;
@@ -48,7 +51,7 @@ export function createBlock(type: BlockType): Block {
     type,
     data:
       type === "heading"
-        ? { text: "新しい見出し" }
+        ? { text: "" }
         : type === "text"
           ? { body: "" }
           : type === "product"
@@ -96,6 +99,9 @@ export function BlockStream({
   blocks,
   editable = false,
   onEditBlock,
+  onUpdateBlockData,
+  onBlockBlur,
+  focusBlockId,
   onDeleteBlock,
   onReorder,
   onInsertBlock,
@@ -194,6 +200,9 @@ export function BlockStream({
                 ) : null
               }
               onEditBlock={onEditBlock}
+              onUpdateBlockData={onUpdateBlockData}
+              onBlockBlur={onBlockBlur}
+              autoFocus={focusBlockId === block.id}
               onDeleteBlock={onDeleteBlock}
               onMoveUp={() => moveBlock(block.id, "up")}
               onMoveDown={() => moveBlock(block.id, "down")}
@@ -213,6 +222,9 @@ export function BlockStream({
                 block={block}
                 editable={editable}
                 onEditBlock={onEditBlock}
+                onUpdateBlockData={onUpdateBlockData}
+                onBlockBlur={onBlockBlur}
+                autoFocus={focusBlockId === block.id}
                 onDeleteBlock={onDeleteBlock}
                 onMoveUp={() => moveBlock(block.id, "up")}
                 onMoveDown={() => moveBlock(block.id, "down")}
@@ -332,6 +344,9 @@ function StaticBlockItem({
   block,
   editable,
   onEditBlock,
+  onUpdateBlockData,
+  onBlockBlur,
+  autoFocus,
   onDeleteBlock,
   onMoveUp,
   onMoveDown,
@@ -341,6 +356,9 @@ function StaticBlockItem({
   block: Block;
   editable: boolean;
   onEditBlock?: (block: Block) => void;
+  onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
+  onBlockBlur?: (blockId: string) => void;
+  autoFocus?: boolean;
   onDeleteBlock?: (blockId: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -366,6 +384,9 @@ function StaticBlockItem({
           block={block}
           editable={editable}
           onEditBlock={onEditBlock}
+          onUpdateBlockData={onUpdateBlockData}
+          onBlockBlur={onBlockBlur}
+          autoFocus={autoFocus}
           onDeleteBlock={onDeleteBlock}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
@@ -382,6 +403,9 @@ function SortableBlockItem({
   editable,
   insertZone,
   onEditBlock,
+  onUpdateBlockData,
+  onBlockBlur,
+  autoFocus,
   onDeleteBlock,
   onMoveUp,
   onMoveDown,
@@ -392,6 +416,9 @@ function SortableBlockItem({
   editable: boolean;
   insertZone?: ReactNode;
   onEditBlock?: (block: Block) => void;
+  onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
+  onBlockBlur?: (blockId: string) => void;
+  autoFocus?: boolean;
   onDeleteBlock?: (blockId: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -446,6 +473,9 @@ function SortableBlockItem({
             block={block}
             editable={editable}
             onEditBlock={onEditBlock}
+            onUpdateBlockData={onUpdateBlockData}
+            onBlockBlur={onBlockBlur}
+            autoFocus={autoFocus}
             onDeleteBlock={onDeleteBlock}
             onMoveUp={onMoveUp}
             onMoveDown={onMoveDown}
@@ -462,6 +492,9 @@ function BlockItem({
   block,
   editable,
   onEditBlock,
+  onUpdateBlockData,
+  onBlockBlur,
+  autoFocus,
   onDeleteBlock,
   onMoveUp,
   onMoveDown,
@@ -471,6 +504,9 @@ function BlockItem({
   block: Block;
   editable: boolean;
   onEditBlock?: (block: Block) => void;
+  onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
+  onBlockBlur?: (blockId: string) => void;
+  autoFocus?: boolean;
   onDeleteBlock?: (blockId: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -487,18 +523,22 @@ function BlockItem({
     setMenuOpen(false);
   }
 
-  const isClickable =
-    editable &&
-    (block.type === "product" ||
-      block.type === "heading" ||
-      block.type === "text");
+  const isProductClickable = editable && block.type === "product";
 
-  const content = <BlockRenderer block={block} editable={editable} />;
+  const content = (
+    <BlockRenderer
+      block={block}
+      editable={editable}
+      onUpdateBlockData={onUpdateBlockData}
+      onBlockBlur={onBlockBlur}
+      autoFocus={autoFocus}
+    />
+  );
 
   return (
     <>
       <div className="min-w-0 flex-1 py-1">
-        {isClickable ? (
+        {isProductClickable ? (
           <button
             type="button"
             className="w-full cursor-pointer text-left"
@@ -529,7 +569,7 @@ function BlockItem({
                 onClick={() => setMenuOpen(false)}
               />
               <div className="menu-float absolute right-0 top-8 z-20 min-w-[140px] py-1">
-                {block.type !== "divider" && onEditBlock && (
+                {block.type === "product" && onEditBlock && (
                   <button
                     type="button"
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-600 transition-colors hover:text-stone-900"

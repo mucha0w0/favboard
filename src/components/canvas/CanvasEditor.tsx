@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface CanvasEditorProps {
   canvas: Canvas;
@@ -36,6 +36,8 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   const router = useRouter();
   const [canvas, setCanvas] = useState(initialCanvas);
   const [blocks, setBlocks] = useState<Block[]>(initialCanvas.blocks);
+  const blocksRef = useRef(blocks);
+  blocksRef.current = blocks;
   const [title, setTitle] = useState(initialCanvas.title);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -47,6 +49,10 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
     null,
   );
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
+  const [pendingNewBlockIds, setPendingNewBlockIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const isDirty = useMemo(
     () => title !== canvas.title || !blocksEqual(blocks, canvas.blocks),
@@ -116,21 +122,29 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
 
   function handleAddBlock(type: BlockType, index?: number) {
     const newBlock = createBlock(type);
-    if (type === "product" || type === "heading" || type === "text") {
+    if (type === "product") {
       setEditingBlock(newBlock);
       setIsNewBlock(true);
       setPendingInsertIndex(index ?? blocks.length);
       setDialogOpen(true);
-    } else {
-      const insertAt = index ?? blocks.length;
-      const nextBlocks = [
-        ...blocks.slice(0, insertAt),
-        newBlock,
-        ...blocks.slice(insertAt),
-      ];
-      setBlocks(nextBlocks);
-      persist(nextBlocks, title);
+      return;
     }
+
+    const insertAt = index ?? blocks.length;
+    const nextBlocks = [
+      ...blocks.slice(0, insertAt),
+      newBlock,
+      ...blocks.slice(insertAt),
+    ];
+    setBlocks(nextBlocks);
+
+    if (type === "heading" || type === "text") {
+      setFocusBlockId(newBlock.id);
+      setPendingNewBlockIds((prev) => new Set(prev).add(newBlock.id));
+      return;
+    }
+
+    persist(nextBlocks, title);
   }
 
   async function handleReorder(nextBlocks: Block[]) {
@@ -139,9 +153,51 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   }
 
   function handleEditBlock(block: Block) {
+    if (block.type !== "product") return;
     setEditingBlock(block);
     setIsNewBlock(false);
     setDialogOpen(true);
+  }
+
+  function handleUpdateBlockData(blockId: string, data: BlockData) {
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id === blockId ? { ...b, data: { ...b.data, ...data } } : b,
+      ),
+    );
+  }
+
+  async function handleBlockBlur(blockId: string) {
+    setFocusBlockId(null);
+
+    const currentBlocks = blocksRef.current;
+    const block = currentBlocks.find((b) => b.id === blockId);
+    if (!block) return;
+
+    const isPendingNew = pendingNewBlockIds.has(blockId);
+    const isEmpty =
+      (block.type === "heading" && !block.data.text?.trim()) ||
+      (block.type === "text" && !block.data.body?.trim());
+
+    if (isPendingNew) {
+      setPendingNewBlockIds((prev) => {
+        const next = new Set(prev);
+        next.delete(blockId);
+        return next;
+      });
+    }
+
+    if (isPendingNew && isEmpty) {
+      setBlocks(currentBlocks.filter((b) => b.id !== blockId));
+      return;
+    }
+
+    const saved = canvas.blocks.find((b) => b.id === blockId);
+    if (saved && JSON.stringify(saved.data) === JSON.stringify(block.data)) {
+      return;
+    }
+
+    await persist(currentBlocks, title);
   }
 
   async function handleApplyBlockData(blockId: string, data: BlockData) {
@@ -295,6 +351,9 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             blocks={blocks}
             editable
             onEditBlock={handleEditBlock}
+            onUpdateBlockData={handleUpdateBlockData}
+            onBlockBlur={handleBlockBlur}
+            focusBlockId={focusBlockId}
             onDeleteBlock={handleDeleteBlock}
             onReorder={handleReorder}
             onInsertBlock={handleAddBlock}
@@ -304,14 +363,16 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         </div>
       </main>
 
-      <ProductFormDialog
-        block={editingBlock}
-        open={dialogOpen}
-        isNew={isNewBlock}
-        onOpenChange={setDialogOpen}
-        onSave={handleApplyBlockData}
-        onCancel={handleDialogCancel}
-      />
+      {editingBlock?.type === "product" && (
+        <ProductFormDialog
+          block={editingBlock}
+          open={dialogOpen}
+          isNew={isNewBlock}
+          onOpenChange={setDialogOpen}
+          onSave={handleApplyBlockData}
+          onCancel={handleDialogCancel}
+        />
+      )}
     </div>
   );
 }

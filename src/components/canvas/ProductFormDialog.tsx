@@ -37,16 +37,7 @@ export function ProductFormDialog({
     onOpenChange(false);
   }
 
-  const typeLabel =
-    block?.type === "heading"
-      ? "見出し"
-      : block?.type === "text"
-        ? "テキスト"
-        : block?.type === "product"
-          ? "商品"
-          : "ブロック";
-
-  const dialogTitle = isNew ? `${typeLabel}を追加` : `${typeLabel}を編集`;
+  const dialogTitle = isNew ? "商品を追加" : "商品を編集";
 
   return (
     <Dialog
@@ -84,16 +75,11 @@ function ProductFormFields({
   const [price, setPrice] = useState(block.data.price || "");
   const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
   const [comment, setComment] = useState(block.data.comment || "");
-  const [headingText, setHeadingText] = useState(block.data.text || "");
-  const [bodyText, setBodyText] = useState(block.data.body || "");
   const [productSize, setProductSize] = useState<ProductSize>(
     block.data.product_size || "standard",
   );
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState("");
-
-  const isHeading = block.type === "heading";
-  const isText = block.type === "text";
 
   function handleClose() {
     onCancel?.();
@@ -127,150 +113,113 @@ function ProductFormFields({
   }
 
   function handleApply() {
-    if (isHeading) {
-      if (!headingText.trim()) return;
-      onSave(block.id, { text: headingText.trim() });
-    } else if (isText) {
-      onSave(block.id, { body: bodyText });
-    } else {
-      onSave(block.id, {
-        title: title.trim() || "Untitled Product",
-        brand: brand.trim(),
-        price: price.trim(),
-        image_url: imageUrl.trim(),
-        product_url: productUrl.trim(),
-        comment: comment.trim(),
-        product_size: productSize,
-      });
-    }
+    onSave(block.id, {
+      title: title.trim() || "Untitled Product",
+      brand: brand.trim(),
+      price: price.trim(),
+      image_url: imageUrl.trim(),
+      product_url: productUrl.trim(),
+      comment: comment.trim(),
+      product_size: productSize,
+    });
     onOpenChange(false);
   }
 
   return (
     <>
-      {isHeading ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="heading-text">見出し</Label>
-            <Input
-              id="heading-text"
-              value={headingText}
-              onChange={(e) => setHeadingText(e.target.value)}
-              placeholder="カテゴリ名やセクションタイトル"
-              autoFocus
-            />
-          </div>
-        </div>
-      ) : isText ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="body-text">本文</Label>
-            <Textarea
-              id="body-text"
-              value={bodyText}
-              onChange={(e) => setBodyText(e.target.value)}
-              placeholder="長文のテキストを入力…"
-              rows={10}
-              autoFocus
-              className="min-h-[200px] leading-relaxed"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>カードサイズ</Label>
-            <div className="flex flex-wrap gap-2">
-              {PRODUCT_SIZES.map(({ value, label }) => (
-                <Button
-                  key={value}
-                  type="button"
-                  size="sm"
-                  variant={productSize === value ? "default" : "ghost"}
-                  onClick={() => setProductSize(value)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="product-url">商品URL</Label>
-            <div className="flex gap-2">
-              <Input
-                id="product-url"
-                value={productUrl}
-                onChange={(e) => setProductUrl(e.target.value)}
-                placeholder="https://..."
-              />
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>カードサイズ</Label>
+          <div className="flex flex-wrap gap-2">
+            {PRODUCT_SIZES.map(({ value, label }) => (
               <Button
+                key={value}
                 type="button"
-                variant="secondary"
-                className="shrink-0"
-                onClick={fetchOgp}
-                disabled={fetching || !productUrl.trim()}
+                size="sm"
+                variant={productSize === value ? "default" : "ghost"}
+                onClick={() => setProductSize(value)}
               >
-                {fetching ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "自動入力"
-                )}
+                {label}
               </Button>
-            </div>
-            {fetchError && (
-              <p className="text-xs text-red-500">{fetchError}</p>
-            )}
+            ))}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="title">タイトル</Label>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="product-url">商品URL</Label>
+          <div className="flex gap-2">
             <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="商品名"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="brand">ブランド</Label>
-              <Input
-                id="brand"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="price">価格</Label>
-              <Input
-                id="price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="¥12,800"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="image-url">画像URL</Label>
-            <Input
-              id="image-url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
+              id="product-url"
+              value={productUrl}
+              onChange={(e) => setProductUrl(e.target.value)}
               placeholder="https://..."
             />
+            <Button
+              type="button"
+              variant="secondary"
+              className="shrink-0"
+              onClick={fetchOgp}
+              disabled={fetching || !productUrl.trim()}
+            >
+              {fetching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "自動入力"
+              )}
+            </Button>
+          </div>
+          {fetchError && (
+            <p className="text-xs text-red-500">{fetchError}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="title">タイトル</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="商品名"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="brand">ブランド</Label>
+            <Input
+              id="brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="comment">こだわり・コメント</Label>
-            <Textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="なぜ欲しいのか、どんなこだわりがあるのか..."
-              rows={3}
+            <Label htmlFor="price">価格</Label>
+            <Input
+              id="price"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="¥12,800"
             />
           </div>
         </div>
-      )}
+        <div className="space-y-2">
+          <Label htmlFor="image-url">画像URL</Label>
+          <Input
+            id="image-url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="comment">こだわり・コメント</Label>
+          <Textarea
+            id="comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="なぜ欲しいのか、どんなこだわりがあるのか..."
+            rows={3}
+          />
+        </div>
+      </div>
       <div className="mt-8 flex justify-end gap-2">
         <Button variant="outline" onClick={handleClose}>
           キャンセル
