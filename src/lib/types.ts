@@ -1,8 +1,14 @@
-export type BlockType = "product" | "heading" | "divider" | "text";
+export type BlockType = "product" | "heading" | "divider" | "text" | "bento";
+
+/** トップレベルに置けるブロック */
+export type TopLevelBlockType = "heading" | "divider" | "bento";
+
+/** Bento 内に置けるブロック */
+export type BentoChildType = "product" | "text";
 
 export type ProductSize = "compact" | "standard" | "large" | "xl";
 
-/** @deprecated Legacy bento layout — ignored in card stack mode */
+/** @deprecated Legacy bento layout — ignored */
 export interface BlockLayout {
   x: number;
   y: number;
@@ -10,29 +16,38 @@ export interface BlockLayout {
   h: number;
 }
 
+/** Bento 内グリッド上の配置（6列ベース） */
+export interface BentoCellPlacement {
+  col: number;
+  row: number;
+  colSpan: number;
+  rowSpan: number;
+}
+
 export interface BlockData {
+  /** 見出し */
+  text?: string;
+  /** テキスト本文 */
+  body?: string;
+  /** 商品 */
   title?: string;
   brand?: string;
   price?: string;
   image_url?: string;
   product_url?: string;
   comment?: string;
-  /** 見出し用 */
-  text?: string;
-  /** 本文用（長文） */
-  body?: string;
   product_size?: ProductSize | "banner";
-  /** @deprecated use pair_layout */
-  product_pair_layout?: "row" | "stack";
-  /** 次のグリッドブロック（S/M商品・テキスト、混在可）との並び方（2件ペア時） */
-  pair_layout?: "row" | "stack";
+  /** Bento コンテナ */
+  bento_rows?: number;
+  children?: Block[];
+  child_placements?: Record<string, BentoCellPlacement>;
 }
 
 export interface Block {
   id: string;
   type: BlockType;
   data: BlockData;
-  /** @deprecated Legacy field — order is determined by array index */
+  /** @deprecated */
   layout?: BlockLayout;
 }
 
@@ -59,11 +74,19 @@ export const PRODUCT_SIZES: {
   label: string;
   description: string;
 }[] = [
-  { value: "compact", label: "S", description: "コンパクト（最大3列）" },
-  { value: "standard", label: "M", description: "標準（最大2列）" },
-  { value: "large", label: "L", description: "ラージ（縦型）" },
-  { value: "xl", label: "XL", description: "エクストララージ（大きめ画像）" },
+  { value: "compact", label: "S", description: "コンパクト" },
+  { value: "standard", label: "M", description: "標準" },
+  { value: "large", label: "L", description: "ラージ" },
+  { value: "xl", label: "XL", description: "エクストララージ" },
 ];
+
+export function isTopLevelBlockType(type: BlockType): type is TopLevelBlockType {
+  return type === "heading" || type === "divider" || type === "bento";
+}
+
+export function isBentoChildType(type: BlockType): type is BentoChildType {
+  return type === "product" || type === "text";
+}
 
 export function getProductSize(block: Block): ProductSize {
   const raw = block.data.product_size ?? "standard";
@@ -71,56 +94,10 @@ export function getProductSize(block: Block): ProductSize {
   return raw;
 }
 
-export function getGridMaxColumns(size: "compact" | "standard"): number {
-  return size === "compact" ? 3 : 2;
-}
-
-export type GridSegmentSize = "compact" | "standard" | "text";
-
-export function getPairLayout(block: Block): "row" | "stack" | undefined {
-  if (block.data.pair_layout) return block.data.pair_layout;
-  if (block.type === "product" && block.data.product_pair_layout) {
-    return block.data.product_pair_layout;
-  }
-  return undefined;
-}
-
-export function getGridBlockKind(block: Block): GridSegmentSize | null {
-  if (block.type === "text") return "text";
-  if (block.type === "product") {
-    const size = getProductSize(block);
-    if (size === "compact" || size === "standard") return size;
-  }
-  return null;
-}
-
-/** S/M 商品またはテキスト — 横並びグリッドに配置できるブロック */
-export function isGridBlock(block: Block): boolean {
-  return getGridBlockKind(block) !== null;
-}
-
-export function canPairTogether(first: Block, second: Block): boolean {
-  const a = getGridBlockKind(first);
-  const b = getGridBlockKind(second);
-  if (a === null || b === null) return false;
-  if (a === b) return true;
-  // S/M 商品 + テキストの混在ペア（2列）
-  const hasText = a === "text" || b === "text";
-  if (!hasText) return false;
-  const productKind = a === "text" ? b : a;
-  return productKind === "compact" || productKind === "standard";
-}
-
-export function getGridMaxColumnsForKind(kind: GridSegmentSize): number {
-  return kind === "compact" ? 3 : 2;
-}
-
 export function blocksEqual(a: Block[], b: Block[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every(
-    (block, index) =>
-      block.id === b[index]?.id &&
-      block.type === b[index]?.type &&
-      JSON.stringify(block.data) === JSON.stringify(b[index]?.data),
-  );
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+export function blockDataEqual(a: BlockData, b: BlockData): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
 }

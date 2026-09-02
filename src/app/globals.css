@@ -5,12 +5,17 @@
   --foreground: #1c1917;
   --muted: #78716c;
   --muted-foreground: #a8a29e;
-  --content-max: 680px;
+  --accent: #b45309;
+  --accent-muted: #d97706;
+  --border: #e7e5e4;
+  --content-max: 720px;
+  --content-wide: 960px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -20,12 +25,15 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
   background: #e7e5e4;
   color: #1c1917;
 }
+
+/* ── Layout ── */
 
 .content-column {
   max-width: var(--content-max);
@@ -34,27 +42,43 @@ body {
   width: 100%;
 }
 
+.content-wide {
+  max-width: var(--content-wide);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
 .document-body {
   font-size: 1rem;
-  line-height: 1.85;
+  line-height: 1.9;
   color: #44403c;
 }
 
 .document-body .block-heading {
-  margin-top: 1.25rem;
-  margin-bottom: 0.25rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .document-body .block-heading:first-child {
   margin-top: 0;
 }
 
-.document-body .block-product {
-  margin: 0.5rem 0;
+.document-body .block-bento {
+  margin: 1.5rem 0;
+}
+
+.document-body .block-bento .block-product,
+.document-body .block-bento .block-text {
+  margin: 0;
 }
 
 .document-body .product-grid-row {
-  margin: 0.5rem 0;
+  margin: 1.25rem 0;
 }
 
 .document-body .product-grid-row .block-product {
@@ -66,32 +90,87 @@ body {
 }
 
 .document-body .block-divider {
-  margin: 1rem 0;
+  margin: 2rem 0;
 }
 
 .document-body .block-text {
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
 }
 
-/* ボタン以外の入力 — 下線のみ、背景と一体化 */
+/* ── Forms ── */
+
 .field-input {
   border: 0;
-  border-bottom: 1px solid #e7e5e4;
+  border-bottom: 1px solid var(--border);
   border-radius: 0;
   background: transparent;
   padding-left: 0;
   padding-right: 0;
   box-shadow: none;
+  transition: border-color 0.2s ease;
 }
 
 .field-input:focus-visible {
   outline: none;
-  border-bottom-color: #1c1917;
+  border-bottom-color: var(--foreground);
 }
 
-/* フローティングメニュー — 枠なし、ぼかしのみ */
+/* ── Floating menus ── */
+
 .menu-float {
-  background: rgb(250 250 249 / 0.92);
+  background: rgb(250 250 249 / 0.94);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px -8px rgb(28 25 23 / 0.12);
+}
+
+/* ── Header ── */
+
+.site-header {
+  background: rgb(250 250 249 / 0.85);
   backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px rgb(28 25 23 / 0.08);
+}
+
+/* ── Animations ── */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.2s; }
+.stagger-4 { animation-delay: 0.28s; }
+
+/* ── Product link hover ── */
+
+.product-link {
+  transition: color 0.15s ease;
+}
+
+.product-link:hover {
+  color: var(--accent);
 }

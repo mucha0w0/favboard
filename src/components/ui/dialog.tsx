@@ -44,7 +44,7 @@ export function Dialog({
       />
       <div
         className={cn(
-          "relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col bg-stone-50",
+          "relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col bg-stone-50 shadow-2xl shadow-stone-900/10",
           className,
         )}
         role="dialog"

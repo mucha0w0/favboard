@@ -1,4 +1,5 @@
 import { type Block, type BlockData } from "@/lib/types";
+import { BentoBlock } from "./blocks/BentoBlock";
 import { DividerBlock } from "./blocks/DividerBlock";
 import { HeadingBlock } from "./blocks/HeadingBlock";
 import { ProductBlock } from "./blocks/ProductBlock";
@@ -9,8 +10,13 @@ interface BlockRendererProps {
   editable?: boolean;
   productLayout?: "inline" | "grid";
   gridSize?: "compact" | "standard";
+  focusBlockId?: string | null;
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
+  onUpdateBento?: (bentoId: string, data: Partial<BlockData>) => void;
+  onEditBentoChild?: (bentoId: string, child: Block) => void;
+  onBentoChildBlur?: (bentoId: string, childId: string) => void;
+  onPersistBento?: (bentoId: string) => void;
   autoFocus?: boolean;
 }
 
@@ -19,11 +25,28 @@ export function BlockRenderer({
   editable,
   productLayout = "inline",
   gridSize,
+  focusBlockId,
   onUpdateBlockData,
   onBlockBlur,
+  onUpdateBento,
+  onEditBentoChild,
+  onBentoChildBlur,
+  onPersistBento,
   autoFocus,
 }: BlockRendererProps) {
   switch (block.type) {
+    case "bento":
+      return (
+        <BentoBlock
+          block={block}
+          editable={editable}
+          focusBlockId={focusBlockId}
+          onUpdateBento={onUpdateBento}
+          onEditChild={onEditBentoChild}
+          onChildBlur={onBentoChildBlur}
+          onPersistBento={onPersistBento}
+        />
+      );
     case "product":
       return (
         <ProductBlock

@@ -6,11 +6,12 @@ import { ProductFormDialog } from "@/components/canvas/ProductFormDialog";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { migrateCanvasBlocks, updateBentoChildData } from "@/lib/bento-layout";
 import {
   type Block,
   type BlockData,
-  type BlockType,
   type Canvas,
+  type TopLevelBlockType,
 } from "@/lib/types";
 import {
   Check,
@@ -35,7 +36,11 @@ function blocksEqual(a: Block[], b: Block[]) {
 export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   const router = useRouter();
   const [canvas, setCanvas] = useState(initialCanvas);
-  const [blocks, setBlocks] = useState<Block[]>(initialCanvas.blocks);
+  const migratedInitial = useMemo(
+    () => migrateCanvasBlocks(initialCanvas.blocks),
+    [initialCanvas.blocks],
+  );
+  const [blocks, setBlocks] = useState<Block[]>(migratedInitial);
   const blocksRef = useRef(blocks);
   blocksRef.current = blocks;
   const [title, setTitle] = useState(initialCanvas.title);
@@ -44,10 +49,8 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   const [savedFlash, setSavedFlash] = useState(false);
   const [error, setError] = useState("");
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
+  const [editingBentoId, setEditingBentoId] = useState<string | null>(null);
   const [isNewBlock, setIsNewBlock] = useState(false);
-  const [pendingInsertIndex, setPendingInsertIndex] = useState<number | null>(
-    null,
-  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const [pendingNewBlockIds, setPendingNewBlockIds] = useState<Set<string>>(
@@ -102,7 +105,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         const updated = data as Canvas;
         setCanvas(updated);
         setTitle(updated.title);
-        setBlocks(updated.blocks);
+        setBlocks(migrateCanvasBlocks(updated.blocks));
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 2000);
         return true;
@@ -120,27 +123,19 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
     await persist(blocks, title);
   }
 
-  function handleAddBlock(type: BlockType, index?: number) {
+  function handleAddBlock(type: TopLevelBlockType) {
     const newBlock = createBlock(type);
-    if (type === "product") {
-      setEditingBlock(newBlock);
-      setIsNewBlock(true);
-      setPendingInsertIndex(index ?? blocks.length);
-      setDialogOpen(true);
+    const nextBlocks = [...blocks, newBlock];
+    setBlocks(nextBlocks);
+
+    if (type === "heading") {
+      setFocusBlockId(newBlock.id);
+      setPendingNewBlockIds((prev) => new Set(prev).add(newBlock.id));
       return;
     }
 
-    const insertAt = index ?? blocks.length;
-    const nextBlocks = [
-      ...blocks.slice(0, insertAt),
-      newBlock,
-      ...blocks.slice(insertAt),
-    ];
-    setBlocks(nextBlocks);
-
-    if (type === "heading" || type === "text") {
-      setFocusBlockId(newBlock.id);
-      setPendingNewBlockIds((prev) => new Set(prev).add(newBlock.id));
+    if (type === "bento") {
+      persist(nextBlocks, title);
       return;
     }
 
@@ -155,19 +150,37 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
     [persist, title],
   );
 
-  function handleEditBlock(block: Block) {
+  function handleEditBlock(block: Block, context?: { bentoId: string }) {
     if (block.type !== "product") return;
     setEditingBlock(block);
+    setEditingBentoId(context?.bentoId ?? null);
     setIsNewBlock(false);
     setDialogOpen(true);
   }
 
-  function handleUpdateBlockData(blockId: string, data: BlockData) {
+  function handleUpdateBlockData(blockId: string, data: Partial<BlockData>) {
     setBlocks((prev) =>
       prev.map((b) =>
         b.id === blockId ? { ...b, data: { ...b.data, ...data } } : b,
       ),
     );
+  }
+
+  function handleUpdateBento(bentoId: string, data: Partial<BlockData>) {
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id === bentoId ? { ...b, data: { ...b.data, ...data } } : b,
+      ),
+    );
+  }
+
+  async function handlePersistBento(bentoId: string) {
+    const bento = blocksRef.current.find((b) => b.id === bentoId);
+    const saved = canvas.blocks.find((b) => b.id === bentoId);
+    if (!bento || (saved && JSON.stringify(saved.data) === JSON.stringify(bento.data))) {
+      return;
+    }
+    await persist(blocksRef.current, title);
   }
 
   async function handleBlockBlur(blockId: string) {
@@ -179,8 +192,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
 
     const isPendingNew = pendingNewBlockIds.has(blockId);
     const isEmpty =
-      (block.type === "heading" && !block.data.text?.trim()) ||
-      (block.type === "text" && !block.data.body?.trim());
+      block.type === "heading" && !block.data.text?.trim();
 
     if (isPendingNew) {
       setPendingNewBlockIds((prev) => {
@@ -203,18 +215,55 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
     await persist(currentBlocks, title);
   }
 
+  async function handleBentoChildBlur(bentoId: string, childId: string) {
+    setFocusBlockId(null);
+
+    const bento = blocksRef.current.find((b) => b.id === bentoId);
+    const child = bento?.data.children?.find((c) => c.id === childId);
+    if (!child || child.type !== "text") return;
+
+    const isPendingNew = pendingNewBlockIds.has(childId);
+    const isEmpty = !child.data.body?.trim();
+
+    if (isPendingNew) {
+      setPendingNewBlockIds((prev) => {
+        const next = new Set(prev);
+        next.delete(childId);
+        return next;
+      });
+    }
+
+    if (isPendingNew && isEmpty) {
+      setBlocks((prev) =>
+        prev.map((b) => {
+          if (b.id !== bentoId) return b;
+          return {
+            ...b,
+            data: {
+              ...b.data,
+              children: b.data.children?.filter((c) => c.id !== childId),
+              child_placements: Object.fromEntries(
+                Object.entries(b.data.child_placements ?? {}).filter(
+                  ([id]) => id !== childId,
+                ),
+              ),
+            },
+          };
+        }),
+      );
+      return;
+    }
+
+    await persist(blocksRef.current, title);
+  }
+
   async function handleApplyBlockData(blockId: string, data: BlockData) {
     let nextBlocks: Block[];
 
-    if (isNewBlock && editingBlock?.id === blockId) {
-      const insertAt = pendingInsertIndex ?? blocks.length;
-      nextBlocks = [
-        ...blocks.slice(0, insertAt),
-        { ...editingBlock, data },
-        ...blocks.slice(insertAt),
-      ];
-      setIsNewBlock(false);
-      setPendingInsertIndex(null);
+    if (editingBentoId) {
+      nextBlocks = blocks.map((b) =>
+        b.id === editingBentoId ? updateBentoChildData(b, blockId, data) : b,
+      );
     } else {
       nextBlocks = blocks.map((b) =>
         b.id === blockId ? { ...b, data: { ...b.data, ...data } } : b,
@@ -223,13 +272,15 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
 
     setBlocks(nextBlocks);
     setEditingBlock(null);
+    setEditingBentoId(null);
+    setIsNewBlock(false);
     await persist(nextBlocks, title);
   }
 
   function handleDialogCancel() {
     setIsNewBlock(false);
-    setPendingInsertIndex(null);
     setEditingBlock(null);
+    setEditingBentoId(null);
   }
 
   async function handleDeleteBlock(blockId: string) {
@@ -345,7 +396,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
               }
             }}
             placeholder="タイトル"
-            className="mb-10 w-full border-none bg-transparent text-[1.75rem] font-bold leading-tight text-stone-900 placeholder:text-stone-300 outline-none sm:text-[2rem]"
+            className="mb-10 w-full border-none bg-transparent text-[1.75rem] font-bold leading-tight tracking-tight text-stone-900 placeholder:text-stone-300 outline-none sm:text-[2rem]"
           />
 
           <BlockStream
@@ -357,6 +408,9 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             focusBlockId={focusBlockId}
             onDeleteBlock={handleDeleteBlock}
             onReorder={handleReorder}
+            onUpdateBento={handleUpdateBento}
+            onBentoChildBlur={handleBentoChildBlur}
+            onPersistBento={handlePersistBento}
           />
 
           <InsertMenu onAdd={handleAddBlock} disabled={saving} />

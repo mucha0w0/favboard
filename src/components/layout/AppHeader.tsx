@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { type MouseEvent, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
   backHref?: string;
@@ -21,9 +22,12 @@ export function AppHeader({
   const widthClass = maxWidth === "4xl" ? "max-w-4xl" : "max-w-2xl";
 
   return (
-    <header className="sticky top-0 z-30 bg-stone-50/80 backdrop-blur-md">
+    <header className="site-header sticky top-0 z-30">
       <div
-        className={`mx-auto flex items-center gap-3 px-4 py-3 ${widthClass}`}
+        className={cn(
+          "mx-auto flex items-center gap-3 px-5 py-3.5 sm:px-6",
+          widthClass,
+        )}
       >
         {backHref && (
           <Link

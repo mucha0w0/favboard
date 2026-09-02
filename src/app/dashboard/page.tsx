@@ -4,7 +4,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { type Canvas } from "@/lib/types";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -124,11 +124,11 @@ export default function DashboardPage() {
         }
       />
 
-      <main className="mx-auto max-w-4xl px-4 py-10">
-        <div className="mb-10 flex items-end justify-between gap-4">
+      <main className="mx-auto max-w-4xl px-5 py-10 sm:px-6 sm:py-14">
+        <div className="mb-10 flex items-end justify-between gap-4 sm:mb-12">
           <div>
-            <h1 className="text-lg font-medium text-stone-900">マイリスト</h1>
-            <p className="mt-1 text-sm text-stone-500">
+            <h1 className="text-lg font-semibold text-stone-900">マイリスト</h1>
+            <p className="mt-1.5 text-sm text-stone-500">
               {canvases.length} 件のリスト
             </p>
           </div>
@@ -151,8 +151,11 @@ export default function DashboardPage() {
         {canvases.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-sm text-stone-400">まだリストがありません</p>
+            <p className="mt-1 text-xs text-stone-400">
+              最初のウィッシュリストを作成しましょう
+            </p>
             <Button
-              className="mt-4"
+              className="mt-6"
               size="sm"
               onClick={handleCreate}
               disabled={creating}
@@ -189,6 +192,7 @@ export default function DashboardPage() {
                         window.open(`/c/${canvas.slug}`, "_blank")
                       }
                     >
+                      <ExternalLink className="h-3 w-3" />
                       公開ページ
                     </Button>
                   )}

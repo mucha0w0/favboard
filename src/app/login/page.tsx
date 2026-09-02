@@ -94,12 +94,12 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-5">
+      <div className="w-full max-w-sm animate-fade-up">
         <div className="mb-10 text-center">
           <Link
             href="/"
-            className="text-sm font-medium tracking-tight text-stone-900"
+            className="text-sm font-medium tracking-tight text-stone-900 transition-opacity hover:opacity-70"
           >
             Visual Wishlist
           </Link>

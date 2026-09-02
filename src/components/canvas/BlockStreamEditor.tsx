@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  applyPairLayoutAction,
-  getBlockDisplayLayout,
-  getPairLayoutActions,
-  type BlockDisplayLayout,
-  type PairLayoutAction,
-} from "@/lib/block-layout";
-import { type Block, blocksEqual, getPairLayout } from "@/lib/types";
+import { getBlockDisplayLayout } from "@/lib/block-layout";
+import { type Block, blocksEqual } from "@/lib/types";
 import {
   DndContext,
   DragOverlay,
@@ -16,7 +10,6 @@ import {
   closestCorners,
   useSensor,
   useSensors,
-  type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -30,7 +23,6 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import {
   BlockPreview,
   SortableBlockShell,
-  StaticBlockShell,
   type BlockStreamShellProps,
 } from "./BlockStreamParts";
 
@@ -44,13 +36,15 @@ export function BlockStreamEditor({
   focusBlockId,
   onDeleteBlock,
   onReorder,
+  onUpdateBento,
+  onBentoChildBlur,
+  onPersistBento,
 }: BlockStreamShellProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overlayWidth, setOverlayWidth] = useState<number | null>(null);
   const [orderedBlocks, setOrderedBlocks] = useState(blocks);
 
   const orderedBlocksRef = useRef(blocks);
-  const dragStartLayoutsRef = useRef<Map<string, BlockDisplayLayout>>(new Map());
   const listContainerRef = useRef<HTMLDivElement>(null);
   const blocksRef = useRef(blocks);
   const onReorderRef = useRef(onReorder);
@@ -66,43 +60,15 @@ export function BlockStreamEditor({
   );
 
   const displayBlocks = activeId ? orderedBlocks : blocks;
-  const isDragging = activeId !== null;
-
-  const sortableIdsKey = displayBlocks.map((block) => block.id).join("\0");
-  const layoutKey = displayBlocks
-    .map((block) => `${block.id}:${getPairLayout(block) ?? ""}`)
-    .join("\0");
 
   const sortableIds = useMemo(
     () => displayBlocks.map((block) => block.id),
-    [sortableIdsKey],
-  );
-
-  const blockLayouts = useMemo(
-    () =>
-      displayBlocks.map((block, index) => {
-        const layout = isDragging
-          ? (dragStartLayoutsRef.current.get(block.id) ??
-            getBlockDisplayLayout(displayBlocks, index))
-          : getBlockDisplayLayout(displayBlocks, index);
-        return { block, index, layout };
-      }),
-    [displayBlocks, isDragging, layoutKey, sortableIdsKey],
+    [displayBlocks],
   );
 
   const activeBlock = activeId
     ? orderedBlocks.find((b) => b.id === activeId)
     : undefined;
-
-  const activeBlockLayout = useMemo(() => {
-    if (!activeBlock) return undefined;
-    if (isDragging) {
-      return dragStartLayoutsRef.current.get(activeBlock.id);
-    }
-    const index = displayBlocks.findIndex((b) => b.id === activeBlock.id);
-    if (index === -1) return undefined;
-    return getBlockDisplayLayout(displayBlocks, index);
-  }, [activeBlock, displayBlocks, isDragging, sortableIdsKey, layoutKey]);
 
   const commitBlocks = useCallback((nextBlocks: Block[]) => {
     if (!blocksEqual(nextBlocks, blocksRef.current)) {
@@ -124,32 +90,14 @@ export function BlockStreamEditor({
     [activeId],
   );
 
-  const handlePairLayoutAction = useCallback(
-    (blockId: string, action: PairLayoutAction) => {
-      const next = applyPairLayoutAction(blocksRef.current, blockId, action);
-      commitBlocks(next);
-    },
-    [commitBlocks],
-  );
-
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const id = event.active.id as string;
-    const currentBlocks = blocksRef.current;
-
-    dragStartLayoutsRef.current = new Map(
-      currentBlocks.map((block, index) => [
-        block.id,
-        getBlockDisplayLayout(currentBlocks, index),
-      ]),
-    );
-    orderedBlocksRef.current = currentBlocks;
-    setOrderedBlocks(currentBlocks);
+    orderedBlocksRef.current = blocksRef.current;
+    setOrderedBlocks(blocksRef.current);
     setActiveId(id);
 
     const listWidth = listContainerRef.current?.getBoundingClientRect().width;
-    if (listWidth) {
-      setOverlayWidth(listWidth);
-    }
+    if (listWidth) setOverlayWidth(listWidth);
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
@@ -169,10 +117,9 @@ export function BlockStreamEditor({
   }, []);
 
   const handleDragEnd = useCallback(() => {
-    const finalBlocks = orderedBlocksRef.current;
+    commitBlocks(orderedBlocksRef.current);
     setActiveId(null);
     setOverlayWidth(null);
-    commitBlocks(finalBlocks);
   }, [commitBlocks]);
 
   const handleDragCancel = useCallback(() => {
@@ -194,37 +141,34 @@ export function BlockStreamEditor({
       <div className="document-body w-full">
         {displayBlocks.length === 0 && (
           <p className="py-12 text-[15px] leading-relaxed text-stone-400">
-            下の ＋ から、商品・テキスト・見出しなどを追加できます
+            下の ＋ から、Bento・見出し・区切り線を追加できます
           </p>
         )}
 
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-          <div
-            ref={listContainerRef}
-            className={
-              isDragging ? "flex flex-col gap-y-0" : "grid grid-cols-6 gap-x-3"
-            }
-          >
-            {blockLayouts.map(({ block, index, layout }) => (
-              <SortableBlockShell
-                key={block.id}
-                block={block}
-                className={isDragging ? "w-full" : layout.colClass}
-                inGrid={layout.inGrid}
-                gridSize={layout.gridSize}
-                pairLayoutActions={getPairLayoutActions(displayBlocks, block.id)}
-                onPairLayoutAction={handlePairLayoutAction}
-                onEditBlock={onEditBlock}
-                onUpdateBlockData={onUpdateBlockData}
-                onBlockBlur={onBlockBlur}
-                autoFocus={focusBlockId === block.id}
-                onDeleteBlock={onDeleteBlock}
-                onMoveUp={() => moveBlock(block.id, "up")}
-                onMoveDown={() => moveBlock(block.id, "down")}
-                canMoveUp={index > 0}
-                canMoveDown={index < displayBlocks.length - 1}
-              />
-            ))}
+          <div ref={listContainerRef} className="flex flex-col">
+            {displayBlocks.map((block, index) => {
+              const layout = getBlockDisplayLayout(displayBlocks, index);
+              return (
+                <SortableBlockShell
+                  key={block.id}
+                  block={block}
+                  className={layout.colClass}
+                  onEditBlock={onEditBlock}
+                  onUpdateBlockData={onUpdateBlockData}
+                  onBlockBlur={onBlockBlur}
+                  focusBlockId={focusBlockId}
+                  onDeleteBlock={onDeleteBlock}
+                  onUpdateBento={onUpdateBento}
+                  onBentoChildBlur={onBentoChildBlur}
+                  onPersistBento={onPersistBento}
+                  onMoveUp={() => moveBlock(block.id, "up")}
+                  onMoveDown={() => moveBlock(block.id, "down")}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < displayBlocks.length - 1}
+                />
+              );
+            })}
           </div>
         </SortableContext>
       </div>
@@ -235,59 +179,10 @@ export function BlockStreamEditor({
             className="cursor-grabbing rounded-sm bg-white shadow-lg ring-1 ring-stone-200/80"
             style={overlayWidth ? { width: overlayWidth } : undefined}
           >
-            <BlockPreview
-              block={activeBlock}
-              inGrid={activeBlockLayout?.inGrid}
-              gridSize={activeBlockLayout?.gridSize}
-            />
+            <BlockPreview block={activeBlock} />
           </div>
         ) : null}
       </DragOverlay>
     </DndContext>
-  );
-}
-
-/** SSR / dynamic import 用プレースホルダー */
-export function BlockStreamEditorPlaceholder({
-  blocks,
-  onEditBlock,
-  onUpdateBlockData,
-  onBlockBlur,
-  focusBlockId,
-  onDeleteBlock,
-}: BlockStreamShellProps) {
-  const blockLayouts = useMemo(
-    () =>
-      blocks.map((block, index) => ({
-        block,
-        index,
-        layout: getBlockDisplayLayout(blocks, index),
-      })),
-    [blocks],
-  );
-
-  return (
-    <div className="document-body w-full" aria-hidden>
-      <div className="grid grid-cols-6 gap-x-3">
-        {blockLayouts.map(({ block, index, layout }) => (
-          <div key={block.id} className={layout.colClass}>
-            <StaticBlockShell
-              block={block}
-              inGrid={layout.inGrid}
-              gridSize={layout.gridSize}
-              onEditBlock={onEditBlock}
-              onUpdateBlockData={onUpdateBlockData}
-              onBlockBlur={onBlockBlur}
-              autoFocus={focusBlockId === block.id}
-              onDeleteBlock={onDeleteBlock}
-              onMoveUp={() => {}}
-              onMoveDown={() => {}}
-              canMoveUp={index > 0}
-              canMoveDown={index < blocks.length - 1}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

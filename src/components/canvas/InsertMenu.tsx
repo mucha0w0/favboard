@@ -1,18 +1,17 @@
 "use client";
 
-import { type BlockType } from "@/lib/types";
-import { AlignLeft, Minus, Package, Plus, Type } from "lucide-react";
+import { type TopLevelBlockType } from "@/lib/types";
+import { LayoutGrid, Minus, Plus, Type } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface InsertMenuProps {
-  onAdd: (type: BlockType) => void;
+  onAdd: (type: TopLevelBlockType) => void;
   disabled?: boolean;
 }
 
-const ITEMS: { type: BlockType; label: string; icon: typeof Package }[] = [
-  { type: "product", label: "商品", icon: Package },
-  { type: "text", label: "テキスト", icon: AlignLeft },
+const ITEMS: { type: TopLevelBlockType; label: string; icon: typeof LayoutGrid }[] = [
+  { type: "bento", label: "Bento", icon: LayoutGrid },
   { type: "heading", label: "見出し", icon: Type },
   { type: "divider", label: "区切り線", icon: Minus },
 ];

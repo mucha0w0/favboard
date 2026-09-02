@@ -1,7 +1,8 @@
 "use client";
 
 import { getBlockDisplayLayout } from "@/lib/block-layout";
-import { type Block, type BlockType } from "@/lib/types";
+import { createBentoBlock } from "@/lib/bento-layout";
+import { type Block, type TopLevelBlockType } from "@/lib/types";
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import { StaticBlockShell } from "./BlockStreamParts";
@@ -18,26 +19,23 @@ const BlockStreamEditor = dynamic(
 interface BlockStreamProps {
   blocks: Block[];
   editable?: boolean;
-  onEditBlock?: (block: Block) => void;
+  onEditBlock?: (block: Block, context?: { bentoId: string }) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
   focusBlockId?: string | null;
   onDeleteBlock?: (blockId: string) => void;
   onReorder?: (blocks: Block[]) => void;
+  onUpdateBento?: (bentoId: string, data: Partial<Block["data"]>) => void;
+  onBentoChildBlur?: (bentoId: string, childId: string) => void;
+  onPersistBento?: (bentoId: string) => void;
 }
 
-export function createBlock(type: BlockType): Block {
+export function createBlock(type: TopLevelBlockType): Block {
+  if (type === "bento") return createBentoBlock();
   return {
     id: crypto.randomUUID(),
     type,
-    data:
-      type === "heading"
-        ? { text: "" }
-        : type === "text"
-          ? { body: "" }
-          : type === "product"
-            ? { product_size: "standard" }
-            : {},
+    data: type === "heading" ? { text: "" } : {},
   };
 }
 
@@ -49,6 +47,9 @@ function BlockStreamView({
   onBlockBlur,
   focusBlockId,
   onDeleteBlock,
+  onUpdateBento,
+  onBentoChildBlur,
+  onPersistBento,
 }: BlockStreamProps) {
   const blockLayouts = useMemo(
     () =>
@@ -64,30 +65,29 @@ function BlockStreamView({
     <div className="document-body w-full">
       {blocks.length === 0 && editable && (
         <p className="py-12 text-[15px] leading-relaxed text-stone-400">
-          下の ＋ から、商品・テキスト・見出しなどを追加できます
+          下の ＋ から、Bento・見出し・区切り線を追加できます
         </p>
       )}
 
-      <div className="grid grid-cols-6 gap-x-3">
+      <div className="flex flex-col">
         {blockLayouts.map(({ block, index, layout }) => (
-          <div key={block.id} className="contents">
-            <div className={layout.colClass}>
-              <StaticBlockShell
-                block={block}
-                inGrid={layout.inGrid}
-                gridSize={layout.gridSize}
-                onEditBlock={onEditBlock}
-                onUpdateBlockData={onUpdateBlockData}
-                onBlockBlur={onBlockBlur}
-                autoFocus={focusBlockId === block.id}
-                onDeleteBlock={onDeleteBlock}
-                onMoveUp={() => {}}
-                onMoveDown={() => {}}
-                canMoveUp={index > 0}
-                canMoveDown={index < blocks.length - 1}
-              />
-            </div>
-          </div>
+          <StaticBlockShell
+            key={block.id}
+            block={block}
+            className={layout.colClass}
+            onEditBlock={onEditBlock}
+            onUpdateBlockData={onUpdateBlockData}
+            onBlockBlur={onBlockBlur}
+            focusBlockId={focusBlockId}
+            onDeleteBlock={onDeleteBlock}
+            onUpdateBento={onUpdateBento}
+            onBentoChildBlur={onBentoChildBlur}
+            onPersistBento={onPersistBento}
+            onMoveUp={() => {}}
+            onMoveDown={() => {}}
+            canMoveUp={index > 0}
+            canMoveDown={index < blocks.length - 1}
+          />
         ))}
       </div>
     </div>
