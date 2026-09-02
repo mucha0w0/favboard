@@ -185,13 +185,15 @@ export function SortableBlockShell({
     isDragging,
   } = useSortable({
     id: block.id,
-    animateLayoutChanges: () => false,
+    animateLayoutChanges: ({ isSorting }) => !isSorting,
   });
 
   const style = {
     transform: CSS.Translate.toString(transform),
     transition: isDragging ? undefined : transition,
-    opacity: isDragging ? 0.35 : 1,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 0 : undefined,
+    position: "relative" as const,
   };
 
   const isDivider = block.type === "divider";

@@ -4,6 +4,7 @@ import {
   applyPairLayoutFromGesture,
   getBlockDisplayLayout,
   getLayoutDragHint,
+  type BlockDisplayLayout,
 } from "@/lib/block-layout";
 import { type Block, blocksEqual, getPairLayout } from "@/lib/types";
 import {
@@ -11,7 +12,7 @@ import {
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
+  closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -22,7 +23,7 @@ import {
 import {
   SortableContext,
   arrayMove,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -51,7 +52,9 @@ export function BlockStreamEditor({
 
   const orderedBlocksRef = useRef(blocks);
   const dragStartBlocksRef = useRef(blocks);
+  const dragStartLayoutsRef = useRef<Map<string, BlockDisplayLayout>>(new Map());
   const dragDeltaRef = useRef({ x: 0, y: 0 });
+  const layoutHintRef = useRef<"row" | "stack" | null>(null);
   const blocksRef = useRef(blocks);
   const onReorderRef = useRef(onReorder);
 
@@ -77,14 +80,18 @@ export function BlockStreamEditor({
     [sortableIdsKey],
   );
 
+  const isDragging = activeId !== null;
+
   const blockLayouts = useMemo(
     () =>
-      displayBlocks.map((block, index) => ({
-        block,
-        index,
-        layout: getBlockDisplayLayout(displayBlocks, index),
-      })),
-    [displayBlocks, layoutKey, sortableIdsKey],
+      displayBlocks.map((block, index) => {
+        const layout = isDragging
+          ? (dragStartLayoutsRef.current.get(block.id) ??
+            getBlockDisplayLayout(displayBlocks, index))
+          : getBlockDisplayLayout(displayBlocks, index);
+        return { block, index, layout };
+      }),
+    [displayBlocks, isDragging, layoutKey, sortableIdsKey],
   );
 
   const activeBlock = activeId
@@ -93,10 +100,13 @@ export function BlockStreamEditor({
 
   const activeBlockLayout = useMemo(() => {
     if (!activeBlock) return undefined;
+    if (isDragging) {
+      return dragStartLayoutsRef.current.get(activeBlock.id);
+    }
     const index = displayBlocks.findIndex((b) => b.id === activeBlock.id);
     if (index === -1) return undefined;
     return getBlockDisplayLayout(displayBlocks, index);
-  }, [activeBlock, sortableIdsKey, layoutKey]);
+  }, [activeBlock, displayBlocks, isDragging, sortableIdsKey, layoutKey]);
 
   const moveBlock = useCallback(
     (blockId: string, direction: "up" | "down") => {
@@ -116,8 +126,15 @@ export function BlockStreamEditor({
     const id = event.active.id as string;
     const currentBlocks = blocksRef.current;
     dragStartBlocksRef.current = currentBlocks;
+    dragStartLayoutsRef.current = new Map(
+      currentBlocks.map((block, index) => [
+        block.id,
+        getBlockDisplayLayout(currentBlocks, index),
+      ]),
+    );
     orderedBlocksRef.current = currentBlocks;
     dragDeltaRef.current = { x: 0, y: 0 };
+    layoutHintRef.current = null;
     setOrderedBlocks(currentBlocks);
     setActiveId(id);
     setLayoutHint(null);
@@ -130,16 +147,18 @@ export function BlockStreamEditor({
   const handleDragMove = useCallback((event: DragMoveEvent) => {
     dragDeltaRef.current = event.delta;
     const nextHint = getLayoutDragHint(
-      dragStartBlocksRef.current,
+      orderedBlocksRef.current,
       event.active.id as string,
       event.delta,
     );
+    layoutHintRef.current = nextHint;
     setLayoutHint((prev) => (prev === nextHint ? prev : nextHint));
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+    if (layoutHintRef.current) return;
 
     setOrderedBlocks((current) => {
       const oldIndex = current.findIndex((b) => b.id === active.id);
@@ -154,19 +173,24 @@ export function BlockStreamEditor({
   }, []);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const startBlocks = dragStartBlocksRef.current;
-    const activeId = event.active.id as string;
+    const activeBlockId = event.active.id as string;
     const delta =
       Math.abs(event.delta.x) + Math.abs(event.delta.y) > 0
         ? event.delta
         : dragDeltaRef.current;
+    const finalBlocks = orderedBlocksRef.current;
 
-    const layoutBlocks = applyPairLayoutFromGesture(startBlocks, activeId, delta);
-    const layoutChanged = !blocksEqual(layoutBlocks, startBlocks);
+    const layoutBlocks = applyPairLayoutFromGesture(
+      finalBlocks,
+      activeBlockId,
+      delta,
+    );
+    const layoutChanged = !blocksEqual(layoutBlocks, finalBlocks);
 
     setActiveId(null);
     setActiveWidth(null);
     setLayoutHint(null);
+    layoutHintRef.current = null;
 
     if (layoutChanged) {
       orderedBlocksRef.current = layoutBlocks;
@@ -177,7 +201,6 @@ export function BlockStreamEditor({
       return;
     }
 
-    const finalBlocks = orderedBlocksRef.current;
     if (!blocksEqual(finalBlocks, blocksRef.current)) {
       onReorderRef.current?.(finalBlocks);
     }
@@ -187,6 +210,7 @@ export function BlockStreamEditor({
     setActiveId(null);
     setActiveWidth(null);
     setLayoutHint(null);
+    layoutHintRef.current = null;
     orderedBlocksRef.current = blocksRef.current;
     setOrderedBlocks(blocksRef.current);
   }, []);
@@ -194,7 +218,7 @@ export function BlockStreamEditor({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragOver={handleDragOver}
@@ -208,17 +232,18 @@ export function BlockStreamEditor({
           </p>
         )}
 
-        <SortableContext
-          items={sortableIds}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="grid grid-cols-6 gap-x-3">
+        <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+          <div
+            className={
+              isDragging ? "flex flex-col gap-y-0" : "grid grid-cols-6 gap-x-3"
+            }
+          >
             {blockLayouts.map(
               ({ block, index, layout }) => (
                 <SortableBlockShell
                   key={block.id}
                   block={block}
-                  className={layout.colClass}
+                  className={isDragging ? "w-full" : layout.colClass}
                   inGrid={layout.inGrid}
                   gridSize={layout.gridSize}
                   onEditBlock={onEditBlock}
