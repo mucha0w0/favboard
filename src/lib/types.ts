@@ -76,6 +76,16 @@ export function isGridProduct(block: Block): boolean {
   return size === "compact" || size === "standard";
 }
 
+export function blocksEqual(a: Block[], b: Block[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every(
+    (block, index) =>
+      block.id === b[index]?.id &&
+      block.type === b[index]?.type &&
+      JSON.stringify(block.data) === JSON.stringify(b[index]?.data),
+  );
+}
+
 export function getGridMaxColumns(size: "compact" | "standard"): number {
   return size === "compact" ? 3 : 2;
 }

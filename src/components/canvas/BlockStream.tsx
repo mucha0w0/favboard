@@ -10,6 +10,7 @@ import {
 import {
   type Block,
   type BlockType,
+  blocksEqual,
   getProductSize,
   isGridProduct,
 } from "@/lib/types";
@@ -187,13 +188,16 @@ export function BlockStream({
   const [layoutHint, setLayoutHint] = useState<"row" | "stack" | null>(null);
   const [orderedBlocks, setOrderedBlocks] = useState(blocks);
   const orderedBlocksRef = useRef(blocks);
+  const dragStartBlocksRef = useRef(blocks);
   const dndReady = useIsClient();
 
   useEffect(() => {
-    if (!activeId) {
-      setOrderedBlocks(blocks);
+    if (activeId) return;
+    setOrderedBlocks((prev) => {
+      if (blocksEqual(prev, blocks)) return prev;
       orderedBlocksRef.current = blocks;
-    }
+      return blocks;
+    });
   }, [blocks, activeId]);
 
   const sensors = useSensors(
@@ -211,6 +215,7 @@ export function BlockStream({
 
   function handleDragStart(event: DragStartEvent) {
     const id = event.active.id as string;
+    dragStartBlocksRef.current = blocks;
     setOrderedBlocks(blocks);
     orderedBlocksRef.current = blocks;
     setActiveId(id);
@@ -222,9 +227,12 @@ export function BlockStream({
   }
 
   function handleDragMove(event: DragMoveEvent) {
-    setLayoutHint(
-      getLayoutDragHint(orderedBlocksRef.current, event.active.id as string, event.delta),
+    const nextHint = getLayoutDragHint(
+      orderedBlocksRef.current,
+      event.active.id as string,
+      event.delta,
     );
+    setLayoutHint((prev) => (prev === nextHint ? prev : nextHint));
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -244,27 +252,25 @@ export function BlockStream({
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    let finalBlocks = applyPairLayoutFromDrag(
+    const finalBlocks = applyPairLayoutFromDrag(
       orderedBlocksRef.current,
       event.active.id as string,
       event.delta,
-    );
-    orderedBlocksRef.current = finalBlocks;
-    setOrderedBlocks(finalBlocks);
-
-    const changed = finalBlocks.some(
-      (block, index) =>
-        block.id !== blocks[index]?.id ||
-        block.data.product_pair_layout !== blocks[index]?.data.product_pair_layout,
+      dragStartBlocksRef.current,
     );
 
-    if (changed && onReorder) {
-      onReorder(finalBlocks);
-    }
+    const changed = !blocksEqual(finalBlocks, blocks);
 
     setActiveId(null);
     setActiveWidth(null);
     setLayoutHint(null);
+
+    orderedBlocksRef.current = finalBlocks;
+    setOrderedBlocks(finalBlocks);
+
+    if (changed && onReorder) {
+      onReorder(finalBlocks);
+    }
   }
 
   function handleDragCancel() {

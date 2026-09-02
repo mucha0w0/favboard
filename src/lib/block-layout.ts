@@ -142,7 +142,15 @@ export function applyPairLayoutFromDrag(
   blocks: Block[],
   activeId: string,
   delta: { x: number; y: number },
+  /** ドラッグ開始時の並び — 並び替え操作とレイアウト切替を区別する */
+  originalBlocks: Block[],
 ): Block[] {
+  const orderUnchanged =
+    blocks.length === originalBlocks.length &&
+    blocks.every((block, index) => block.id === originalBlocks[index]?.id);
+
+  if (!orderUnchanged) return blocks;
+
   const idx = blocks.findIndex((b) => b.id === activeId);
   if (idx === -1) return blocks;
 
