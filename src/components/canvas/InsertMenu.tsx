@@ -3,6 +3,7 @@
 import { type BlockType } from "@/lib/types";
 import { AlignLeft, Minus, Package, Plus, Type } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface InsertMenuProps {
   onAdd: (type: BlockType) => void;
@@ -24,13 +25,13 @@ export function InsertMenu({ onAdd, disabled }: InsertMenuProps) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[160px] rounded-md border border-stone-200 bg-white py-1">
+          <div className="menu-float absolute bottom-full left-0 z-20 mb-2 min-w-[160px] py-1">
             {ITEMS.map(({ type, label, icon: Icon }) => (
               <button
                 key={type}
                 type="button"
                 disabled={disabled}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-stone-600 transition-colors hover:text-stone-900 disabled:opacity-50"
                 onClick={() => {
                   onAdd(type);
                   setOpen(false);
@@ -43,17 +44,18 @@ export function InsertMenu({ onAdd, disabled }: InsertMenuProps) {
           </div>
         </>
       )}
-      <button
+      <Button
         type="button"
+        size="icon"
         disabled={disabled}
         onClick={() => setOpen(!open)}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-500 transition-colors hover:border-stone-300 hover:text-stone-700 disabled:opacity-50"
+        className="rounded-full"
         aria-label="ブロックを追加"
       >
         <Plus
-          className={`h-5 w-5 transition-transform ${open ? "rotate-45" : ""}`}
+          className={`h-4 w-4 transition-transform ${open ? "rotate-45" : ""}`}
         />
-      </button>
+      </Button>
     </div>
   );
 }

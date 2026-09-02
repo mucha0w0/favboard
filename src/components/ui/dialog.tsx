@@ -38,20 +38,20 @@ export function Dialog({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
       <div
-        className="absolute inset-0 bg-stone-900/20 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-stone-900/15 backdrop-blur-[3px]"
         onClick={() => onOpenChange(false)}
         aria-hidden
       />
       <div
         className={cn(
-          "relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-lg border border-stone-200 bg-white",
+          "relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col bg-stone-50",
           className,
         )}
         role="dialog"
         aria-modal
         aria-labelledby="dialog-title"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-5 py-3.5">
+        <div className="flex shrink-0 items-center justify-between px-5 py-4">
           <h2 id="dialog-title" className="text-base font-medium text-stone-900">
             {title}
           </h2>
@@ -65,7 +65,7 @@ export function Dialog({
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="overflow-y-auto px-5 pb-5">{children}</div>
       </div>
     </div>
   );

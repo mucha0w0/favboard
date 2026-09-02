@@ -152,13 +152,13 @@ function ProductCardContent({
   switch (size) {
     case "compact":
       return (
-        <div className="flex gap-3 p-3">
+        <div className="flex gap-4">
           <ProductImage
             showImage={showImage}
             imageUrl={image_url}
             title={title}
             onError={() => setImageError(true)}
-            className="h-16 w-16 rounded-md"
+            className="h-16 w-16"
           />
           <div className="min-w-0 flex-1">
             <ProductMeta
@@ -185,7 +185,7 @@ function ProductCardContent({
             onError={() => setImageError(true)}
             className="aspect-4/5 w-full"
           />
-          <div className="space-y-1 p-3 sm:p-4">
+          <div className="space-y-1 pt-3">
             <ProductMeta
               brandText={brandText}
               titleText={titleText}
@@ -210,7 +210,7 @@ function ProductCardContent({
             onError={() => setImageError(true)}
             className="aspect-3/1 w-full"
           />
-          <div className="space-y-1 p-3 sm:p-4">
+          <div className="space-y-1 pt-3">
             <ProductMeta
               brandText={brandText}
               titleText={titleText}
@@ -235,7 +235,7 @@ function ProductCardContent({
             onError={() => setImageError(true)}
             className="aspect-3/2 w-full"
           />
-          <div className="space-y-1 p-3 sm:p-4">
+          <div className="space-y-1 pt-3">
             <ProductMeta
               brandText={brandText}
               titleText={titleText}
@@ -258,12 +258,10 @@ export function ProductBlock({
   const size = getProductSize(block);
 
   return (
-    <div className="overflow-hidden rounded-md border border-stone-200 bg-white">
-      <ProductCardContent
-        block={block}
-        showPlaceholders={showPlaceholders}
-        size={size}
-      />
-    </div>
+    <ProductCardContent
+      block={block}
+      showPlaceholders={showPlaceholders}
+      size={size}
+    />
   );
 }

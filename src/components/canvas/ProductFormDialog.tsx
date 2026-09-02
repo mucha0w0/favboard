@@ -12,7 +12,6 @@ import {
   type OgpData,
   type ProductSize,
 } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -181,26 +180,17 @@ function ProductFormFields({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>カードサイズ</Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {PRODUCT_SIZES.map(({ value, label, description }) => (
-                <button
+            <div className="flex flex-wrap gap-2">
+              {PRODUCT_SIZES.map(({ value, label }) => (
+                <Button
                   key={value}
                   type="button"
+                  size="sm"
+                  variant={productSize === value ? "default" : "ghost"}
                   onClick={() => setProductSize(value)}
-                  className={cn(
-                    "rounded-lg border px-3 py-2.5 text-left transition-colors",
-                    productSize === value
-                      ? "border-stone-800 bg-stone-50 ring-1 ring-stone-800"
-                      : "border-stone-200 hover:border-stone-300",
-                  )}
                 >
-                  <span className="block text-sm font-semibold text-stone-800">
-                    {label}
-                  </span>
-                  <span className="mt-0.5 block text-[10px] leading-tight text-stone-400">
-                    {description}
-                  </span>
-                </button>
+                  {label}
+                </Button>
               ))}
             </div>
           </div>
@@ -281,7 +271,7 @@ function ProductFormFields({
           </div>
         </div>
       )}
-      <div className="mt-6 flex justify-end gap-2 border-t border-stone-100 pt-4">
+      <div className="mt-8 flex justify-end gap-2">
         <Button variant="outline" onClick={handleClose}>
           キャンセル
         </Button>

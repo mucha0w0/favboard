@@ -21,7 +21,7 @@ export function AppHeader({
   const widthClass = maxWidth === "4xl" ? "max-w-4xl" : "max-w-2xl";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 bg-stone-50/80 backdrop-blur-md">
       <div
         className={`mx-auto flex items-center gap-3 px-4 py-3 ${widthClass}`}
       >

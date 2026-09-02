@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-200/80">
+      <header>
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <span className="text-sm font-medium tracking-tight text-stone-900">
             Visual Wishlist
@@ -39,7 +39,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="border-t border-stone-200 py-16">
+        <section className="py-16">
           <dl className="space-y-10">
             <Feature
               number="01"
@@ -59,7 +59,7 @@ export default function HomePage() {
           </dl>
         </section>
 
-        <footer className="border-t border-stone-200 py-10">
+        <footer className="py-10">
           <p className="text-xs text-stone-400">
             公式ページへのリンクのみ。ねだり・代払い要素はありません。
           </p>

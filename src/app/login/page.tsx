@@ -96,7 +96,7 @@ function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
+        <div className="mb-10 text-center">
           <Link
             href="/"
             className="text-sm font-medium tracking-tight text-stone-900"
@@ -115,20 +115,17 @@ function LoginForm() {
         {displayMessage && (
           <Alert
             variant={displayMessage.includes("送信") ? "info" : "error"}
-            className="mb-4"
+            className="mb-6 text-center"
           >
             {displayMessage}
           </Alert>
         )}
 
         {isLocalMode ? (
-          <div className="rounded-lg border border-stone-200 bg-white p-6">
-            <p className="mb-5 text-xs leading-relaxed text-stone-500">
+          <div className="space-y-6">
+            <p className="text-center text-xs leading-relaxed text-stone-500">
               データはこのPCの{" "}
-              <code className="rounded bg-stone-100 px-1 py-0.5 text-stone-600">
-                .data/
-              </code>{" "}
-              に保存されます。
+              <code className="text-stone-600">.data/</code> に保存されます。
             </p>
             <Button
               className="w-full"
@@ -140,11 +137,8 @@ function LoginForm() {
             </Button>
           </div>
         ) : (
-          <form
-            onSubmit={handleSupabaseLogin}
-            className="rounded-lg border border-stone-200 bg-white p-6"
-          >
-            <div className="space-y-4">
+          <form onSubmit={handleSupabaseLogin} className="space-y-6">
+            <div className="space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="email">メールアドレス</Label>
                 <Input
@@ -167,13 +161,13 @@ function LoginForm() {
                 />
               </div>
             </div>
-            <Button type="submit" className="mt-6 w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {isSignUp ? "アカウント作成" : "ログイン"}
             </Button>
             <button
               type="button"
-              className="mt-4 w-full text-center text-xs text-stone-400 transition-colors hover:text-stone-700"
+              className="w-full text-center text-xs text-stone-400 transition-colors hover:text-stone-700"
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setMessage("");

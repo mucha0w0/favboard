@@ -5,10 +5,7 @@
   --foreground: #1c1917;
   --muted: #78716c;
   --muted-foreground: #a8a29e;
-  --border: #e7e5e4;
-  --surface: #ffffff;
   --content-max: 680px;
-  --radius: 0.5rem;
 }
 
 @theme inline {
@@ -53,7 +50,7 @@ body {
 }
 
 .document-body .block-product {
-  margin: 1rem 0;
+  margin: 1.25rem 0;
 }
 
 .document-body .block-divider {
@@ -62,4 +59,27 @@ body {
 
 .document-body .block-text {
   margin: 1.25rem 0;
+}
+
+/* ボタン以外の入力 — 下線のみ、背景と一体化 */
+.field-input {
+  border: 0;
+  border-bottom: 1px solid #e7e5e4;
+  border-radius: 0;
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+  box-shadow: none;
+}
+
+.field-input:focus-visible {
+  outline: none;
+  border-bottom-color: #1c1917;
+}
+
+/* フローティングメニュー — 枠なし、ぼかしのみ */
+.menu-float {
+  background: rgb(250 250 249 / 0.92);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgb(28 25 23 / 0.08);
 }
