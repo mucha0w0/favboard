@@ -21,7 +21,7 @@ import {
 } from "@/lib/bento-layout";
 import type { BentoCellPlacement, Block, BlockData } from "@/lib/types";
 import { AlignLeft, GripHorizontal, Package, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BlockRenderer } from "../BlockRenderer";
 
 interface BentoBlockProps {
@@ -54,8 +54,6 @@ type DragPreview = {
   placement?: BentoCellPlacement;
   bentoRows?: number;
   blocked?: boolean;
-  dx?: number;
-  dy?: number;
 };
 
 type DragOrigin = {
@@ -64,67 +62,6 @@ type DragOrigin = {
   placement: BentoCellPlacement;
   step: number;
 };
-
-function computeDragPixelStyle(
-  mode: DragMode,
-  startP: BentoCellPlacement,
-  currentP: BentoCellPlacement,
-  dx: number,
-  dy: number,
-  step: number,
-): CSSProperties {
-  if (mode.kind === "move") {
-    const gridDx = (currentP.col - startP.col) * step;
-    const gridDy = (currentP.row - startP.row) * step;
-    const tx = dx - gridDx;
-    const ty = dy - gridDy;
-    if (tx === 0 && ty === 0) return {};
-    return { transform: `translate(${tx}px, ${ty}px)` };
-  }
-
-  if (mode.kind === "resize") {
-    const edge = mode.edge;
-    let tx = 0;
-    let ty = 0;
-    let extraW = 0;
-    let extraH = 0;
-
-    const affectsLeft =
-      edge === "left" || edge === "sw" || edge === "nw";
-    const affectsTop = edge === "top" || edge === "ne" || edge === "nw";
-    const affectsRight =
-      edge === "right" || edge === "se" || edge === "ne";
-    const affectsBottom =
-      edge === "bottom" || edge === "se" || edge === "sw";
-
-    if (affectsLeft) {
-      tx = dx - (currentP.col - startP.col) * step;
-    }
-    if (affectsTop) {
-      ty = dy - (currentP.row - startP.row) * step;
-    }
-    if (affectsRight) {
-      extraW = dx - (currentP.colSpan - startP.colSpan) * step;
-    }
-    if (affectsBottom) {
-      extraH = dy - (currentP.rowSpan - startP.rowSpan) * step;
-    }
-
-    const style: CSSProperties = {};
-    if (tx !== 0 || ty !== 0) {
-      style.transform = `translate(${tx}px, ${ty}px)`;
-    }
-    if (extraW !== 0) {
-      style.width = `calc(100% + ${extraW}px)`;
-    }
-    if (extraH !== 0) {
-      style.height = `calc(100% + ${extraH}px)`;
-    }
-    return style;
-  }
-
-  return {};
-}
 
 function computePlacementFromDrag(
   mode: DragMode,
@@ -229,15 +166,6 @@ export function BentoBlock({
   const children = getBentoChildren(block);
   const rowCount = dragPreview?.bentoRows ?? getBentoRows(block);
 
-  const bentoHeightNudge =
-    dragModeRef.current?.kind === "bento-height" &&
-    dragPreview?.bentoRows != null &&
-    dragPreview.dy != null &&
-    dragOrigin.current
-      ? dragPreview.dy -
-        (dragPreview.bentoRows - bentoStartRows.current) * dragOrigin.current.step
-      : 0;
-
   const commitBento = useCallback(
     (next: Block) => {
       onUpdateBento?.(block.id, next.data);
@@ -288,7 +216,9 @@ export function BentoBlock({
         requiredBentoRows(blockRef.current),
       );
       const nextRows = Math.max(minRows, bentoStartRows.current + deltaRows);
-      applyDragPreview({ bentoRows: nextRows, dx: 0, dy });
+      const prev = dragPreviewRef.current;
+      if (prev?.bentoRows === nextRows) return;
+      applyDragPreview({ bentoRows: nextRows });
       return;
     }
 
@@ -311,13 +241,24 @@ export function BentoBlock({
       { expandRows: false },
     );
 
+    const prev = dragPreviewRef.current;
+    if (
+      prev?.childId === preview.childId &&
+      prev.placement?.col === resolved.placement.col &&
+      prev.placement?.row === resolved.placement.row &&
+      prev.placement?.colSpan === resolved.placement.colSpan &&
+      prev.placement?.rowSpan === resolved.placement.rowSpan &&
+      prev.bentoRows === resolved.bentoRows &&
+      prev.blocked === resolved.blocked
+    ) {
+      return;
+    }
+
     applyDragPreview({
       childId: preview.childId,
       placement: resolved.placement,
       bentoRows: resolved.bentoRows,
       blocked: resolved.blocked,
-      dx,
-      dy,
     });
   };
 
@@ -468,50 +409,22 @@ export function BentoBlock({
         <div
           ref={gridRef}
           className="bento-grid relative grid gap-1 rounded-lg border border-stone-200/80 bg-stone-100/20 p-1.5"
-          style={{
-            ...bentoGridStyle(rowCount),
-            ...(bentoHeightNudge !== 0
-              ? { paddingBottom: bentoHeightNudge }
-              : {}),
-          }}
+          style={bentoGridStyle(rowCount)}
           onClick={() => editable && setSelectedId(null)}
         >
           {children.map((child) => {
             const placement = getDisplayPlacement(child.id);
             const isSelected = selectedId === child.id;
-            const baseStyle = placementStyle(placement);
+            const style = placementStyle(placement);
             const isDragging =
               dragPreview?.childId === child.id && dragPreview.placement;
             const isBlocked =
               isDragging && dragPreview?.blocked === true;
 
-            let dragStyle: CSSProperties = {};
-            if (
-              isDragging &&
-              dragPreview.placement &&
-              dragModeRef.current &&
-              dragOrigin.current &&
-              dragPreview.dx != null &&
-              dragPreview.dy != null
-            ) {
-              dragStyle = computeDragPixelStyle(
-                dragModeRef.current,
-                dragOrigin.current.placement,
-                dragPreview.placement,
-                dragPreview.dx,
-                dragPreview.dy,
-                dragOrigin.current.step,
-              );
-            }
-
-            const style = { ...baseStyle, ...dragStyle };
-
             return (
               <div
                 key={child.id}
-                className={`relative flex min-h-0 min-w-0 flex-col rounded-md bg-white shadow-sm ring-1 ${
-                  isDragging ? "z-10 overflow-visible opacity-90" : "overflow-hidden"
-                } ${
+                className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md bg-white shadow-sm ring-1 ${
                   isBlocked
                     ? "ring-red-300"
                     : isSelected && editable
