@@ -3,16 +3,9 @@
 import {
   applyPairLayoutFromDrag,
   getBlockDisplayLayout,
-  isExactGridPairAt,
-  isRowPair,
-  segmentBlocks,
+  getLayoutDragHint,
 } from "@/lib/block-layout";
-import {
-  type Block,
-  blocksEqual,
-  getProductSize,
-  isGridProduct,
-} from "@/lib/types";
+import { type Block, blocksEqual, getPairLayout } from "@/lib/types";
 import {
   DndContext,
   DragOverlay,
@@ -41,62 +34,6 @@ import {
 } from "./BlockStreamParts";
 
 const POINTER_ACTIVATION = { distance: 8 } as const;
-const LAYOUT_DRAG_THRESHOLD = 40;
-
-function getLayoutDragHint(
-  blocks: Block[],
-  activeId: string,
-  delta: { x: number; y: number },
-): "row" | "stack" | null {
-  const idx = blocks.findIndex((b) => b.id === activeId);
-  if (idx === -1) return null;
-
-  const block = blocks[idx];
-  if (!isGridProduct(block)) return null;
-
-  const isHorizontal =
-    Math.abs(delta.x) > LAYOUT_DRAG_THRESHOLD &&
-    Math.abs(delta.x) > Math.abs(delta.y) * 1.2;
-  const isVertical =
-    Math.abs(delta.y) > LAYOUT_DRAG_THRESHOLD &&
-    Math.abs(delta.y) > Math.abs(delta.x) * 1.2;
-
-  const size = getProductSize(block);
-  const prev = idx > 0 ? blocks[idx - 1] : undefined;
-  const next = idx < blocks.length - 1 ? blocks[idx + 1] : undefined;
-
-  if (isHorizontal) {
-    const canPair =
-      (prev &&
-        isGridProduct(prev) &&
-        getProductSize(prev) === size &&
-        isExactGridPairAt(blocks, idx - 1) &&
-        !isRowPair(prev, block)) ||
-      (next &&
-        isGridProduct(next) &&
-        getProductSize(next) === size &&
-        isExactGridPairAt(blocks, idx) &&
-        !isRowPair(block, next));
-    if (canPair) return "row";
-  }
-
-  if (isVertical) {
-    const canSplit =
-      (prev &&
-        isGridProduct(prev) &&
-        getProductSize(prev) === size &&
-        isExactGridPairAt(blocks, idx - 1) &&
-        isRowPair(prev, block)) ||
-      (next &&
-        isGridProduct(next) &&
-        getProductSize(next) === size &&
-        isExactGridPairAt(blocks, idx) &&
-        isRowPair(block, next));
-    if (canSplit) return "stack";
-  }
-
-  return null;
-}
 
 export function BlockStreamEditor({
   blocks,
@@ -131,7 +68,7 @@ export function BlockStreamEditor({
 
   const sortableIdsKey = displayBlocks.map((block) => block.id).join("\0");
   const layoutKey = displayBlocks
-    .map((block) => `${block.id}:${block.data.product_pair_layout ?? ""}`)
+    .map((block) => `${block.id}:${getPairLayout(block) ?? ""}`)
     .join("\0");
 
   const sortableIds = useMemo(
@@ -153,17 +90,11 @@ export function BlockStreamEditor({
     ? orderedBlocks.find((b) => b.id === activeId)
     : undefined;
 
-  const activeBlockGridSize = useMemo(() => {
+  const activeBlockLayout = useMemo(() => {
     if (!activeBlock) return undefined;
-    for (const segment of segmentBlocks(displayBlocks)) {
-      if (
-        segment.type === "grid-row" &&
-        segment.blocks.some((block) => block.id === activeBlock.id)
-      ) {
-        return segment.size;
-      }
-    }
-    return undefined;
+    const index = displayBlocks.findIndex((b) => b.id === activeBlock.id);
+    if (index === -1) return undefined;
+    return getBlockDisplayLayout(displayBlocks, index);
   }, [activeBlock, sortableIdsKey, layoutKey]);
 
   const moveBlock = useCallback(
@@ -306,7 +237,11 @@ export function BlockStreamEditor({
             className="cursor-grabbing opacity-90"
             style={activeWidth ? { width: activeWidth } : undefined}
           >
-            <BlockPreview block={activeBlock} gridSize={activeBlockGridSize} />
+            <BlockPreview
+              block={activeBlock}
+              inGrid={activeBlockLayout?.inGrid}
+              gridSize={activeBlockLayout?.gridSize}
+            />
           </div>
         ) : null}
       </DragOverlay>

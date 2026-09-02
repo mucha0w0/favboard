@@ -46,12 +46,17 @@ function blockClass(type: BlockType): string {
 
 export function BlockPreview({
   block,
+  inGrid,
   gridSize,
 }: {
   block: Block;
+  inGrid?: boolean;
   gridSize?: "compact" | "standard";
 }) {
-  const productLayout = gridSize ? "grid" : "inline";
+  const productLayout =
+    block.type === "product" && inGrid ? "grid" : "inline";
+  const productGridSize =
+    block.type === "product" && inGrid ? gridSize : undefined;
 
   if (block.type === "divider") {
     return (
@@ -60,7 +65,7 @@ export function BlockPreview({
           block={block}
           editable
           productLayout={productLayout}
-          gridSize={gridSize}
+          gridSize={productGridSize}
         />
       </div>
     );
@@ -73,7 +78,7 @@ export function BlockPreview({
           block={block}
           editable
           productLayout={productLayout}
-          gridSize={gridSize}
+          gridSize={productGridSize}
         />
       </div>
     </div>
@@ -278,8 +283,10 @@ function BlockItem({
     <BlockRenderer
       block={block}
       editable
-      productLayout={inGrid ? "grid" : "inline"}
-      gridSize={inGrid ? gridSize : undefined}
+      productLayout={
+        block.type === "product" && inGrid ? "grid" : "inline"
+      }
+      gridSize={block.type === "product" && inGrid ? gridSize : undefined}
       onUpdateBlockData={onUpdateBlockData}
       onBlockBlur={onBlockBlur}
       autoFocus={autoFocus}
