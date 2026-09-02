@@ -160,27 +160,37 @@ export function updateChildPlacement(
   bento: Block,
   childId: string,
   placement: BentoCellPlacement,
+  options?: { expandRows?: boolean },
 ): Block {
-  const rows = Math.max(
-    getBentoRows(bento),
-    requiredBentoRows(bento),
-    placement.row + placement.rowSpan,
-  );
-  const next = clampPlacement(placement, rows);
-  if (!canPlace(bento, next, childId)) return bento;
+  const expandRows = options?.expandRows ?? true;
+  const currentRows = getBentoRows(bento);
 
-  const nextRows = Math.min(
-    MAX_BENTO_ROWS,
-    Math.max(rows, next.row + next.rowSpan),
-  );
+  const nextRows = expandRows
+    ? Math.min(
+        MAX_BENTO_ROWS,
+        Math.max(
+          currentRows,
+          requiredBentoRows(bento),
+          placement.row + placement.rowSpan,
+        ),
+      )
+    : currentRows;
+
+  const workingBento: Block = {
+    ...bento,
+    data: { ...bento.data, bento_rows: nextRows },
+  };
+
+  const next = clampPlacement(placement, nextRows);
+  if (!canPlace(workingBento, next, childId)) return bento;
 
   return {
-    ...bento,
+    ...workingBento,
     data: {
-      ...bento.data,
-      bento_rows: nextRows,
+      ...workingBento.data,
+      bento_rows: expandRows ? nextRows : currentRows,
       child_placements: {
-        ...bento.data.child_placements,
+        ...workingBento.data.child_placements,
         [childId]: next,
       },
     },
