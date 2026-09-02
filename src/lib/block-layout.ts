@@ -136,6 +136,65 @@ export function gridColumnClass(count: number, size: "compact" | "standard"): st
   return "grid-cols-2";
 }
 
+export type BlockDisplayLayout = {
+  inGrid: boolean;
+  gridSize?: "compact" | "standard";
+  colClass: string;
+};
+
+/** フラットグリッド上での各ブロックの表示レイアウト（6列ベース） */
+export function getBlockDisplayLayout(
+  blocks: Block[],
+  index: number,
+): BlockDisplayLayout {
+  for (const segment of segmentBlocks(blocks)) {
+    if (segment.type === "single" && segment.index === index) {
+      return { inGrid: false, colClass: "col-span-full" };
+    }
+
+    if (segment.type === "grid-row") {
+      const rowIndex = index - segment.startIndex;
+      if (rowIndex < 0 || rowIndex >= segment.blocks.length) continue;
+
+      const count = segment.blocks.length;
+      if (count === 3 && segment.size === "compact") {
+        return {
+          inGrid: true,
+          gridSize: segment.size,
+          colClass: "col-span-2",
+        };
+      }
+      if (count === 2) {
+        return {
+          inGrid: true,
+          gridSize: segment.size,
+          colClass: "col-span-3",
+        };
+      }
+      return {
+        inGrid: true,
+        gridSize: segment.size,
+        colClass: "col-span-full",
+      };
+    }
+  }
+
+  return { inGrid: false, colClass: "col-span-full" };
+}
+
+export function isSegmentStart(blocks: Block[], index: number): boolean {
+  if (index === 0) return true;
+
+  for (const segment of segmentBlocks(blocks)) {
+    if (segment.type === "single" && segment.index === index) return true;
+    if (segment.type === "grid-row" && segment.startIndex === index) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 const LAYOUT_DRAG_THRESHOLD = 40;
 
 export function applyPairLayoutFromDrag(

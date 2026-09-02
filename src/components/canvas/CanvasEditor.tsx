@@ -147,10 +147,13 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
     persist(nextBlocks, title);
   }
 
-  async function handleReorder(nextBlocks: Block[]) {
-    setBlocks(nextBlocks);
-    await persist(nextBlocks, title);
-  }
+  const handleReorder = useCallback(
+    async (nextBlocks: Block[]) => {
+      setBlocks(nextBlocks);
+      await persist(nextBlocks, title);
+    },
+    [persist, title],
+  );
 
   function handleEditBlock(block: Block) {
     if (block.type !== "product") return;

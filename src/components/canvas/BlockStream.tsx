@@ -2,9 +2,10 @@
 
 import {
   applyPairLayoutFromDrag,
-  gridColumnClass,
+  getBlockDisplayLayout,
   isExactGridPairAt,
   isRowPair,
+  isSegmentStart,
   segmentBlocks,
 } from "@/lib/block-layout";
 import {
@@ -45,10 +46,12 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  useEffect,
+  useCallback,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
+  Fragment,
   type ReactNode,
 } from "react";
 import { BlockRenderer } from "./BlockRenderer";
@@ -106,6 +109,8 @@ function blockClass(type: BlockType): string {
       return "block-text";
   }
 }
+
+const POINTER_ACTIVATION = { distance: 8 } as const;
 
 const LAYOUT_DRAG_THRESHOLD = 40;
 
@@ -191,17 +196,8 @@ export function BlockStream({
   const dragStartBlocksRef = useRef(blocks);
   const dndReady = useIsClient();
 
-  useEffect(() => {
-    if (activeId) return;
-    setOrderedBlocks((prev) => {
-      if (blocksEqual(prev, blocks)) return prev;
-      orderedBlocksRef.current = blocks;
-      return blocks;
-    });
-  }, [blocks, activeId]);
-
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: POINTER_ACTIVATION }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -209,33 +205,58 @@ export function BlockStream({
 
   const displayBlocks = activeId ? orderedBlocks : blocks;
 
+  const sortableIdsKey = displayBlocks.map((block) => block.id).join("\0");
+  const layoutKey = displayBlocks
+    .map((block) => `${block.id}:${block.data.product_pair_layout ?? ""}`)
+    .join("\0");
+  const sortableIds = useMemo(
+    () => displayBlocks.map((block) => block.id),
+    [sortableIdsKey],
+  );
+
   const activeBlock = activeId
     ? orderedBlocks.find((b) => b.id === activeId)
     : undefined;
 
-  function handleDragStart(event: DragStartEvent) {
-    const id = event.active.id as string;
-    dragStartBlocksRef.current = blocks;
-    setOrderedBlocks(blocks);
-    orderedBlocksRef.current = blocks;
-    setActiveId(id);
-    setLayoutHint(null);
-    const node = document.querySelector<HTMLElement>(`[data-block-id="${id}"]`);
-    if (node) {
-      setActiveWidth(node.getBoundingClientRect().width);
+  const activeBlockGridSize = useMemo(() => {
+    if (!activeBlock) return undefined;
+    for (const segment of segmentBlocks(displayBlocks)) {
+      if (
+        segment.type === "grid-row" &&
+        segment.blocks.some((block) => block.id === activeBlock.id)
+      ) {
+        return segment.size;
+      }
     }
-  }
+    return undefined;
+  }, [activeBlock, sortableIdsKey, layoutKey]);
 
-  function handleDragMove(event: DragMoveEvent) {
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const id = event.active.id as string;
+      dragStartBlocksRef.current = blocks;
+      orderedBlocksRef.current = blocks;
+      setOrderedBlocks(blocks);
+      setActiveId(id);
+      setLayoutHint(null);
+      const node = document.querySelector<HTMLElement>(`[data-block-id="${id}"]`);
+      if (node) {
+        setActiveWidth(node.getBoundingClientRect().width);
+      }
+    },
+    [blocks],
+  );
+
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
     const nextHint = getLayoutDragHint(
       orderedBlocksRef.current,
       event.active.id as string,
       event.delta,
     );
     setLayoutHint((prev) => (prev === nextHint ? prev : nextHint));
-  }
+  }, []);
 
-  function handleDragOver(event: DragOverEvent) {
+  const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -249,37 +270,37 @@ export function BlockStream({
       orderedBlocksRef.current = next;
       return next;
     });
-  }
+  }, []);
 
-  function handleDragEnd(event: DragEndEvent) {
-    const finalBlocks = applyPairLayoutFromDrag(
-      orderedBlocksRef.current,
-      event.active.id as string,
-      event.delta,
-      dragStartBlocksRef.current,
-    );
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const finalBlocks = applyPairLayoutFromDrag(
+        orderedBlocksRef.current,
+        event.active.id as string,
+        event.delta,
+        dragStartBlocksRef.current,
+      );
 
-    const changed = !blocksEqual(finalBlocks, blocks);
+      orderedBlocksRef.current = finalBlocks;
 
+      setActiveId(null);
+      setActiveWidth(null);
+      setLayoutHint(null);
+
+      if (!blocksEqual(finalBlocks, blocks) && onReorder) {
+        onReorder(finalBlocks);
+      }
+    },
+    [blocks, onReorder],
+  );
+
+  const handleDragCancel = useCallback(() => {
     setActiveId(null);
     setActiveWidth(null);
     setLayoutHint(null);
-
-    orderedBlocksRef.current = finalBlocks;
-    setOrderedBlocks(finalBlocks);
-
-    if (changed && onReorder) {
-      onReorder(finalBlocks);
-    }
-  }
-
-  function handleDragCancel() {
-    setActiveId(null);
-    setActiveWidth(null);
-    setLayoutHint(null);
-    setOrderedBlocks(blocks);
     orderedBlocksRef.current = blocks;
-  }
+    setOrderedBlocks(blocks);
+  }, [blocks]);
 
   function moveBlock(blockId: string, direction: "up" | "down") {
     if (!onReorder) return;
@@ -300,10 +321,7 @@ export function BlockStream({
         )}
 
         {sortable ? (
-          <SortableContext
-            items={displayBlocks.map((b) => b.id)}
-            strategy={rectSortingStrategy}
-          >
+          <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
             {renderBlocks(true)}
           </SortableContext>
         ) : (
@@ -314,49 +332,31 @@ export function BlockStream({
   }
 
   function renderBlocks(sortable: boolean) {
-    const segments = segmentBlocks(displayBlocks);
-
     return (
       <>
-        {segments.map((segment) => {
-          if (segment.type === "single") {
-            const { block, index } = segment;
-            return sortable ? (
-              <SortableBlockItem
-                key={block.id}
-                block={block}
-                editable={editable}
-                insertZone={
-                  editable && onInsertBlock ? (
+        <div className="grid grid-cols-6 gap-x-3">
+          {displayBlocks.map((block, index) => {
+            const layout = getBlockDisplayLayout(displayBlocks, index);
+            const showInsert =
+              editable && onInsertBlock && isSegmentStart(displayBlocks, index);
+
+            const blockNode = sortable ? (
+              <Fragment key={block.id}>
+                {showInsert && (
+                  <div className="col-span-full">
                     <InsertZone
                       index={index}
                       onInsert={onInsertBlock}
                       disabled={activeId !== null}
                     />
-                  ) : null
-                }
-                onEditBlock={onEditBlock}
-                onUpdateBlockData={onUpdateBlockData}
-                onBlockBlur={onBlockBlur}
-                autoFocus={focusBlockId === block.id}
-                onDeleteBlock={onDeleteBlock}
-                onMoveUp={() => moveBlock(block.id, "up")}
-                onMoveDown={() => moveBlock(block.id, "down")}
-                canMoveUp={index > 0}
-                canMoveDown={index < displayBlocks.length - 1}
-              />
-            ) : (
-              <div key={block.id}>
-                {editable && onInsertBlock && (
-                  <InsertZone
-                    index={index}
-                    onInsert={onInsertBlock}
-                    disabled={activeId !== null}
-                  />
+                  </div>
                 )}
-                <StaticBlockItem
+                <SortableBlockItem
                   block={block}
+                  className={layout.colClass}
                   editable={editable}
+                  inGrid={layout.inGrid}
+                  gridSize={layout.gridSize}
                   onEditBlock={onEditBlock}
                   onUpdateBlockData={onUpdateBlockData}
                   onBlockBlur={onBlockBlur}
@@ -367,86 +367,41 @@ export function BlockStream({
                   canMoveUp={index > 0}
                   canMoveDown={index < displayBlocks.length - 1}
                 />
-              </div>
-            );
-          }
-
-          const { blocks: rowBlocks, startIndex, size } = segment;
-          const rowKey = `grid-${rowBlocks.map((b) => b.id).join("-")}`;
-          const colClass = gridColumnClass(rowBlocks.length, size);
-
-          if (!sortable) {
-            return (
-              <div key={rowKey}>
-                {editable && onInsertBlock && (
-                  <InsertZone
-                    index={startIndex}
-                    onInsert={onInsertBlock}
-                    disabled={activeId !== null}
-                  />
-                )}
-                <div className={`product-grid-row grid ${colClass} gap-3`}>
-                  {rowBlocks.map((block, rowIndex) => {
-                    const index = startIndex + rowIndex;
-                    return (
-                      <StaticBlockItem
-                        key={block.id}
-                        block={block}
-                        editable={editable}
-                        inGrid
-                        gridSize={size}
-                        onEditBlock={onEditBlock}
-                        onUpdateBlockData={onUpdateBlockData}
-                        onBlockBlur={onBlockBlur}
-                        autoFocus={focusBlockId === block.id}
-                        onDeleteBlock={onDeleteBlock}
-                        onMoveUp={() => moveBlock(block.id, "up")}
-                        onMoveDown={() => moveBlock(block.id, "down")}
-                        canMoveUp={index > 0}
-                        canMoveDown={index < displayBlocks.length - 1}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          }
-
-          return (
-            <div key={rowKey}>
-              {editable && onInsertBlock && (
-                <InsertZone
-                  index={startIndex}
-                  onInsert={onInsertBlock}
-                  disabled={activeId !== null}
-                />
-              )}
-              <div className={`product-grid-row grid ${colClass} gap-3`}>
-                {rowBlocks.map((block, rowIndex) => {
-                  const index = startIndex + rowIndex;
-                  return (
-                    <SortableBlockItem
-                      key={block.id}
-                      block={block}
-                      editable={editable}
-                      inGrid
-                      gridSize={size}
-                      onEditBlock={onEditBlock}
-                      onUpdateBlockData={onUpdateBlockData}
-                      onBlockBlur={onBlockBlur}
-                      autoFocus={focusBlockId === block.id}
-                      onDeleteBlock={onDeleteBlock}
-                      onMoveUp={() => moveBlock(block.id, "up")}
-                      onMoveDown={() => moveBlock(block.id, "down")}
-                      canMoveUp={index > 0}
-                      canMoveDown={index < displayBlocks.length - 1}
+              </Fragment>
+            ) : (
+              <Fragment key={block.id}>
+                {showInsert && (
+                  <div className="col-span-full">
+                    <InsertZone
+                      index={index}
+                      onInsert={onInsertBlock!}
+                      disabled={activeId !== null}
                     />
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+                  </div>
+                )}
+                <div className={layout.colClass}>
+                  <StaticBlockItem
+                    block={block}
+                    editable={editable}
+                    inGrid={layout.inGrid}
+                    gridSize={layout.gridSize}
+                    onEditBlock={onEditBlock}
+                    onUpdateBlockData={onUpdateBlockData}
+                    onBlockBlur={onBlockBlur}
+                    autoFocus={focusBlockId === block.id}
+                    onDeleteBlock={onDeleteBlock}
+                    onMoveUp={() => moveBlock(block.id, "up")}
+                    onMoveDown={() => moveBlock(block.id, "down")}
+                    canMoveUp={index > 0}
+                    canMoveDown={index < displayBlocks.length - 1}
+                  />
+                </div>
+              </Fragment>
+            );
+
+            return blockNode;
+          })}
+        </div>
         {editable && onInsertBlock && displayBlocks.length > 0 && (
           <InsertZone
             index={displayBlocks.length}
@@ -483,20 +438,7 @@ export function BlockStream({
             className="cursor-grabbing opacity-90"
             style={activeWidth ? { width: activeWidth } : undefined}
           >
-            <BlockPreview
-              block={activeBlock}
-              gridSize={(() => {
-                for (const seg of segmentBlocks(displayBlocks)) {
-                  if (
-                    seg.type === "grid-row" &&
-                    seg.blocks.some((b) => b.id === activeBlock.id)
-                  ) {
-                    return seg.size;
-                  }
-                }
-                return undefined;
-              })()}
-            />
+            <BlockPreview block={activeBlock} gridSize={activeBlockGridSize} />
           </div>
         ) : null}
       </DragOverlay>
@@ -670,8 +612,8 @@ function StaticBlockItem({
 
 function SortableBlockItem({
   block,
+  className = "",
   editable,
-  insertZone,
   inGrid = false,
   gridSize,
   onEditBlock,
@@ -685,8 +627,8 @@ function SortableBlockItem({
   canMoveDown,
 }: {
   block: Block;
+  className?: string;
   editable: boolean;
-  insertZone?: ReactNode;
   inGrid?: boolean;
   gridSize?: "compact" | "standard";
   onEditBlock?: (block: Block) => void;
@@ -721,8 +663,7 @@ function SortableBlockItem({
   const isDivider = block.type === "divider";
 
   return (
-    <div ref={setNodeRef} style={style}>
-      {insertZone}
+    <div ref={setNodeRef} style={style} className={className}>
       <div
         data-block-id={block.id}
         className={`relative ${blockClass(block.type)}`}
@@ -761,6 +702,7 @@ function SortableBlockItem({
             editable={editable}
             fullWidth={isDivider}
             inGrid={inGrid}
+            gridSize={gridSize}
             onEditBlock={onEditBlock}
             onUpdateBlockData={onUpdateBlockData}
             onBlockBlur={onBlockBlur}
