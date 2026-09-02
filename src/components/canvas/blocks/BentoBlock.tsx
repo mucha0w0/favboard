@@ -242,14 +242,23 @@ export function BentoBlock({
     );
 
     const prev = dragPreviewRef.current;
+
+    if (resolved.blocked) {
+      if (prev?.childId === preview.childId && prev.blocked && !prev.placement) {
+        return;
+      }
+      applyDragPreview({ childId: preview.childId, blocked: true });
+      return;
+    }
+
     if (
       prev?.childId === preview.childId &&
+      !prev.blocked &&
       prev.placement?.col === resolved.placement.col &&
       prev.placement?.row === resolved.placement.row &&
       prev.placement?.colSpan === resolved.placement.colSpan &&
       prev.placement?.rowSpan === resolved.placement.rowSpan &&
-      prev.bentoRows === resolved.bentoRows &&
-      prev.blocked === resolved.blocked
+      prev.bentoRows === resolved.bentoRows
     ) {
       return;
     }
@@ -258,7 +267,6 @@ export function BentoBlock({
       childId: preview.childId,
       placement: resolved.placement,
       bentoRows: resolved.bentoRows,
-      blocked: resolved.blocked,
     });
   };
 
@@ -365,7 +373,8 @@ export function BentoBlock({
   function getDisplayPlacement(childId: string): BentoCellPlacement {
     if (
       dragPreview?.childId === childId &&
-      dragPreview.placement
+      dragPreview.placement &&
+      !dragPreview.blocked
     ) {
       return dragPreview.placement;
     }
@@ -417,19 +426,17 @@ export function BentoBlock({
             const isSelected = selectedId === child.id;
             const style = placementStyle(placement);
             const isDragging =
-              dragPreview?.childId === child.id && dragPreview.placement;
-            const isBlocked =
-              isDragging && dragPreview?.blocked === true;
+              dragPreview?.childId === child.id &&
+              dragPreview.placement &&
+              !dragPreview.blocked;
 
             return (
               <div
                 key={child.id}
                 className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md bg-white shadow-sm ring-1 ${
-                  isBlocked
-                    ? "ring-red-300"
-                    : isSelected && editable
-                      ? "ring-stone-400"
-                      : "ring-stone-200/60"
+                  isSelected && editable
+                    ? "ring-stone-400"
+                    : "ring-stone-200/60"
                 } ${isDragging ? "z-10 opacity-90" : ""}`}
                 style={style}
                 onClick={(e) => {
