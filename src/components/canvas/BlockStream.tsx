@@ -313,6 +313,16 @@ export function BlockStream({
 }
 
 function BlockPreview({ block }: { block: Block }) {
+  if (block.type === "divider") {
+    return (
+      <div className={blockClass(block.type)}>
+        <div className="py-1">
+          <BlockRenderer block={block} editable />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={blockClass(block.type)}>
       <div className="flex gap-1 sm:gap-2 pr-2 sm:pr-3">
@@ -403,16 +413,28 @@ function StaticBlockItem({
   canMoveUp: boolean;
   canMoveDown: boolean;
 }) {
+  const isDivider = block.type === "divider";
+
   return (
     <div data-block-id={block.id} className={`relative ${blockClass(block.type)}`}>
       <div
-        className={`group/block relative flex gap-1 sm:gap-2 ${
-          editable ? "pr-2 sm:pr-3" : "pr-6 sm:pr-8"
+        className={`group/block relative ${
+          isDivider
+            ? "py-1"
+            : `flex gap-1 sm:gap-2 ${editable ? "pr-2 sm:pr-3" : "pr-6 sm:pr-8"}`
         }`}
       >
-        {editable && (
+        {editable && !isDivider && (
           <div
             className="mt-1 flex h-9 w-7 shrink-0 items-center justify-center self-start text-stone-300"
+            aria-hidden
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
+        )}
+        {editable && isDivider && (
+          <div
+            className="pointer-events-none absolute left-0 top-1/2 flex h-9 w-7 -translate-y-1/2 items-center justify-center text-stone-300"
             aria-hidden
           >
             <GripVertical className="h-4 w-4" />
@@ -421,6 +443,7 @@ function StaticBlockItem({
         <BlockItem
           block={block}
           editable={editable}
+          fullWidth={isDivider}
           onEditBlock={onEditBlock}
           onUpdateBlockData={onUpdateBlockData}
           onBlockBlur={onBlockBlur}
@@ -482,6 +505,8 @@ function SortableBlockItem({
     opacity: isDragging ? 0 : 1,
   };
 
+  const isDivider = block.type === "divider";
+
   return (
     <div ref={setNodeRef} style={style}>
       {insertZone}
@@ -490,26 +515,42 @@ function SortableBlockItem({
         className={`relative ${blockClass(block.type)}`}
       >
         <div
-          className={`group/block relative flex gap-1 sm:gap-2 ${
-            editable ? "pr-2 sm:pr-3" : "pr-6 sm:pr-8"
+          className={`group/block relative ${
+            isDivider
+              ? "py-1"
+              : `flex gap-1 sm:gap-2 ${editable ? "pr-2 sm:pr-3" : "pr-6 sm:pr-8"}`
           }`}
         >
-        {editable && (
-          <button
-            type="button"
-            ref={setActivatorNodeRef}
-            {...attributes}
-            {...listeners}
-            className="mt-1 flex h-9 w-7 shrink-0 cursor-grab touch-none items-center justify-center self-start text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
-            aria-label="ドラッグして並べ替え"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-        )}
+          {editable && !isDivider && (
+            <button
+              type="button"
+              ref={setActivatorNodeRef}
+              {...attributes}
+              {...listeners}
+              className="mt-1 flex h-9 w-7 shrink-0 cursor-grab touch-none items-center justify-center self-start text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
+              aria-label="ドラッグして並べ替え"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+          )}
+          {editable && isDivider && (
+            <button
+              type="button"
+              ref={setActivatorNodeRef}
+              {...attributes}
+              {...listeners}
+              className="absolute left-0 top-1/2 z-10 flex h-9 w-7 -translate-y-1/2 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
+              aria-label="ドラッグして並べ替え"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+          )}
           <BlockItem
             block={block}
             editable={editable}
+            fullWidth={isDivider}
             onEditBlock={onEditBlock}
             onUpdateBlockData={onUpdateBlockData}
             onBlockBlur={onBlockBlur}
@@ -529,6 +570,7 @@ function SortableBlockItem({
 function BlockItem({
   block,
   editable,
+  fullWidth = false,
   onEditBlock,
   onUpdateBlockData,
   onBlockBlur,
@@ -541,6 +583,7 @@ function BlockItem({
 }: {
   block: Block;
   editable: boolean;
+  fullWidth?: boolean;
   onEditBlock?: (block: Block) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -575,7 +618,7 @@ function BlockItem({
 
   return (
     <>
-      <div className="min-w-0 flex-1 py-1">
+      <div className={fullWidth ? "w-full" : "min-w-0 flex-1 py-1"}>
         {isProductClickable ? (
           <button
             type="button"
@@ -590,7 +633,9 @@ function BlockItem({
       </div>
 
       {editable && (
-        <div className="absolute right-0 top-1 z-10">
+        <div
+          className={`absolute z-10 ${fullWidth ? "right-0 top-1/2 -translate-y-1/2" : "right-0 top-1"}`}
+        >
           <button
             type="button"
             className="p-1.5 text-stone-300 opacity-0 transition-opacity hover:text-stone-600 group-hover/block:opacity-100 data-[open=true]:opacity-100"
@@ -606,7 +651,11 @@ function BlockItem({
                 className="fixed inset-0 z-10"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="menu-float absolute right-0 top-8 z-20 min-w-[140px] py-1">
+              <div
+                className={`menu-float absolute right-0 z-20 min-w-[140px] py-1 ${
+                  fullWidth ? "top-full mt-1" : "top-8"
+                }`}
+              >
                 {block.type === "product" && onEditBlock && (
                   <button
                     type="button"
