@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  applyPairLayoutFromDrag,
+  applyPairLayoutFromGesture,
   getBlockDisplayLayout,
   getLayoutDragHint,
 } from "@/lib/block-layout";
@@ -51,6 +51,7 @@ export function BlockStreamEditor({
 
   const orderedBlocksRef = useRef(blocks);
   const dragStartBlocksRef = useRef(blocks);
+  const dragDeltaRef = useRef({ x: 0, y: 0 });
   const blocksRef = useRef(blocks);
   const onReorderRef = useRef(onReorder);
 
@@ -116,6 +117,7 @@ export function BlockStreamEditor({
     const currentBlocks = blocksRef.current;
     dragStartBlocksRef.current = currentBlocks;
     orderedBlocksRef.current = currentBlocks;
+    dragDeltaRef.current = { x: 0, y: 0 };
     setOrderedBlocks(currentBlocks);
     setActiveId(id);
     setLayoutHint(null);
@@ -126,8 +128,9 @@ export function BlockStreamEditor({
   }, []);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
+    dragDeltaRef.current = event.delta;
     const nextHint = getLayoutDragHint(
-      orderedBlocksRef.current,
+      dragStartBlocksRef.current,
       event.active.id as string,
       event.delta,
     );
@@ -151,19 +154,30 @@ export function BlockStreamEditor({
   }, []);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const finalBlocks = applyPairLayoutFromDrag(
-      orderedBlocksRef.current,
-      event.active.id as string,
-      event.delta,
-      dragStartBlocksRef.current,
-    );
+    const startBlocks = dragStartBlocksRef.current;
+    const activeId = event.active.id as string;
+    const delta =
+      Math.abs(event.delta.x) + Math.abs(event.delta.y) > 0
+        ? event.delta
+        : dragDeltaRef.current;
 
-    orderedBlocksRef.current = finalBlocks;
+    const layoutBlocks = applyPairLayoutFromGesture(startBlocks, activeId, delta);
+    const layoutChanged = !blocksEqual(layoutBlocks, startBlocks);
 
     setActiveId(null);
     setActiveWidth(null);
     setLayoutHint(null);
 
+    if (layoutChanged) {
+      orderedBlocksRef.current = layoutBlocks;
+      setOrderedBlocks(layoutBlocks);
+      if (!blocksEqual(layoutBlocks, blocksRef.current)) {
+        onReorderRef.current?.(layoutBlocks);
+      }
+      return;
+    }
+
+    const finalBlocks = orderedBlocksRef.current;
     if (!blocksEqual(finalBlocks, blocksRef.current)) {
       onReorderRef.current?.(finalBlocks);
     }

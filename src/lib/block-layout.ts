@@ -318,13 +318,15 @@ export function applyPairLayoutFromDrag(
   blocks: Block[],
   activeId: string,
   delta: { x: number; y: number },
-  originalBlocks: Block[],
+  originalBlocks?: Block[],
 ): Block[] {
-  const orderUnchanged =
-    blocks.length === originalBlocks.length &&
-    blocks.every((block, index) => block.id === originalBlocks[index]?.id);
-
-  if (!orderUnchanged) return blocks;
+  if (
+    originalBlocks &&
+    (blocks.length !== originalBlocks.length ||
+      !blocks.every((block, index) => block.id === originalBlocks[index]?.id))
+  ) {
+    return blocks;
+  }
 
   const idx = blocks.findIndex((b) => b.id === activeId);
   if (idx === -1) return blocks;
@@ -401,4 +403,13 @@ export function applyPairLayoutFromDrag(
         }
       : b,
   );
+}
+
+/** ドラッグジェスチャーから pair_layout を適用（並び順は変えない） */
+export function applyPairLayoutFromGesture(
+  blocks: Block[],
+  activeId: string,
+  delta: { x: number; y: number },
+): Block[] {
+  return applyPairLayoutFromDrag(blocks, activeId, delta);
 }
