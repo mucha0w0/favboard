@@ -264,6 +264,103 @@ export function isSegmentStart(blocks: Block[], index: number): boolean {
 
 const LAYOUT_DRAG_THRESHOLD = 40;
 
+export type PairLayoutAction =
+  | { type: "pair-row-with-prev" }
+  | { type: "pair-row-with-next" }
+  | { type: "stack-with-prev" }
+  | { type: "stack-with-next" };
+
+/** メニュー等から使える横並び / 縦並び操作の一覧 */
+export function getPairLayoutActions(
+  blocks: Block[],
+  blockId: string,
+): PairLayoutAction[] {
+  const idx = blocks.findIndex((b) => b.id === blockId);
+  if (idx === -1) return [];
+
+  const block = blocks[idx];
+  if (!isGridBlock(block)) return [];
+
+  const prev = idx > 0 ? blocks[idx - 1] : undefined;
+  const next = idx < blocks.length - 1 ? blocks[idx + 1] : undefined;
+  const actions: PairLayoutAction[] = [];
+
+  if (
+    prev &&
+    canPairTogether(prev, block) &&
+    isExactGridPairAt(blocks, idx - 1) &&
+    !isRowPair(prev, block)
+  ) {
+    actions.push({ type: "pair-row-with-prev" });
+  }
+  if (
+    next &&
+    canPairTogether(block, next) &&
+    isExactGridPairAt(blocks, idx) &&
+    !isRowPair(block, next)
+  ) {
+    actions.push({ type: "pair-row-with-next" });
+  }
+  if (
+    prev &&
+    canPairTogether(prev, block) &&
+    isExactGridPairAt(blocks, idx - 1) &&
+    isRowPair(prev, block)
+  ) {
+    actions.push({ type: "stack-with-prev" });
+  }
+  if (
+    next &&
+    canPairTogether(block, next) &&
+    isExactGridPairAt(blocks, idx) &&
+    isRowPair(block, next)
+  ) {
+    actions.push({ type: "stack-with-next" });
+  }
+
+  return actions;
+}
+
+function setPairLayoutOnBlock(
+  blocks: Block[],
+  firstBlockId: string,
+  layout: ProductPairLayout,
+): Block[] {
+  return blocks.map((b) =>
+    b.id === firstBlockId
+      ? {
+          ...b,
+          data: {
+            ...b.data,
+            pair_layout: layout,
+            product_pair_layout: undefined,
+          },
+        }
+      : b,
+  );
+}
+
+/** 明示的なペアレイアウト操作を適用 */
+export function applyPairLayoutAction(
+  blocks: Block[],
+  blockId: string,
+  action: PairLayoutAction,
+): Block[] {
+  const idx = blocks.findIndex((b) => b.id === blockId);
+  if (idx === -1) return blocks;
+
+  switch (action.type) {
+    case "pair-row-with-prev":
+      return setPairLayoutOnBlock(blocks, blocks[idx - 1]!.id, "row");
+    case "pair-row-with-next":
+      return setPairLayoutOnBlock(blocks, blockId, "row");
+    case "stack-with-prev":
+      return setPairLayoutOnBlock(blocks, blocks[idx - 1]!.id, "stack");
+    case "stack-with-next":
+      return setPairLayoutOnBlock(blocks, blockId, "stack");
+  }
+}
+
 export function getLayoutDragHint(
   blocks: Block[],
   activeId: string,

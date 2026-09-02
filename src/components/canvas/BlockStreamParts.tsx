@@ -1,12 +1,15 @@
 "use client";
 
+import type { PairLayoutAction } from "@/lib/block-layout";
 import { type Block, type BlockType } from "@/lib/types";
 import {
   ArrowDown,
   ArrowUp,
+  Columns2,
   GripVertical,
   MoreHorizontal,
   Pencil,
+  Rows2,
   Trash2,
 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
@@ -98,6 +101,52 @@ interface BlockShellCommonProps {
   onMoveDown: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  pairLayoutActions?: PairLayoutAction[];
+  onPairLayoutAction?: (blockId: string, action: PairLayoutAction) => void;
+}
+
+const PAIR_ACTION_LABELS: Record<PairLayoutAction["type"], string> = {
+  "pair-row-with-prev": "上と横並び",
+  "pair-row-with-next": "下と横並び",
+  "stack-with-prev": "上と縦並びに戻す",
+  "stack-with-next": "下と縦並びに戻す",
+};
+
+function PairLayoutMenuItems({
+  blockId,
+  actions,
+  onPairLayoutAction,
+  onClose,
+}: {
+  blockId: string;
+  actions: PairLayoutAction[];
+  onPairLayoutAction?: (blockId: string, action: PairLayoutAction) => void;
+  onClose: () => void;
+}) {
+  if (actions.length === 0 || !onPairLayoutAction) return null;
+
+  return (
+    <>
+      {actions.map((action) => {
+        const isRow = action.type.startsWith("pair-row");
+        const Icon = isRow ? Columns2 : Rows2;
+        return (
+          <button
+            key={action.type}
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-600 transition-colors hover:text-stone-900"
+            onClick={() => {
+              onPairLayoutAction(blockId, action);
+              onClose();
+            }}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {PAIR_ACTION_LABELS[action.type]}
+          </button>
+        );
+      })}
+    </>
+  );
 }
 
 export function StaticBlockShell({
@@ -174,6 +223,8 @@ export function SortableBlockShell({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  pairLayoutActions = [],
+  onPairLayoutAction,
 }: BlockShellCommonProps & { className?: string }) {
   const {
     attributes,
@@ -191,18 +242,25 @@ export function SortableBlockShell({
   const style = {
     transform: CSS.Translate.toString(transform),
     transition: isDragging ? undefined : transition,
-    opacity: isDragging ? 0.4 : 1,
-    zIndex: isDragging ? 0 : undefined,
     position: "relative" as const,
   };
 
   const isDivider = block.type === "divider";
 
   return (
-    <div ref={setNodeRef} style={style} className={className}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${className} ${
+        isDragging
+          ? "rounded-sm border border-dashed border-stone-200 bg-stone-50/50"
+          : ""
+      }`}
+    >
       <div
         data-block-id={block.id}
         className={`relative ${blockClass(block.type)}`}
+        style={isDragging ? { opacity: 0 } : undefined}
       >
         <div className="group/block relative">
           {!isDivider && (
@@ -247,6 +305,8 @@ export function SortableBlockShell({
             onMoveDown={onMoveDown}
             canMoveUp={canMoveUp}
             canMoveDown={canMoveDown}
+            pairLayoutActions={pairLayoutActions}
+            onPairLayoutAction={onPairLayoutAction}
           />
         </div>
       </div>
@@ -268,6 +328,8 @@ function BlockItem({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  pairLayoutActions = [],
+  onPairLayoutAction,
 }: BlockShellCommonProps & { fullWidth?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -371,6 +433,12 @@ function BlockItem({
                 <ArrowDown className="h-3.5 w-3.5" />
                 下に移動
               </button>
+              <PairLayoutMenuItems
+                blockId={block.id}
+                actions={pairLayoutActions}
+                onPairLayoutAction={onPairLayoutAction}
+                onClose={() => setMenuOpen(false)}
+              />
               {onDeleteBlock && (
                 <button
                   type="button"

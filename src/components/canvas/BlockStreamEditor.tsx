@@ -1,10 +1,11 @@
 "use client";
 
 import {
-  applyPairLayoutFromGesture,
+  applyPairLayoutAction,
   getBlockDisplayLayout,
-  getLayoutDragHint,
+  getPairLayoutActions,
   type BlockDisplayLayout,
+  type PairLayoutAction,
 } from "@/lib/block-layout";
 import { type Block, blocksEqual, getPairLayout } from "@/lib/types";
 import {
@@ -16,7 +17,6 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-  type DragMoveEvent,
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -46,15 +46,12 @@ export function BlockStreamEditor({
   onReorder,
 }: BlockStreamShellProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeWidth, setActiveWidth] = useState<number | null>(null);
-  const [layoutHint, setLayoutHint] = useState<"row" | "stack" | null>(null);
+  const [overlayWidth, setOverlayWidth] = useState<number | null>(null);
   const [orderedBlocks, setOrderedBlocks] = useState(blocks);
 
   const orderedBlocksRef = useRef(blocks);
-  const dragStartBlocksRef = useRef(blocks);
   const dragStartLayoutsRef = useRef<Map<string, BlockDisplayLayout>>(new Map());
-  const dragDeltaRef = useRef({ x: 0, y: 0 });
-  const layoutHintRef = useRef<"row" | "stack" | null>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const blocksRef = useRef(blocks);
   const onReorderRef = useRef(onReorder);
 
@@ -69,6 +66,7 @@ export function BlockStreamEditor({
   );
 
   const displayBlocks = activeId ? orderedBlocks : blocks;
+  const isDragging = activeId !== null;
 
   const sortableIdsKey = displayBlocks.map((block) => block.id).join("\0");
   const layoutKey = displayBlocks
@@ -79,8 +77,6 @@ export function BlockStreamEditor({
     () => displayBlocks.map((block) => block.id),
     [sortableIdsKey],
   );
-
-  const isDragging = activeId !== null;
 
   const blockLayouts = useMemo(
     () =>
@@ -108,6 +104,12 @@ export function BlockStreamEditor({
     return getBlockDisplayLayout(displayBlocks, index);
   }, [activeBlock, displayBlocks, isDragging, sortableIdsKey, layoutKey]);
 
+  const commitBlocks = useCallback((nextBlocks: Block[]) => {
+    if (!blocksEqual(nextBlocks, blocksRef.current)) {
+      onReorderRef.current?.(nextBlocks);
+    }
+  }, []);
+
   const moveBlock = useCallback(
     (blockId: string, direction: "up" | "down") => {
       const reorder = onReorderRef.current;
@@ -122,10 +124,18 @@ export function BlockStreamEditor({
     [activeId],
   );
 
+  const handlePairLayoutAction = useCallback(
+    (blockId: string, action: PairLayoutAction) => {
+      const next = applyPairLayoutAction(blocksRef.current, blockId, action);
+      commitBlocks(next);
+    },
+    [commitBlocks],
+  );
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const id = event.active.id as string;
     const currentBlocks = blocksRef.current;
-    dragStartBlocksRef.current = currentBlocks;
+
     dragStartLayoutsRef.current = new Map(
       currentBlocks.map((block, index) => [
         block.id,
@@ -133,32 +143,18 @@ export function BlockStreamEditor({
       ]),
     );
     orderedBlocksRef.current = currentBlocks;
-    dragDeltaRef.current = { x: 0, y: 0 };
-    layoutHintRef.current = null;
     setOrderedBlocks(currentBlocks);
     setActiveId(id);
-    setLayoutHint(null);
-    const node = document.querySelector<HTMLElement>(`[data-block-id="${id}"]`);
-    if (node) {
-      setActiveWidth(node.getBoundingClientRect().width);
-    }
-  }, []);
 
-  const handleDragMove = useCallback((event: DragMoveEvent) => {
-    dragDeltaRef.current = event.delta;
-    const nextHint = getLayoutDragHint(
-      orderedBlocksRef.current,
-      event.active.id as string,
-      event.delta,
-    );
-    layoutHintRef.current = nextHint;
-    setLayoutHint((prev) => (prev === nextHint ? prev : nextHint));
+    const listWidth = listContainerRef.current?.getBoundingClientRect().width;
+    if (listWidth) {
+      setOverlayWidth(listWidth);
+    }
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    if (layoutHintRef.current) return;
 
     setOrderedBlocks((current) => {
       const oldIndex = current.findIndex((b) => b.id === active.id);
@@ -172,45 +168,16 @@ export function BlockStreamEditor({
     });
   }, []);
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const activeBlockId = event.active.id as string;
-    const delta =
-      Math.abs(event.delta.x) + Math.abs(event.delta.y) > 0
-        ? event.delta
-        : dragDeltaRef.current;
+  const handleDragEnd = useCallback(() => {
     const finalBlocks = orderedBlocksRef.current;
-
-    const layoutBlocks = applyPairLayoutFromGesture(
-      finalBlocks,
-      activeBlockId,
-      delta,
-    );
-    const layoutChanged = !blocksEqual(layoutBlocks, finalBlocks);
-
     setActiveId(null);
-    setActiveWidth(null);
-    setLayoutHint(null);
-    layoutHintRef.current = null;
-
-    if (layoutChanged) {
-      orderedBlocksRef.current = layoutBlocks;
-      setOrderedBlocks(layoutBlocks);
-      if (!blocksEqual(layoutBlocks, blocksRef.current)) {
-        onReorderRef.current?.(layoutBlocks);
-      }
-      return;
-    }
-
-    if (!blocksEqual(finalBlocks, blocksRef.current)) {
-      onReorderRef.current?.(finalBlocks);
-    }
-  }, []);
+    setOverlayWidth(null);
+    commitBlocks(finalBlocks);
+  }, [commitBlocks]);
 
   const handleDragCancel = useCallback(() => {
     setActiveId(null);
-    setActiveWidth(null);
-    setLayoutHint(null);
-    layoutHintRef.current = null;
+    setOverlayWidth(null);
     orderedBlocksRef.current = blocksRef.current;
     setOrderedBlocks(blocksRef.current);
   }, []);
@@ -220,7 +187,6 @@ export function BlockStreamEditor({
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
@@ -234,47 +200,40 @@ export function BlockStreamEditor({
 
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
           <div
+            ref={listContainerRef}
             className={
               isDragging ? "flex flex-col gap-y-0" : "grid grid-cols-6 gap-x-3"
             }
           >
-            {blockLayouts.map(
-              ({ block, index, layout }) => (
-                <SortableBlockShell
-                  key={block.id}
-                  block={block}
-                  className={isDragging ? "w-full" : layout.colClass}
-                  inGrid={layout.inGrid}
-                  gridSize={layout.gridSize}
-                  onEditBlock={onEditBlock}
-                  onUpdateBlockData={onUpdateBlockData}
-                  onBlockBlur={onBlockBlur}
-                  autoFocus={focusBlockId === block.id}
-                  onDeleteBlock={onDeleteBlock}
-                  onMoveUp={() => moveBlock(block.id, "up")}
-                  onMoveDown={() => moveBlock(block.id, "down")}
-                  canMoveUp={index > 0}
-                  canMoveDown={index < displayBlocks.length - 1}
-                />
-              ),
-            )}
+            {blockLayouts.map(({ block, index, layout }) => (
+              <SortableBlockShell
+                key={block.id}
+                block={block}
+                className={isDragging ? "w-full" : layout.colClass}
+                inGrid={layout.inGrid}
+                gridSize={layout.gridSize}
+                pairLayoutActions={getPairLayoutActions(displayBlocks, block.id)}
+                onPairLayoutAction={handlePairLayoutAction}
+                onEditBlock={onEditBlock}
+                onUpdateBlockData={onUpdateBlockData}
+                onBlockBlur={onBlockBlur}
+                autoFocus={focusBlockId === block.id}
+                onDeleteBlock={onDeleteBlock}
+                onMoveUp={() => moveBlock(block.id, "up")}
+                onMoveDown={() => moveBlock(block.id, "down")}
+                canMoveUp={index > 0}
+                canMoveDown={index < displayBlocks.length - 1}
+              />
+            ))}
           </div>
         </SortableContext>
       </div>
 
-      {layoutHint && activeId && (
-        <div className="pointer-events-none fixed bottom-8 left-1/2 z-50 -translate-x-1/2">
-          <div className="menu-float rounded-full px-4 py-2 text-sm text-stone-600">
-            {layoutHint === "row" ? "横並びに配置" : "縦並びに配置"}
-          </div>
-        </div>
-      )}
-
       <DragOverlay dropAnimation={null}>
         {activeBlock ? (
           <div
-            className="cursor-grabbing opacity-90"
-            style={activeWidth ? { width: activeWidth } : undefined}
+            className="cursor-grabbing rounded-sm bg-white shadow-lg ring-1 ring-stone-200/80"
+            style={overlayWidth ? { width: overlayWidth } : undefined}
           >
             <BlockPreview
               block={activeBlock}
