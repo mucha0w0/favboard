@@ -164,7 +164,7 @@ export function updateChildPlacement(
   placement: BentoCellPlacement,
   options?: { expandRows?: boolean },
 ): Block {
-  const expandRows = options?.expandRows ?? true;
+  const expandRows = options?.expandRows ?? false;
   const currentRows = getBentoRows(bento);
 
   const nextRows = expandRows
@@ -417,7 +417,7 @@ export function previewChildPlacement(
   placement: BentoCellPlacement,
   options?: { expandRows?: boolean },
 ): { placement: BentoCellPlacement; bentoRows: number; blocked: boolean } {
-  const expandRows = options?.expandRows ?? true;
+  const expandRows = options?.expandRows ?? false;
   const currentRows = getBentoRows(bento);
 
   const nextRows = expandRows

@@ -72,6 +72,7 @@ function ProductMeta({
   price,
   titleClass = "text-sm",
   vertical = false,
+  lineClamp,
 }: {
   brandText: string;
   titleText: string;
@@ -81,18 +82,26 @@ function ProductMeta({
   price?: string;
   titleClass?: string;
   vertical?: boolean;
+  lineClamp?: number;
 }) {
+  const clampClass =
+    lineClamp === 2
+      ? "line-clamp-2"
+      : lineClamp === 3
+        ? "line-clamp-3"
+        : undefined;
+
   return (
-    <div className={vertical ? "space-y-1.5" : "space-y-0.5"}>
+    <div className={vertical ? "space-y-1" : "min-w-0 space-y-0.5"}>
       <p
-        className={`text-[10px] font-medium uppercase tracking-[0.12em] ${
+        className={`truncate text-[10px] font-medium uppercase tracking-[0.12em] ${
           brand?.trim() ? "text-stone-400" : "text-stone-300"
         }`}
       >
         {brandText}
       </p>
       <h3
-        className={`font-medium leading-snug tracking-tight ${titleClass} ${
+        className={`font-medium tracking-tight ${titleClass} ${clampClass ?? ""} ${
           title?.trim() ? "text-stone-900" : "text-stone-300"
         }`}
       >
@@ -177,6 +186,9 @@ function ProductHorizontal({
   titleClass,
   comment,
   product_url,
+  gapClass = "gap-4 sm:gap-5",
+  showExtras = true,
+  lineClamp,
 }: {
   showImage: boolean;
   imageUrl?: string;
@@ -191,9 +203,12 @@ function ProductHorizontal({
   titleClass?: string;
   comment?: string;
   product_url?: string;
+  gapClass?: string;
+  showExtras?: boolean;
+  lineClamp?: number;
 }) {
   return (
-    <div className="group flex gap-4 sm:gap-5">
+    <div className={`group flex h-full min-h-0 ${gapClass}`}>
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
@@ -201,7 +216,7 @@ function ProductHorizontal({
         onError={onImageError}
         className={imageClassName}
       />
-      <div className="min-w-0 flex-1 pt-0.5">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center">
         <ProductMeta
           brandText={brandText}
           titleText={titleText}
@@ -210,8 +225,11 @@ function ProductHorizontal({
           title={title}
           price={price}
           titleClass={titleClass}
+          lineClamp={lineClamp}
         />
-        <ProductExtras comment={comment} product_url={product_url} />
+        {showExtras && (
+          <ProductExtras comment={comment} product_url={product_url} />
+        )}
       </div>
     </div>
   );
@@ -231,6 +249,8 @@ function ProductVertical({
   titleClass,
   comment,
   product_url,
+  showExtras = true,
+  lineClamp,
 }: {
   showImage: boolean;
   imageUrl?: string;
@@ -245,9 +265,11 @@ function ProductVertical({
   titleClass?: string;
   comment?: string;
   product_url?: string;
+  showExtras?: boolean;
+  lineClamp?: number;
 }) {
   return (
-    <div className="group space-y-4">
+    <div className="group flex h-full min-h-0 flex-col">
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
@@ -255,7 +277,7 @@ function ProductVertical({
         onError={onImageError}
         className={imageClassName}
       />
-      <div>
+      <div className="mt-1.5 shrink-0">
         <ProductMeta
           brandText={brandText}
           titleText={titleText}
@@ -265,8 +287,11 @@ function ProductVertical({
           price={price}
           titleClass={titleClass}
           vertical
+          lineClamp={lineClamp}
         />
-        <ProductExtras comment={comment} product_url={product_url} />
+        {showExtras && (
+          <ProductExtras comment={comment} product_url={product_url} />
+        )}
       </div>
     </div>
   );
@@ -274,25 +299,42 @@ function ProductVertical({
 
 const GRID_SIZE_STYLES: Record<
   ProductSize,
-  { imageClass: string; titleClass: string; vertical?: boolean }
+  {
+    imageClass: string;
+    titleClass: string;
+    vertical?: boolean;
+    gapClass?: string;
+    showExtras?: boolean;
+    lineClamp?: number;
+  }
 > = {
   compact: {
-    imageClass: "h-12 w-12 sm:h-14 sm:w-14",
-    titleClass: "text-xs leading-tight",
+    imageClass: "h-full max-h-full aspect-square w-auto max-w-[38%]",
+    titleClass: "text-[10px] leading-tight",
+    gapClass: "gap-1.5",
+    showExtras: false,
+    lineClamp: 2,
   },
   standard: {
-    imageClass: "h-16 w-16 sm:h-20 sm:w-20",
-    titleClass: "text-sm leading-snug",
+    imageClass: "h-full max-h-full aspect-square w-auto max-w-[42%]",
+    titleClass: "text-xs leading-snug",
+    gapClass: "gap-2",
+    showExtras: false,
+    lineClamp: 3,
   },
   large: {
-    imageClass: "aspect-[4/5] w-full min-h-[5rem]",
-    titleClass: "text-sm leading-snug",
+    imageClass: "min-h-0 w-full flex-1",
+    titleClass: "text-xs leading-snug",
     vertical: true,
+    showExtras: true,
+    lineClamp: 2,
   },
   xl: {
-    imageClass: "aspect-[3/4] w-full min-h-[7rem]",
-    titleClass: "text-base leading-snug",
+    imageClass: "min-h-0 w-full flex-1",
+    titleClass: "text-sm leading-snug",
     vertical: true,
+    showExtras: true,
+    lineClamp: 3,
   },
 };
 
@@ -336,9 +378,14 @@ function ProductCardContent({
     layout === "grid" && cellSpan
       ? getProductSizeFromPlacement(cellSpan.colSpan, cellSpan.rowSpan)
       : size;
-  const styles =
-    layout === "grid" ? GRID_SIZE_STYLES : PRODUCT_SIZE_STYLES;
-  const { imageClass, titleClass, vertical } = styles[effectiveSize];
+  const gridStyles = GRID_SIZE_STYLES[effectiveSize];
+  const inlineStyles = PRODUCT_SIZE_STYLES[effectiveSize];
+  const imageClass = layout === "grid" ? gridStyles.imageClass : inlineStyles.imageClass;
+  const titleClass = layout === "grid" ? gridStyles.titleClass : inlineStyles.titleClass;
+  const vertical = layout === "grid" ? gridStyles.vertical : inlineStyles.vertical;
+  const gapClass = layout === "grid" ? gridStyles.gapClass : undefined;
+  const showExtras = layout === "grid" ? gridStyles.showExtras : true;
+  const lineClamp = layout === "grid" ? gridStyles.lineClamp : undefined;
   const useVertical =
     vertical &&
     (layout === "inline" ||
@@ -348,21 +395,22 @@ function ProductCardContent({
           effectiveSize === "xl" ||
           cellSpan.rowSpan > cellSpan.colSpan)));
 
+  const layoutProps = {
+    ...shared,
+    imageClassName: imageClass,
+    titleClass,
+    showExtras,
+    lineClamp,
+  };
+
   if (useVertical) {
-    return (
-      <ProductVertical
-        {...shared}
-        imageClassName={imageClass}
-        titleClass={titleClass}
-      />
-    );
+    return <ProductVertical {...layoutProps} />;
   }
 
   return (
     <ProductHorizontal
-      {...shared}
-      imageClassName={imageClass}
-      titleClass={titleClass}
+      {...layoutProps}
+      gapClass={layout === "grid" ? gapClass : undefined}
     />
   );
 }
@@ -376,12 +424,14 @@ export function ProductBlock({
   const size = getProductSize(block);
 
   return (
-    <ProductCardContent
-      block={block}
-      showPlaceholders={showPlaceholders}
-      size={size}
-      layout={layout}
-      cellSpan={cellSpan}
-    />
+    <div className={layout === "grid" ? "block-product h-full min-h-0" : "block-product"}>
+      <ProductCardContent
+        block={block}
+        showPlaceholders={showPlaceholders}
+        size={size}
+        layout={layout}
+        cellSpan={cellSpan}
+      />
+    </div>
   );
 }

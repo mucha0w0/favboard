@@ -73,6 +73,7 @@ function computePlacementFromDrag(
   origin: DragOrigin,
   dx: number,
   dy: number,
+  rowCount: number,
 ): DragPreview | null {
   const { cellW, cellH, placement: startP } = origin;
   const deltaCol = Math.round(dx / cellW);
@@ -119,7 +120,10 @@ function computePlacementFromDrag(
       colSpan = Math.max(1, Math.min(BENTO_COLS - col, colSpan));
     }
     if (affectsBottom) {
-      rowSpan = Math.max(1, startP.rowSpan + deltaRow);
+      rowSpan = Math.max(
+        1,
+        Math.min(rowCount - startP.row, startP.rowSpan + deltaRow),
+      );
     }
     if (affectsTop) {
       row = Math.max(
@@ -127,7 +131,7 @@ function computePlacementFromDrag(
         Math.min(startP.row + startP.rowSpan - 1, startP.row + deltaRow),
       );
       rowSpan = startP.row + startP.rowSpan - row;
-      rowSpan = Math.max(1, rowSpan);
+      rowSpan = Math.max(1, Math.min(rowCount - row, rowSpan));
     }
 
     return {
@@ -226,16 +230,23 @@ export function BentoBlock({
       origin.cellH = metrics.cellH;
     }
 
-    const preview = computePlacementFromDrag(mode, origin, dx, dy);
+    const currentBlock = blockRef.current;
+    const rowCount = getBentoRows(currentBlock);
+
+    const preview = computePlacementFromDrag(
+      mode,
+      origin,
+      dx,
+      dy,
+      rowCount,
+    );
     if (!preview?.placement || !preview.childId) return;
 
-    const currentBlock = blockRef.current;
-    const expandRows = mode.kind === "move";
     const resolved = previewChildPlacement(
       currentBlock,
       preview.childId,
       preview.placement,
-      { expandRows },
+      { expandRows: false },
     );
 
     applyDragPreview({
@@ -266,7 +277,7 @@ export function BentoBlock({
           currentBlock,
           preview.childId,
           preview.placement,
-          { expandRows: mode.kind === "move" },
+          { expandRows: false },
         );
       }
 
@@ -482,7 +493,19 @@ export function BentoBlock({
                         )
                       }
                     />
-                    {/* 上辺・上隅のみ（下方向リサイズ不可） */}
+                    <div
+                      className="absolute inset-x-2 bottom-0 z-20 flex h-3 cursor-s-resize touch-none items-end justify-center"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "bottom" },
+                          placement,
+                        )
+                      }
+                    >
+                      <span className="mb-0.5 h-1 w-8 rounded-full bg-stone-300/80" />
+                    </div>
+                    {/* 四隅リサイズ */}
                     <div
                       className="absolute left-0 top-0 z-20 h-4 w-4 cursor-nw-resize touch-none"
                       onPointerDown={(e) =>
@@ -499,6 +522,26 @@ export function BentoBlock({
                         startDrag(
                           e,
                           { kind: "resize", childId: child.id, edge: "ne" },
+                          placement,
+                        )
+                      }
+                    />
+                    <div
+                      className="absolute bottom-0 left-0 z-20 h-4 w-4 cursor-sw-resize touch-none"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "sw" },
+                          placement,
+                        )
+                      }
+                    />
+                    <div
+                      className="absolute bottom-0 right-0 z-20 h-4 w-4 cursor-se-resize touch-none"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "se" },
                           placement,
                         )
                       }
@@ -585,7 +628,7 @@ export function BentoBlock({
           </button>
           <span className="text-xs text-stone-400">
             {rowCount} 行 · グリッド {BENTO_COLS} 列 ·
-            下のグリップで Bento の縦幅を変更
+            上下の端をドラッグしてグリッド数で縦幅を変更
           </span>
         </div>
       )}
