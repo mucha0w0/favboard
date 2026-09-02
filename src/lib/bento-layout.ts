@@ -474,6 +474,7 @@ export function measureBentoCellSize(el: HTMLElement): number {
 export function measureBentoGridMetrics(el: HTMLElement): {
   cellSize: number;
   gap: number;
+  step: number;
 } {
   const rect = el.getBoundingClientRect();
   const style = getComputedStyle(el);
@@ -483,16 +484,32 @@ export function measureBentoGridMetrics(el: HTMLElement): {
     parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
   const contentW = rect.width - padX;
   const cellSize = (contentW - gap * (BENTO_COLS - 1)) / BENTO_COLS;
-  return { cellSize, gap };
+  return { cellSize, gap, step: cellSize + gap };
+}
+
+/** 描画済みセルから実測のステップ幅を取得（計算値より優先） */
+export function measureBentoGridStepFromDOM(
+  gridEl: HTMLElement,
+): { cellSize: number; gap: number; step: number } {
+  const fallback = measureBentoGridMetrics(gridEl);
+  const cells = gridEl.querySelectorAll(":scope > *");
+  if (cells.length < 2) return fallback;
+
+  const first = cells[0].getBoundingClientRect();
+  const second = cells[1].getBoundingClientRect();
+  const step = second.left - first.left;
+  const cellSize = first.width;
+  const gap = step - cellSize;
+
+  if (step <= 0 || cellSize <= 0) return fallback;
+  return { cellSize, gap, step };
 }
 
 /** ピクセル移動量をグリッド単位に換算（セル + gap を 1 ステップとする） */
 export function deltaGridUnits(
   deltaPx: number,
-  cellSize: number,
-  gap: number,
+  step: number,
 ): number {
-  const step = cellSize + gap;
   if (step <= 0) return 0;
   return Math.round(deltaPx / step);
 }
