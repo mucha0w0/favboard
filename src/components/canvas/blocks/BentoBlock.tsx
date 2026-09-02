@@ -244,6 +244,10 @@ export function BentoBlock({
     const prev = dragPreviewRef.current;
 
     if (resolved.blocked) {
+      // 重なり時は最後に有効だったプレビュー位置を維持
+      if (prev?.childId === preview.childId && prev.placement) {
+        return;
+      }
       if (prev?.childId === preview.childId && prev.blocked && !prev.placement) {
         return;
       }
@@ -371,11 +375,7 @@ export function BentoBlock({
   );
 
   function getDisplayPlacement(childId: string): BentoCellPlacement {
-    if (
-      dragPreview?.childId === childId &&
-      dragPreview.placement &&
-      !dragPreview.blocked
-    ) {
+    if (dragPreview?.childId === childId && dragPreview.placement) {
       return dragPreview.placement;
     }
     return getChildPlacement(block, childId);
@@ -426,9 +426,7 @@ export function BentoBlock({
             const isSelected = selectedId === child.id;
             const style = placementStyle(placement);
             const isDragging =
-              dragPreview?.childId === child.id &&
-              dragPreview.placement &&
-              !dragPreview.blocked;
+              dragPreview?.childId === child.id && dragPreview.placement;
 
             return (
               <div
