@@ -5,6 +5,7 @@ import {
   getGridBlockKind,
   getGridMaxColumnsForKind,
   getPairLayout,
+  getProductSize,
   isGridBlock,
 } from "@/lib/types";
 
@@ -26,20 +27,60 @@ export function isRowPair(first: Block, second: Block | undefined): boolean {
   return getPairLayout(first) === "row";
 }
 
-/** 同種グリッドブロックがちょうど2件だけ連続しているか */
+function sameKindTriple(
+  first: Block,
+  middle: Block,
+  last: Block,
+): boolean {
+  const a = getGridBlockKind(first);
+  const b = getGridBlockKind(middle);
+  const c = getGridBlockKind(last);
+  return a !== null && a === b && b === c;
+}
+
+/** ちょうど2件のペアとして横/縦を切り替えられる位置か */
 export function isExactGridPairAt(blocks: Block[], firstIndex: number): boolean {
   const first = blocks[firstIndex];
   const second = blocks[firstIndex + 1];
   if (!second || !canPairTogether(first, second)) return false;
 
-  const kind = getGridBlockKind(first)!;
   const before = firstIndex > 0 ? blocks[firstIndex - 1] : undefined;
   const after =
     firstIndex + 2 < blocks.length ? blocks[firstIndex + 2] : undefined;
-  const sameBefore = before && getGridBlockKind(before) === kind;
-  const sameAfter = after && getGridBlockKind(after) === kind;
 
-  return !sameBefore && !sameAfter;
+  if (
+    before &&
+    canPairTogether(before, first) &&
+    sameKindTriple(before, first, second)
+  ) {
+    return false;
+  }
+
+  if (
+    after &&
+    canPairTogether(second, after) &&
+    sameKindTriple(first, second, after)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function getPairSegmentSize(first: Block, second: Block): GridSegmentSize {
+  const a = getGridBlockKind(first)!;
+  const b = getGridBlockKind(second)!;
+  if (a === b) return a;
+  return a === "text" ? b : a;
+}
+
+function productGridSizeForBlock(
+  block: Block,
+): "compact" | "standard" | undefined {
+  if (block.type !== "product") return undefined;
+  const size = getProductSize(block);
+  if (size === "compact" || size === "standard") return size;
+  return undefined;
 }
 
 function segmentGridRun(
@@ -108,22 +149,43 @@ export function segmentBlocks(blocks: Block[]): BlockSegment[] {
   let i = 0;
 
   while (i < blocks.length) {
-    const kind = getGridBlockKind(blocks[i]);
+    const block = blocks[i];
 
-    if (!kind) {
-      segments.push({ type: "single", block: blocks[i], index: i });
+    if (!isGridBlock(block)) {
+      segments.push({ type: "single", block, index: i });
       i++;
       continue;
     }
 
-    const runStart = i;
-    const run: Block[] = [];
-    while (i < blocks.length && getGridBlockKind(blocks[i]) === kind) {
-      run.push(blocks[i]);
-      i++;
+    const next = blocks[i + 1];
+
+    if (next && isRowPair(block, next)) {
+      segments.push({
+        type: "grid-row",
+        blocks: [block, next],
+        size: getPairSegmentSize(block, next),
+        startIndex: i,
+        mode: "pair",
+      });
+      i += 2;
+      continue;
     }
 
-    segments.push(...segmentGridRun(run, runStart, kind));
+    const kind = getGridBlockKind(block)!;
+
+    if (next && getGridBlockKind(next) === kind) {
+      const runStart = i;
+      const run: Block[] = [];
+      while (i < blocks.length && getGridBlockKind(blocks[i]) === kind) {
+        run.push(blocks[i]);
+        i++;
+      }
+      segments.push(...segmentGridRun(run, runStart, kind));
+      continue;
+    }
+
+    segments.push({ type: "single", block, index: i });
+    i++;
   }
 
   return segments;
@@ -159,10 +221,8 @@ export function getBlockDisplayLayout(
       if (rowIndex < 0 || rowIndex >= segment.blocks.length) continue;
 
       const count = segment.blocks.length;
-      const gridSize =
-        segment.size === "compact" || segment.size === "standard"
-          ? segment.size
-          : undefined;
+      const block = blocks[index];
+      const gridSize = productGridSizeForBlock(block);
 
       if (count === 3 && segment.size === "compact") {
         return {

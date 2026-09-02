@@ -24,7 +24,7 @@ export interface BlockData {
   product_size?: ProductSize | "banner";
   /** @deprecated use pair_layout */
   product_pair_layout?: "row" | "stack";
-  /** 次の同種グリッドブロック（S/M商品・テキスト）との並び方（2件ペア時） */
+  /** 次のグリッドブロック（S/M商品・テキスト、混在可）との並び方（2件ペア時） */
   pair_layout?: "row" | "stack";
 }
 
@@ -102,7 +102,13 @@ export function isGridBlock(block: Block): boolean {
 export function canPairTogether(first: Block, second: Block): boolean {
   const a = getGridBlockKind(first);
   const b = getGridBlockKind(second);
-  return a !== null && a === b;
+  if (a === null || b === null) return false;
+  if (a === b) return true;
+  // S/M 商品 + テキストの混在ペア（2列）
+  const hasText = a === "text" || b === "text";
+  if (!hasText) return false;
+  const productKind = a === "text" ? b : a;
+  return productKind === "compact" || productKind === "standard";
 }
 
 export function getGridMaxColumnsForKind(kind: GridSegmentSize): number {
