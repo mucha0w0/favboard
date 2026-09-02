@@ -8,7 +8,6 @@ import { useState } from "react";
 interface ProductBlockProps {
   block: Block;
   showPlaceholders?: boolean;
-  /** グリッドセル内では縦型カードで表示 */
   layout?: "inline" | "grid";
   gridSize?: "compact" | "standard";
 }
@@ -140,24 +139,24 @@ const PRODUCT_SIZE_STYLES: Record<
   { imageClass: string; titleClass: string }
 > = {
   compact: {
-    imageClass: "aspect-square w-full max-h-24",
-    titleClass: "text-[11px] leading-tight",
+    imageClass: "h-16 w-16",
+    titleClass: "text-xs leading-tight",
   },
   standard: {
-    imageClass: "aspect-[4/3] w-full min-h-36",
-    titleClass: "text-base leading-snug",
+    imageClass: "h-24 w-24",
+    titleClass: "text-sm leading-snug",
   },
   large: {
-    imageClass: "aspect-[4/3] w-full min-h-48",
+    imageClass: "h-32 w-32",
     titleClass: "text-base leading-snug",
   },
   xl: {
-    imageClass: "aspect-[4/3] w-full min-h-56",
+    imageClass: "h-40 w-40",
     titleClass: "text-base leading-snug",
   },
 };
 
-function ProductVertical({
+function ProductHorizontal({
   showImage,
   imageUrl,
   title,
@@ -187,7 +186,7 @@ function ProductVertical({
   product_url?: string;
 }) {
   return (
-    <>
+    <div className="flex gap-4">
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
@@ -195,7 +194,7 @@ function ProductVertical({
         onError={onImageError}
         className={imageClassName}
       />
-      <div className="space-y-1 pt-2">
+      <div className="min-w-0 flex-1">
         <ProductMeta
           brandText={brandText}
           titleText={titleText}
@@ -207,7 +206,7 @@ function ProductVertical({
         />
         <ProductExtras comment={comment} product_url={product_url} />
       </div>
-    </>
+    </div>
   );
 }
 
@@ -252,7 +251,7 @@ function ProductCardContent({
   const { imageClass, titleClass } = PRODUCT_SIZE_STYLES[effectiveSize];
 
   return (
-    <ProductVertical
+    <ProductHorizontal
       {...shared}
       imageClassName={imageClass}
       titleClass={titleClass}
