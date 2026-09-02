@@ -28,9 +28,19 @@ interface BentoBlockProps {
   onPersistBento?: (bentoId: string) => void;
 }
 
+type ResizeEdge =
+  | "right"
+  | "bottom"
+  | "left"
+  | "top"
+  | "se"
+  | "sw"
+  | "ne"
+  | "nw";
+
 type DragMode =
   | { kind: "move"; childId: string; startCol: number; startRow: number }
-  | { kind: "resize"; childId: string; edge: "right" | "bottom" | "corner" }
+  | { kind: "resize"; childId: string; edge: ResizeEdge }
   | { kind: "bento-height" };
 
 export function BentoBlock({
@@ -93,27 +103,65 @@ export function BentoBlock({
       }
 
       if (dragMode.kind === "resize") {
-        const p = dragOrigin.current.placement;
+        const startP = dragOrigin.current.placement;
         const deltaCol = Math.round(dx / cellW);
         const deltaRow = Math.round(dy / cellH);
-        let colSpan = p.colSpan;
-        let rowSpan = p.rowSpan;
+        const edge = dragMode.edge;
 
-        if (dragMode.edge === "right" || dragMode.edge === "corner") {
+        let col = startP.col;
+        let row = startP.row;
+        let colSpan = startP.colSpan;
+        let rowSpan = startP.rowSpan;
+
+        const affectsRight =
+          edge === "right" || edge === "se" || edge === "ne";
+        const affectsLeft =
+          edge === "left" || edge === "sw" || edge === "nw";
+        const affectsBottom =
+          edge === "bottom" || edge === "se" || edge === "sw";
+        const affectsTop = edge === "top" || edge === "ne" || edge === "nw";
+
+        if (affectsRight) {
           colSpan = Math.max(
             1,
-            Math.min(BENTO_COLS - p.col, p.colSpan + deltaCol),
+            Math.min(BENTO_COLS - startP.col, startP.colSpan + deltaCol),
           );
         }
-        if (dragMode.edge === "bottom" || dragMode.edge === "corner") {
+        if (affectsLeft) {
+          col = Math.max(
+            0,
+            Math.min(
+              startP.col + startP.colSpan - 1,
+              startP.col + deltaCol,
+            ),
+          );
+          colSpan = startP.col + startP.colSpan - col;
+          colSpan = Math.max(
+            1,
+            Math.min(BENTO_COLS - col, colSpan),
+          );
+        }
+        if (affectsBottom) {
           rowSpan = Math.max(
             1,
-            Math.min(rowCount - p.row, p.rowSpan + deltaRow),
+            Math.min(rowCount - startP.row, startP.rowSpan + deltaRow),
           );
+        }
+        if (affectsTop) {
+          row = Math.max(
+            0,
+            Math.min(
+              startP.row + startP.rowSpan - 1,
+              startP.row + deltaRow,
+            ),
+          );
+          rowSpan = startP.row + startP.rowSpan - row;
+          rowSpan = Math.max(1, Math.min(rowCount - row, rowSpan));
         }
 
         const next = updateChildPlacement(block, dragMode.childId, {
-          ...p,
+          col,
+          row,
           colSpan,
           rowSpan,
         });
@@ -230,7 +278,7 @@ export function BentoBlock({
                   <>
                     <button
                       type="button"
-                      className="absolute left-1 top-1 z-20 flex h-6 w-6 cursor-grab items-center justify-center rounded bg-white/90 text-stone-400 shadow-sm active:cursor-grabbing"
+                      className="absolute left-1 top-1 z-30 flex h-6 w-6 cursor-grab items-center justify-center rounded bg-white/90 text-stone-400 shadow-sm active:cursor-grabbing"
                       aria-label="移動"
                       onPointerDown={(e) =>
                         startDrag(
@@ -249,50 +297,90 @@ export function BentoBlock({
                     </button>
                     <button
                       type="button"
-                      className="absolute right-1 top-1 z-20 flex h-6 w-6 items-center justify-center rounded bg-white/90 text-red-500 shadow-sm"
+                      className="absolute right-1 top-1 z-30 flex h-6 w-6 items-center justify-center rounded bg-white/90 text-red-500 shadow-sm"
                       aria-label="削除"
                       onClick={() => handleDeleteChild(child.id)}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
+                    {/* 四辺リサイズ */}
                     <div
-                      className="absolute bottom-0 right-0 z-20 h-4 w-4 cursor-se-resize"
+                      className="absolute inset-y-2 left-0 z-20 w-2 cursor-w-resize"
                       onPointerDown={(e) =>
                         startDrag(
                           e,
-                          {
-                            kind: "resize",
-                            childId: child.id,
-                            edge: "corner",
-                          },
+                          { kind: "resize", childId: child.id, edge: "left" },
                           placement,
                         )
                       }
                     />
                     <div
-                      className="absolute right-0 top-1/2 z-20 h-8 w-2 -translate-y-1/2 cursor-e-resize"
+                      className="absolute inset-x-2 top-0 z-20 h-2 cursor-n-resize"
                       onPointerDown={(e) =>
                         startDrag(
                           e,
-                          {
-                            kind: "resize",
-                            childId: child.id,
-                            edge: "right",
-                          },
+                          { kind: "resize", childId: child.id, edge: "top" },
                           placement,
                         )
                       }
                     />
                     <div
-                      className="absolute bottom-0 left-1/2 z-20 h-2 w-8 -translate-x-1/2 cursor-s-resize"
+                      className="absolute inset-y-2 right-0 z-20 w-2 cursor-e-resize"
                       onPointerDown={(e) =>
                         startDrag(
                           e,
-                          {
-                            kind: "resize",
-                            childId: child.id,
-                            edge: "bottom",
-                          },
+                          { kind: "resize", childId: child.id, edge: "right" },
+                          placement,
+                        )
+                      }
+                    />
+                    <div
+                      className="absolute inset-x-2 bottom-0 z-20 h-2 cursor-s-resize"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "bottom" },
+                          placement,
+                        )
+                      }
+                    />
+                    {/* 四隅リサイズ */}
+                    <div
+                      className="absolute left-0 top-0 z-20 h-3 w-3 cursor-nw-resize"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "nw" },
+                          placement,
+                        )
+                      }
+                    />
+                    <div
+                      className="absolute right-0 top-0 z-20 h-3 w-3 cursor-ne-resize"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "ne" },
+                          placement,
+                        )
+                      }
+                    />
+                    <div
+                      className="absolute bottom-0 left-0 z-20 h-3 w-3 cursor-sw-resize"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "sw" },
+                          placement,
+                        )
+                      }
+                    />
+                    <div
+                      className="absolute bottom-0 right-0 z-20 h-3 w-3 cursor-se-resize"
+                      onPointerDown={(e) =>
+                        startDrag(
+                          e,
+                          { kind: "resize", childId: child.id, edge: "se" },
                           placement,
                         )
                       }
@@ -311,7 +399,10 @@ export function BentoBlock({
                         block={child}
                         editable={editable}
                         productLayout="grid"
-                        gridSize="compact"
+                        cellSpan={{
+                          colSpan: placement.colSpan,
+                          rowSpan: placement.rowSpan,
+                        }}
                       />
                     </button>
                   ) : (
@@ -353,7 +444,8 @@ export function BentoBlock({
             テキスト
           </button>
           <span className="text-xs text-stone-400">
-            {rowCount} 行 · グリッド {BENTO_COLS} 列
+            {rowCount} 行 · グリッド {BENTO_COLS} 列 ·
+            選択中のアイテムは端をドラッグしてサイズ変更
           </span>
         </div>
       )}

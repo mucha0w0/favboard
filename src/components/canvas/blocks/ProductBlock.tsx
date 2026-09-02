@@ -1,5 +1,6 @@
 "use client";
 
+import { getProductSizeFromPlacement } from "@/lib/bento-layout";
 import { getProductSize, type Block, type ProductSize } from "@/lib/types";
 import { ArrowUpRight, Package } from "lucide-react";
 import Image from "next/image";
@@ -9,7 +10,7 @@ interface ProductBlockProps {
   block: Block;
   showPlaceholders?: boolean;
   layout?: "inline" | "grid";
-  gridSize?: "compact" | "standard";
+  cellSpan?: { colSpan: number; rowSpan: number };
 }
 
 function normalizeImageUrl(url: string): string {
@@ -271,18 +272,42 @@ function ProductVertical({
   );
 }
 
+const GRID_SIZE_STYLES: Record<
+  ProductSize,
+  { imageClass: string; titleClass: string; vertical?: boolean }
+> = {
+  compact: {
+    imageClass: "h-12 w-12 sm:h-14 sm:w-14",
+    titleClass: "text-xs leading-tight",
+  },
+  standard: {
+    imageClass: "h-16 w-16 sm:h-20 sm:w-20",
+    titleClass: "text-sm leading-snug",
+  },
+  large: {
+    imageClass: "aspect-[4/5] w-full min-h-[5rem]",
+    titleClass: "text-sm leading-snug",
+    vertical: true,
+  },
+  xl: {
+    imageClass: "aspect-[3/4] w-full min-h-[7rem]",
+    titleClass: "text-base leading-snug",
+    vertical: true,
+  },
+};
+
 function ProductCardContent({
   block,
   showPlaceholders,
   size,
   layout,
-  gridSize,
+  cellSpan,
 }: {
   block: Block;
   showPlaceholders: boolean;
   size: ProductSize;
   layout: "inline" | "grid";
-  gridSize?: "compact" | "standard";
+  cellSpan?: { colSpan: number; rowSpan: number };
 }) {
   const { title, brand, price, image_url, product_url, comment } = block.data;
   const [imageError, setImageError] = useState(false);
@@ -307,11 +332,23 @@ function ProductCardContent({
     product_url,
   };
 
-  const effectiveSize = layout === "grid" ? (gridSize ?? size) : size;
-  const { imageClass, titleClass, vertical } =
-    PRODUCT_SIZE_STYLES[effectiveSize];
+  const effectiveSize =
+    layout === "grid" && cellSpan
+      ? getProductSizeFromPlacement(cellSpan.colSpan, cellSpan.rowSpan)
+      : size;
+  const styles =
+    layout === "grid" ? GRID_SIZE_STYLES : PRODUCT_SIZE_STYLES;
+  const { imageClass, titleClass, vertical } = styles[effectiveSize];
+  const useVertical =
+    vertical &&
+    (layout === "inline" ||
+      (layout === "grid" &&
+        cellSpan &&
+        (effectiveSize === "large" ||
+          effectiveSize === "xl" ||
+          cellSpan.rowSpan > cellSpan.colSpan)));
 
-  if (vertical && layout === "inline") {
+  if (useVertical) {
     return (
       <ProductVertical
         {...shared}
@@ -334,7 +371,7 @@ export function ProductBlock({
   block,
   showPlaceholders = false,
   layout = "inline",
-  gridSize,
+  cellSpan,
 }: ProductBlockProps) {
   const size = getProductSize(block);
 
@@ -344,7 +381,7 @@ export function ProductBlock({
       showPlaceholders={showPlaceholders}
       size={size}
       layout={layout}
-      gridSize={gridSize}
+      cellSpan={cellSpan}
     />
   );
 }

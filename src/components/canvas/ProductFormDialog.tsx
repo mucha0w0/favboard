@@ -5,14 +5,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  PRODUCT_SIZES,
-  getProductSize,
-  type Block,
-  type BlockData,
-  type OgpData,
-  type ProductSize,
-} from "@/lib/types";
+import { type Block, type BlockData, type OgpData } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -76,9 +69,6 @@ function ProductFormFields({
   const [price, setPrice] = useState(block.data.price || "");
   const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
   const [comment, setComment] = useState(block.data.comment || "");
-  const [productSize, setProductSize] = useState<ProductSize>(
-    getProductSize(block),
-  );
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState("");
 
@@ -121,7 +111,6 @@ function ProductFormFields({
       image_url: imageUrl.trim(),
       product_url: productUrl.trim(),
       comment: comment.trim(),
-      product_size: productSize,
     });
     onOpenChange(false);
   }
@@ -129,23 +118,6 @@ function ProductFormFields({
   return (
     <>
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>カードサイズ</Label>
-          <div className="flex flex-wrap gap-2">
-            {PRODUCT_SIZES.map(({ value, label }) => (
-              <Button
-                key={value}
-                type="button"
-                size="sm"
-                variant={productSize === value ? "default" : "ghost"}
-                onClick={() => setProductSize(value)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="product-url">商品URL</Label>
           <div className="flex gap-2">

@@ -9,7 +9,7 @@ interface BlockRendererProps {
   block: Block;
   editable?: boolean;
   productLayout?: "inline" | "grid";
-  gridSize?: "compact" | "standard";
+  cellSpan?: { colSpan: number; rowSpan: number };
   focusBlockId?: string | null;
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -24,7 +24,7 @@ export function BlockRenderer({
   block,
   editable,
   productLayout = "inline",
-  gridSize,
+  cellSpan,
   focusBlockId,
   onUpdateBlockData,
   onBlockBlur,
@@ -53,7 +53,7 @@ export function BlockRenderer({
           block={block}
           showPlaceholders={editable}
           layout={productLayout}
-          gridSize={gridSize}
+          cellSpan={cellSpan}
         />
       );
     case "heading":

@@ -3,6 +3,7 @@ import {
   type BentoChildType,
   type Block,
   type BlockData,
+  type ProductSize,
   isBentoChildType,
 } from "@/lib/types";
 
@@ -271,7 +272,7 @@ export function createBentoChild(type: BentoChildType): Block {
     data:
       type === "text"
         ? { body: "" }
-        : { product_size: "compact", title: "", brand: "", price: "" },
+        : { title: "", brand: "", price: "" },
   };
 }
 
@@ -323,6 +324,18 @@ function normalizeBentoBlock(block: Block): Block {
     ...block,
     data: { ...block.data, bento_rows: rows, child_placements: placements },
   };
+}
+
+/** グリッド上の占有セル数から商品カードの表示サイズを推定 */
+export function getProductSizeFromPlacement(
+  colSpan: number,
+  rowSpan: number,
+): ProductSize {
+  const area = colSpan * rowSpan;
+  if (area <= 4) return "compact";
+  if (area <= 6) return "standard";
+  if (area <= 12) return "large";
+  return "xl";
 }
 
 export function placementStyle(placement: BentoCellPlacement): {
