@@ -53,6 +53,14 @@ body {
   margin: 0.5rem 0;
 }
 
+.document-body .product-grid-row {
+  margin: 0.5rem 0;
+}
+
+.document-body .product-grid-row .block-product {
+  margin: 0;
+}
+
 .document-body .block-divider {
   margin: 1rem 0;
 }

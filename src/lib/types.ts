@@ -66,3 +66,14 @@ export function getProductSize(block: Block): ProductSize {
   if (raw === "banner") return "xl";
   return raw;
 }
+
+/** S / M — 横並びグリッドに配置できるサイズ */
+export function isGridProduct(block: Block): boolean {
+  if (block.type !== "product") return false;
+  const size = getProductSize(block);
+  return size === "compact" || size === "standard";
+}
+
+export function getGridMaxColumns(size: "compact" | "standard"): number {
+  return size === "compact" ? 3 : 2;
+}

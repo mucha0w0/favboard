@@ -1,6 +1,12 @@
 "use client";
 
-import { type Block, type BlockType } from "@/lib/types";
+import {
+  type Block,
+  type BlockType,
+  getGridMaxColumns,
+  getProductSize,
+  isGridProduct,
+} from "@/lib/types";
 import {
   DndContext,
   DragOverlay,
@@ -91,6 +97,84 @@ function blockClass(type: BlockType): string {
     case "text":
       return "block-text";
   }
+}
+
+type BlockSegment =
+  | { type: "single"; block: Block; index: number }
+  | {
+      type: "grid-row";
+      blocks: Block[];
+      size: "compact" | "standard";
+      startIndex: number;
+    };
+
+function segmentBlocks(blocks: Block[]): BlockSegment[] {
+  const segments: BlockSegment[] = [];
+  let i = 0;
+
+  while (i < blocks.length) {
+    const block = blocks[i];
+
+    if (!isGridProduct(block)) {
+      segments.push({ type: "single", block, index: i });
+      i++;
+      continue;
+    }
+
+    const runStart = i;
+    const run: Block[] = [];
+    while (i < blocks.length && isGridProduct(blocks[i])) {
+      run.push(blocks[i]);
+      i++;
+    }
+
+    let rowStart = 0;
+    let absIndex = runStart;
+    while (rowStart < run.length) {
+      const size = getProductSize(run[rowStart]) as "compact" | "standard";
+      const maxCols = getGridMaxColumns(size);
+      const rowBlocks = [run[rowStart]];
+      let j = rowStart + 1;
+
+      while (
+        j < run.length &&
+        getProductSize(run[j]) === size &&
+        rowBlocks.length < maxCols
+      ) {
+        rowBlocks.push(run[j]);
+        j++;
+      }
+
+      segments.push({
+        type: "grid-row",
+        blocks: rowBlocks,
+        size,
+        startIndex: absIndex,
+      });
+
+      absIndex += rowBlocks.length;
+      rowStart = j;
+    }
+  }
+
+  return segments.flatMap((segment) => {
+    if (segment.type === "grid-row" && segment.blocks.length === 1) {
+      return [
+        {
+          type: "single" as const,
+          block: segment.blocks[0],
+          index: segment.startIndex,
+        },
+      ];
+    }
+    return [segment];
+  });
+}
+
+function gridColumnClass(count: number): string {
+  if (count <= 1) return "grid-cols-1";
+  if (count === 2) return "grid-cols-2";
+  return "grid-cols-3";
 }
 
 function useIsClient() {
@@ -219,45 +303,27 @@ export function BlockStream({
   }
 
   function renderBlocks(sortable: boolean) {
+    const segments = segmentBlocks(displayBlocks);
+
     return (
       <>
-        {displayBlocks.map((block, index) =>
-          sortable ? (
-            <SortableBlockItem
-              key={block.id}
-              block={block}
-              editable={editable}
-              insertZone={
-                editable && onInsertBlock ? (
-                  <InsertZone
-                    index={index}
-                    onInsert={onInsertBlock}
-                    disabled={activeId !== null}
-                  />
-                ) : null
-              }
-              onEditBlock={onEditBlock}
-              onUpdateBlockData={onUpdateBlockData}
-              onBlockBlur={onBlockBlur}
-              autoFocus={focusBlockId === block.id}
-              onDeleteBlock={onDeleteBlock}
-              onMoveUp={() => moveBlock(block.id, "up")}
-              onMoveDown={() => moveBlock(block.id, "down")}
-              canMoveUp={index > 0}
-              canMoveDown={index < displayBlocks.length - 1}
-            />
-          ) : (
-            <div key={block.id}>
-              {editable && onInsertBlock && (
-                <InsertZone
-                  index={index}
-                  onInsert={onInsertBlock}
-                  disabled={activeId !== null}
-                />
-              )}
-              <StaticBlockItem
+        {segments.map((segment) => {
+          if (segment.type === "single") {
+            const { block, index } = segment;
+            return sortable ? (
+              <SortableBlockItem
+                key={block.id}
                 block={block}
                 editable={editable}
+                insertZone={
+                  editable && onInsertBlock ? (
+                    <InsertZone
+                      index={index}
+                      onInsert={onInsertBlock}
+                      disabled={activeId !== null}
+                    />
+                  ) : null
+                }
                 onEditBlock={onEditBlock}
                 onUpdateBlockData={onUpdateBlockData}
                 onBlockBlur={onBlockBlur}
@@ -268,9 +334,109 @@ export function BlockStream({
                 canMoveUp={index > 0}
                 canMoveDown={index < displayBlocks.length - 1}
               />
+            ) : (
+              <div key={block.id}>
+                {editable && onInsertBlock && (
+                  <InsertZone
+                    index={index}
+                    onInsert={onInsertBlock}
+                    disabled={activeId !== null}
+                  />
+                )}
+                <StaticBlockItem
+                  block={block}
+                  editable={editable}
+                  onEditBlock={onEditBlock}
+                  onUpdateBlockData={onUpdateBlockData}
+                  onBlockBlur={onBlockBlur}
+                  autoFocus={focusBlockId === block.id}
+                  onDeleteBlock={onDeleteBlock}
+                  onMoveUp={() => moveBlock(block.id, "up")}
+                  onMoveDown={() => moveBlock(block.id, "down")}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < displayBlocks.length - 1}
+                />
+              </div>
+            );
+          }
+
+          const { blocks: rowBlocks, startIndex } = segment;
+          const rowKey = `grid-${rowBlocks.map((b) => b.id).join("-")}`;
+
+          if (!sortable) {
+            return (
+              <div key={rowKey}>
+                {editable && onInsertBlock && (
+                  <InsertZone
+                    index={startIndex}
+                    onInsert={onInsertBlock}
+                    disabled={activeId !== null}
+                  />
+                )}
+                <div
+                  className={`product-grid-row grid ${gridColumnClass(rowBlocks.length)} gap-3`}
+                >
+                  {rowBlocks.map((block, rowIndex) => {
+                    const index = startIndex + rowIndex;
+                    return (
+                      <StaticBlockItem
+                        key={block.id}
+                        block={block}
+                        editable={editable}
+                        inGrid
+                        onEditBlock={onEditBlock}
+                        onUpdateBlockData={onUpdateBlockData}
+                        onBlockBlur={onBlockBlur}
+                        autoFocus={focusBlockId === block.id}
+                        onDeleteBlock={onDeleteBlock}
+                        onMoveUp={() => moveBlock(block.id, "up")}
+                        onMoveDown={() => moveBlock(block.id, "down")}
+                        canMoveUp={index > 0}
+                        canMoveDown={index < displayBlocks.length - 1}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={rowKey}>
+              {editable && onInsertBlock && (
+                <InsertZone
+                  index={startIndex}
+                  onInsert={onInsertBlock}
+                  disabled={activeId !== null}
+                />
+              )}
+              <div
+                className={`product-grid-row grid ${gridColumnClass(rowBlocks.length)} gap-3`}
+              >
+                {rowBlocks.map((block, rowIndex) => {
+                  const index = startIndex + rowIndex;
+                  return (
+                    <SortableBlockItem
+                      key={block.id}
+                      block={block}
+                      editable={editable}
+                      inGrid
+                      onEditBlock={onEditBlock}
+                      onUpdateBlockData={onUpdateBlockData}
+                      onBlockBlur={onBlockBlur}
+                      autoFocus={focusBlockId === block.id}
+                      onDeleteBlock={onDeleteBlock}
+                      onMoveUp={() => moveBlock(block.id, "up")}
+                      onMoveDown={() => moveBlock(block.id, "down")}
+                      canMoveUp={index > 0}
+                      canMoveDown={index < displayBlocks.length - 1}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          ),
-        )}
+          );
+        })}
         {editable && onInsertBlock && displayBlocks.length > 0 && (
           <InsertZone
             index={displayBlocks.length}
@@ -313,10 +479,12 @@ export function BlockStream({
 }
 
 function BlockPreview({ block }: { block: Block }) {
+  const productLayout = isGridProduct(block) ? "grid" : "inline";
+
   if (block.type === "divider") {
     return (
       <div className={blockClass(block.type)}>
-        <BlockRenderer block={block} editable />
+        <BlockRenderer block={block} editable productLayout={productLayout} />
       </div>
     );
   }
@@ -324,7 +492,7 @@ function BlockPreview({ block }: { block: Block }) {
   return (
     <div className={blockClass(block.type)}>
       <div className="min-w-0">
-        <BlockRenderer block={block} editable />
+        <BlockRenderer block={block} editable productLayout={productLayout} />
       </div>
     </div>
   );
@@ -388,6 +556,7 @@ function InsertZone({
 function StaticBlockItem({
   block,
   editable,
+  inGrid = false,
   onEditBlock,
   onUpdateBlockData,
   onBlockBlur,
@@ -400,6 +569,7 @@ function StaticBlockItem({
 }: {
   block: Block;
   editable: boolean;
+  inGrid?: boolean;
   onEditBlock?: (block: Block) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -417,7 +587,9 @@ function StaticBlockItem({
       <div className="group/block relative">
         {editable && !isDivider && (
           <div
-            className="absolute -left-7 top-0.5 flex h-9 w-7 items-center justify-center text-stone-300"
+            className={`absolute flex h-9 w-7 items-center justify-center text-stone-300 ${
+              inGrid ? "-left-5 top-0" : "-left-7 top-0.5"
+            }`}
             aria-hidden
           >
             <GripVertical className="h-4 w-4" />
@@ -435,6 +607,7 @@ function StaticBlockItem({
           block={block}
           editable={editable}
           fullWidth={isDivider}
+          inGrid={inGrid}
           onEditBlock={onEditBlock}
           onUpdateBlockData={onUpdateBlockData}
           onBlockBlur={onBlockBlur}
@@ -454,6 +627,7 @@ function SortableBlockItem({
   block,
   editable,
   insertZone,
+  inGrid = false,
   onEditBlock,
   onUpdateBlockData,
   onBlockBlur,
@@ -467,6 +641,7 @@ function SortableBlockItem({
   block: Block;
   editable: boolean;
   insertZone?: ReactNode;
+  inGrid?: boolean;
   onEditBlock?: (block: Block) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -512,7 +687,9 @@ function SortableBlockItem({
               ref={setActivatorNodeRef}
               {...attributes}
               {...listeners}
-              className="absolute -left-7 top-0.5 flex h-9 w-7 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
+              className={`absolute flex h-9 w-7 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing ${
+                inGrid ? "-left-5 top-0" : "-left-7 top-0.5"
+              }`}
               aria-label="ドラッグして並べ替え"
               onClick={(e) => e.stopPropagation()}
             >
@@ -536,6 +713,7 @@ function SortableBlockItem({
             block={block}
             editable={editable}
             fullWidth={isDivider}
+            inGrid={inGrid}
             onEditBlock={onEditBlock}
             onUpdateBlockData={onUpdateBlockData}
             onBlockBlur={onBlockBlur}
@@ -556,6 +734,7 @@ function BlockItem({
   block,
   editable,
   fullWidth = false,
+  inGrid = false,
   onEditBlock,
   onUpdateBlockData,
   onBlockBlur,
@@ -569,6 +748,7 @@ function BlockItem({
   block: Block;
   editable: boolean;
   fullWidth?: boolean;
+  inGrid?: boolean;
   onEditBlock?: (block: Block) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -595,6 +775,7 @@ function BlockItem({
     <BlockRenderer
       block={block}
       editable={editable}
+      productLayout={inGrid ? "grid" : "inline"}
       onUpdateBlockData={onUpdateBlockData}
       onBlockBlur={onBlockBlur}
       autoFocus={autoFocus}

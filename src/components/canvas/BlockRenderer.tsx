@@ -7,6 +7,7 @@ import { TextBlock } from "./blocks/TextBlock";
 interface BlockRendererProps {
   block: Block;
   editable?: boolean;
+  productLayout?: "inline" | "grid";
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
   autoFocus?: boolean;
@@ -15,6 +16,7 @@ interface BlockRendererProps {
 export function BlockRenderer({
   block,
   editable,
+  productLayout = "inline",
   onUpdateBlockData,
   onBlockBlur,
   autoFocus,
@@ -22,7 +24,11 @@ export function BlockRenderer({
   switch (block.type) {
     case "product":
       return (
-        <ProductBlock block={block} showPlaceholders={editable} />
+        <ProductBlock
+          block={block}
+          showPlaceholders={editable}
+          layout={productLayout}
+        />
       );
     case "heading":
       return (

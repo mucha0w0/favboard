@@ -8,6 +8,8 @@ import { useState } from "react";
 interface ProductBlockProps {
   block: Block;
   showPlaceholders?: boolean;
+  /** グリッドセル内では縦型カードで表示 */
+  layout?: "inline" | "grid";
 }
 
 function normalizeImageUrl(url: string): string {
@@ -197,6 +199,7 @@ function ProductVertical({
   priceText,
   brand,
   price,
+  titleClass,
   comment,
   product_url,
 }: {
@@ -210,6 +213,7 @@ function ProductVertical({
   priceText: string;
   brand?: string;
   price?: string;
+  titleClass?: string;
   comment?: string;
   product_url?: string;
 }) {
@@ -230,6 +234,7 @@ function ProductVertical({
           brand={brand}
           title={title}
           price={price}
+          titleClass={titleClass}
         />
         <ProductExtras comment={comment} product_url={product_url} />
       </div>
@@ -241,10 +246,12 @@ function ProductCardContent({
   block,
   showPlaceholders,
   size,
+  layout,
 }: {
   block: Block;
   showPlaceholders: boolean;
   size: ProductSize;
+  layout: "inline" | "grid";
 }) {
   const { title, brand, price, image_url, product_url, comment } = block.data;
   const [imageError, setImageError] = useState(false);
@@ -268,6 +275,28 @@ function ProductCardContent({
     comment,
     product_url,
   };
+
+  if (layout === "grid") {
+    switch (size) {
+      case "compact":
+        return (
+          <ProductVertical
+            {...shared}
+            imageClassName="aspect-square w-full"
+            titleClass="text-xs"
+          />
+        );
+      case "standard":
+      default:
+        return (
+          <ProductVertical
+            {...shared}
+            imageClassName="aspect-[4/3] w-full"
+            titleClass="text-sm"
+          />
+        );
+    }
+  }
 
   switch (size) {
     case "compact":
@@ -304,6 +333,7 @@ function ProductCardContent({
 export function ProductBlock({
   block,
   showPlaceholders = false,
+  layout = "inline",
 }: ProductBlockProps) {
   const size = getProductSize(block);
 
@@ -312,6 +342,7 @@ export function ProductBlock({
       block={block}
       showPlaceholders={showPlaceholders}
       size={size}
+      layout={layout}
     />
   );
 }
