@@ -132,6 +132,111 @@ function ProductExtras({
   );
 }
 
+function ProductHorizontal({
+  showImage,
+  imageUrl,
+  title,
+  onImageError,
+  imageClassName,
+  brandText,
+  titleText,
+  priceText,
+  brand,
+  price,
+  titleClass,
+  comment,
+  product_url,
+}: {
+  showImage: boolean;
+  imageUrl?: string;
+  title?: string;
+  onImageError: () => void;
+  imageClassName: string;
+  brandText: string;
+  titleText: string;
+  priceText: string;
+  brand?: string;
+  price?: string;
+  titleClass?: string;
+  comment?: string;
+  product_url?: string;
+}) {
+  return (
+    <div className="flex gap-4">
+      <ProductImage
+        showImage={showImage}
+        imageUrl={imageUrl}
+        title={title}
+        onError={onImageError}
+        className={imageClassName}
+      />
+      <div className="min-w-0 flex-1">
+        <ProductMeta
+          brandText={brandText}
+          titleText={titleText}
+          priceText={priceText}
+          brand={brand}
+          title={title}
+          price={price}
+          titleClass={titleClass}
+        />
+        <ProductExtras comment={comment} product_url={product_url} />
+      </div>
+    </div>
+  );
+}
+
+function ProductVertical({
+  showImage,
+  imageUrl,
+  title,
+  onImageError,
+  imageClassName,
+  brandText,
+  titleText,
+  priceText,
+  brand,
+  price,
+  comment,
+  product_url,
+}: {
+  showImage: boolean;
+  imageUrl?: string;
+  title?: string;
+  onImageError: () => void;
+  imageClassName: string;
+  brandText: string;
+  titleText: string;
+  priceText: string;
+  brand?: string;
+  price?: string;
+  comment?: string;
+  product_url?: string;
+}) {
+  return (
+    <>
+      <ProductImage
+        showImage={showImage}
+        imageUrl={imageUrl}
+        title={title}
+        onError={onImageError}
+        className={imageClassName}
+      />
+      <div className="space-y-1 pt-2">
+        <ProductMeta
+          brandText={brandText}
+          titleText={titleText}
+          priceText={priceText}
+          brand={brand}
+          title={title}
+          price={price}
+        />
+        <ProductExtras comment={comment} product_url={product_url} />
+      </div>
+    </>
+  );
+}
+
 function ProductCardContent({
   block,
   showPlaceholders,
@@ -148,105 +253,50 @@ function ProductCardContent({
   const brandText = displayValue(brand, "ブランド名", showPlaceholders);
   const titleText = displayValue(title, "商品名", showPlaceholders);
   const priceText = displayValue(price, "¥ —", showPlaceholders);
+  const onImageError = () => setImageError(true);
+
+  const shared = {
+    showImage,
+    imageUrl: image_url,
+    title,
+    onImageError,
+    brandText,
+    titleText,
+    priceText,
+    brand,
+    price,
+    comment,
+    product_url,
+  };
 
   switch (size) {
     case "compact":
       return (
-        <div className="flex gap-4">
-          <ProductImage
-            showImage={showImage}
-            imageUrl={image_url}
-            title={title}
-            onError={() => setImageError(true)}
-            className="h-16 w-16"
-          />
-          <div className="min-w-0 flex-1">
-            <ProductMeta
-              brandText={brandText}
-              titleText={titleText}
-              priceText={priceText}
-              brand={brand}
-              title={title}
-              price={price}
-              titleClass="text-xs"
-            />
-            <ProductExtras comment={comment} product_url={product_url} />
-          </div>
-        </div>
+        <ProductHorizontal
+          {...shared}
+          imageClassName="h-16 w-16"
+          titleClass="text-xs"
+        />
       );
 
     case "large":
       return (
-        <>
-          <ProductImage
-            showImage={showImage}
-            imageUrl={image_url}
-            title={title}
-            onError={() => setImageError(true)}
-            className="aspect-4/5 w-full"
-          />
-          <div className="space-y-1 pt-3">
-            <ProductMeta
-              brandText={brandText}
-              titleText={titleText}
-              priceText={priceText}
-              brand={brand}
-              title={title}
-              price={price}
-              titleClass="text-base"
-            />
-            <ProductExtras comment={comment} product_url={product_url} />
-          </div>
-        </>
+        <ProductVertical {...shared} imageClassName="h-48 w-full" />
       );
 
-    case "banner":
+    case "xl":
       return (
-        <>
-          <ProductImage
-            showImage={showImage}
-            imageUrl={image_url}
-            title={title}
-            onError={() => setImageError(true)}
-            className="aspect-3/1 w-full"
-          />
-          <div className="space-y-1 pt-3">
-            <ProductMeta
-              brandText={brandText}
-              titleText={titleText}
-              priceText={priceText}
-              brand={brand}
-              title={title}
-              price={price}
-            />
-            <ProductExtras comment={comment} product_url={product_url} />
-          </div>
-        </>
+        <ProductVertical {...shared} imageClassName="h-56 w-full" />
       );
 
     case "standard":
     default:
       return (
-        <>
-          <ProductImage
-            showImage={showImage}
-            imageUrl={image_url}
-            title={title}
-            onError={() => setImageError(true)}
-            className="aspect-3/2 w-full"
-          />
-          <div className="space-y-1 pt-3">
-            <ProductMeta
-              brandText={brandText}
-              titleText={titleText}
-              priceText={priceText}
-              brand={brand}
-              title={title}
-              price={price}
-            />
-            <ProductExtras comment={comment} product_url={product_url} />
-          </div>
-        </>
+        <ProductHorizontal
+          {...shared}
+          imageClassName="h-24 w-24"
+          titleClass="text-sm"
+        />
       );
   }
 }

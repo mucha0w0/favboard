@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   PRODUCT_SIZES,
+  getProductSize,
   type Block,
   type BlockData,
   type OgpData,
@@ -76,7 +77,7 @@ function ProductFormFields({
   const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
   const [comment, setComment] = useState(block.data.comment || "");
   const [productSize, setProductSize] = useState<ProductSize>(
-    block.data.product_size || "standard",
+    getProductSize(block),
   );
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState("");
