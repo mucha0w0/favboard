@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { type Block, type BlockData, type OgpData } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { ProductImageInput } from "./ProductImageInput";
 
 interface ProductFormDialogProps {
   block: Block | null;
@@ -173,15 +174,7 @@ function ProductFormFields({
             />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="image-url">画像URL</Label>
-          <Input
-            id="image-url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-          />
-        </div>
+        <ProductImageInput value={imageUrl} onChange={setImageUrl} />
         <div className="space-y-2">
           <Label htmlFor="comment">こだわり・コメント</Label>
           <Textarea
