@@ -357,7 +357,6 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             focusBlockId={focusBlockId}
             onDeleteBlock={handleDeleteBlock}
             onReorder={handleReorder}
-            onInsertBlock={handleAddBlock}
           />
 
           <InsertMenu onAdd={handleAddBlock} disabled={saving} />
