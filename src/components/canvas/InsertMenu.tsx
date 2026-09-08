@@ -52,7 +52,7 @@ export function InsertMenu({ onAdd, disabled }: InsertMenuProps) {
         size="icon"
         disabled={disabled}
         onClick={() => setOpen(!open)}
-        className="rounded-full"
+        className="-ml-16 rounded-full"
         aria-label="ブロックを追加"
       >
         <Plus
