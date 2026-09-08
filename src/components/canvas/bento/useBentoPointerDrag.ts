@@ -8,8 +8,8 @@ import {
   measureBentoGridGeometry,
   MIN_BENTO_ROWS,
   placementToPixels,
-  previewChildPlacement,
   requiredBentoRows,
+  resolveDragPlacement,
   rowsFromPointerDelta,
   setBentoRows,
   snapFloatToPlacement,
@@ -140,7 +140,7 @@ export function useBentoPointerDrag({
         origin.geo,
         Math.max(currentRows, origin.startRows),
         {
-          expandRows: true,
+          expandRows: false,
           ...(mode.kind === "resize"
             ? {
                 resizeEdge: mode.edge,
@@ -150,11 +150,21 @@ export function useBentoPointerDrag({
         },
       );
 
-      const resolved = previewChildPlacement(
+      const prev = dragVisualRef.current;
+      const lastValid =
+        prev?.kind === "child" &&
+        prev.childId === mode.childId &&
+        prev.snap &&
+        !prev.blocked
+          ? prev.snap
+          : origin.startPlacement;
+
+      const resolved = resolveDragPlacement(
         blockRef.current,
         mode.childId,
         snapped,
-        { expandRows: true },
+        lastValid,
+        { expandRows: false },
       );
 
       const next: BentoDragVisual = {
@@ -162,10 +172,9 @@ export function useBentoPointerDrag({
         childId: mode.childId,
         snap: resolved.placement,
         bentoRows: resolved.bentoRows,
-        blocked: resolved.blocked,
+        blocked: false,
       };
 
-      const prev = dragVisualRef.current;
       if (
         prev?.kind === "child" &&
         prev.childId === next.childId &&
@@ -227,7 +236,7 @@ export function useBentoPointerDrag({
             currentBlock,
             visual.childId,
             visual.snap,
-            { expandRows: true },
+            { expandRows: false },
           );
         }
 

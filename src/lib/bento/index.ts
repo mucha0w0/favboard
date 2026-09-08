@@ -18,6 +18,7 @@ export {
   placementStyle,
   previewChildPlacement,
   requiredBentoRows,
+  resolveDragPlacement,
 } from "./grid";
 export {
   addBentoChild,

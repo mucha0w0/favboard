@@ -101,7 +101,7 @@ export function getProductSizeFromPlacement(
   return "xl";
 }
 
-/** ドラッグ中プレビュー用 — 衝突時は blocked（placement は clamp 済み） */
+/** ドラッグ中プレビュー用 — 衝突時は blocked（呼び出し側で軸分離解決） */
 export function previewChildPlacement(
   bento: Block,
   childId: string,
@@ -133,6 +133,73 @@ export function previewChildPlacement(
   }
 
   return { placement: clamped, bentoRows: nextRows, blocked: true };
+}
+
+function placementAxisDistance(
+  a: BentoCellPlacement,
+  b: BentoCellPlacement,
+): number {
+  return (
+    Math.abs(a.col - b.col) +
+    Math.abs(a.colSpan - b.colSpan) +
+    Math.abs(a.row - b.row) +
+    Math.abs(a.rowSpan - b.rowSpan)
+  );
+}
+
+/**
+ * 衝突時に X（col/colSpan）と Y（row/rowSpan）を分けて解決する。
+ * 片軸だけ重なる場合は、もう片軸の更新を通す。
+ */
+export function resolveDragPlacement(
+  bento: Block,
+  childId: string,
+  proposed: BentoCellPlacement,
+  lastValid: BentoCellPlacement,
+  options?: { expandRows?: boolean },
+): { placement: BentoCellPlacement; bentoRows: number } {
+  const full = previewChildPlacement(bento, childId, proposed, options);
+  if (!full.blocked) {
+    return { placement: full.placement, bentoRows: full.bentoRows };
+  }
+
+  const applyAxes = (order: ("x" | "y")[]) => {
+    let result = lastValid;
+    let bentoRows =
+      previewChildPlacement(bento, childId, lastValid, options).bentoRows;
+
+    for (const axis of order) {
+      const candidate: BentoCellPlacement =
+        axis === "x"
+          ? {
+              col: proposed.col,
+              colSpan: proposed.colSpan,
+              row: result.row,
+              rowSpan: result.rowSpan,
+            }
+          : {
+              col: result.col,
+              colSpan: result.colSpan,
+              row: proposed.row,
+              rowSpan: proposed.rowSpan,
+            };
+      const tried = previewChildPlacement(bento, childId, candidate, options);
+      if (!tried.blocked) {
+        result = tried.placement;
+        bentoRows = tried.bentoRows;
+      }
+    }
+
+    return { placement: result, bentoRows };
+  };
+
+  const xy = applyAxes(["x", "y"]);
+  const yx = applyAxes(["y", "x"]);
+
+  return placementAxisDistance(xy.placement, proposed) <=
+    placementAxisDistance(yx.placement, proposed)
+    ? xy
+    : yx;
 }
 
 /** @deprecated ピクセル換算は dom.ts / drag.ts を使う */

@@ -101,12 +101,13 @@ export function computeFloatRect(
   const min = geo.cell;
 
   if (mode.kind === "move") {
-    return {
-      x: startRect.x + dx,
-      y: startRect.y + dy,
-      w: startRect.w,
-      h: startRect.h,
-    };
+    const { width: maxW, height: maxH } = gridContentSize(
+      geo,
+      origin.startRows,
+    );
+    const x = Math.max(0, Math.min(maxW - startRect.w, startRect.x + dx));
+    const y = Math.max(0, Math.min(maxH - startRect.h, startRect.y + dy));
+    return { x, y, w: startRect.w, h: startRect.h };
   }
 
   if (mode.kind !== "resize") {
@@ -116,7 +117,11 @@ export function computeFloatRect(
   const { affectsRight, affectsLeft, affectsBottom, affectsTop } = edgeAxes(
     mode.edge,
   );
-  const { width: maxW, height: maxH } = gridContentSize(geo, MAX_BENTO_ROWS);
+  // 子の移動・リサイズでは Bento 行数を増やさない。下端は壁として扱う。
+  const { width: maxW, height: maxH } = gridContentSize(
+    geo,
+    origin.startRows,
+  );
 
   let { x, y, w, h } = startRect;
   const right = x + w;
@@ -146,7 +151,7 @@ export function computeFloatRect(
 
 /**
  * フロート矩形をスナップした placement に変換。
- * 下方向リサイズ時は必要に応じて行数を拡張した仮想 rowCount で clamp。
+ * expandRows 時のみ下方向にはみ出した分で行数を拡張する。
  * resizeEdge 指定時は壁側で拡大を止め、反対辺を動かさない。
  */
 export function snapFloatToPlacement(
