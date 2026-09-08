@@ -3,7 +3,6 @@
 import {
   type DragMode,
   type DragOrigin,
-  type PixelRect,
   computeFloatRect,
   getBentoRows,
   measureBentoGridGeometry,
@@ -22,14 +21,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export type BentoDragVisual = {
   kind: "child" | "bento-height";
   childId?: string;
-  /** content 原点からのフロート矩形（カーソル追従） */
-  float?: PixelRect;
   /** スナップ先（グリッド上のゴースト） */
   snap?: BentoCellPlacement;
   bentoRows?: number;
   blocked: boolean;
-  padLeft: number;
-  padTop: number;
 };
 
 export function useBentoPointerDrag({
@@ -134,15 +129,13 @@ export function useBentoPointerDrag({
           kind: "bento-height",
           bentoRows: nextRows,
           blocked: false,
-          padLeft: origin.geo.padLeft,
-          padTop: origin.geo.padTop,
         });
         return;
       }
 
       const float = computeFloatRect(mode, origin, clientX, clientY);
       const currentRows = getBentoRows(blockRef.current);
-      const { placement: snapped, bentoRows } = snapFloatToPlacement(
+      const { placement: snapped } = snapFloatToPlacement(
         float,
         origin.geo,
         Math.max(currentRows, origin.startRows),
@@ -159,12 +152,9 @@ export function useBentoPointerDrag({
       const next: BentoDragVisual = {
         kind: "child",
         childId: mode.childId,
-        float,
         snap: resolved.placement,
         bentoRows: resolved.bentoRows,
         blocked: resolved.blocked,
-        padLeft: origin.geo.padLeft,
-        padTop: origin.geo.padTop,
       };
 
       const prev = dragVisualRef.current;
@@ -173,10 +163,6 @@ export function useBentoPointerDrag({
         prev.childId === next.childId &&
         prev.blocked === next.blocked &&
         prev.bentoRows === next.bentoRows &&
-        prev.float?.x === next.float?.x &&
-        prev.float?.y === next.float?.y &&
-        prev.float?.w === next.float?.w &&
-        prev.float?.h === next.float?.h &&
         prev.snap?.col === next.snap?.col &&
         prev.snap?.row === next.snap?.row &&
         prev.snap?.colSpan === next.snap?.colSpan &&
@@ -296,19 +282,14 @@ export function useBentoPointerDrag({
           kind: "bento-height",
           bentoRows: startRows,
           blocked: false,
-          padLeft: geo.padLeft,
-          padTop: geo.padTop,
         });
       } else {
         applyVisual({
           kind: "child",
           childId: mode.childId,
-          float: startRect,
           snap: placement,
           bentoRows: startRows,
           blocked: false,
-          padLeft: geo.padLeft,
-          padTop: geo.padTop,
         });
       }
 

@@ -127,9 +127,6 @@ export function BentoBlock({
   const rowCount = dragVisual?.bentoRows ?? getBentoRows(block);
   const draggingChildId =
     dragVisual?.kind === "child" ? dragVisual.childId : undefined;
-  const floatChild = draggingChildId
-    ? children.find((c) => c.id === draggingChildId)
-    : undefined;
 
   function handleAddChild(type: "product" | "text") {
     const child = createBentoChild(type);
@@ -210,7 +207,7 @@ export function BentoBlock({
                   isSelected && editable
                     ? "ring-stone-400"
                     : "ring-stone-200/50"
-                } ${isDragging ? "opacity-30" : ""}`}
+                }`}
                 style={style}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -266,35 +263,6 @@ export function BentoBlock({
               style={placementStyle(dragVisual.snap)}
             />
           )}
-
-          {/* カーソル追従フロート */}
-          {dragVisual?.kind === "child" &&
-            dragVisual.float &&
-            floatChild &&
-            dragVisual.snap && (
-              <div
-                className={`pointer-events-none absolute z-20 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-sm bg-white shadow-lg ring-1 ${
-                  dragVisual.blocked
-                    ? "ring-red-400/80"
-                    : "ring-stone-200/80"
-                }`}
-                style={{
-                  left: dragVisual.padLeft + dragVisual.float.x,
-                  top: dragVisual.padTop + dragVisual.float.y,
-                  width: dragVisual.float.w,
-                  height: dragVisual.float.h,
-                }}
-              >
-                <ChildBody
-                  child={floatChild}
-                  editable={false}
-                  placement={dragVisual.snap}
-                  blockId={block.id}
-                  blockRef={blockRef}
-                  commitBento={commitBento}
-                />
-              </div>
-            )}
         </div>
       </div>
 
