@@ -111,36 +111,20 @@ export function ProductOfficialLink({ url }: { url: string }) {
       href={normalizeExternalUrl(url)}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-[12px] text-stone-600 underline underline-offset-2 transition-colors hover:text-stone-900"
+      aria-label="公式サイトへ移動"
+      className="absolute bottom-0 right-0 z-10 inline-flex items-center justify-center p-1 text-stone-500 transition-colors hover:text-stone-900"
     >
-      <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
-      公式サイトに移動
+      <ExternalLink className="h-3.5 w-3.5" aria-hidden />
     </a>
   );
 }
 
-export function ProductExtras({
-  comment,
-  officialUrl,
-}: {
-  comment?: string;
-  officialUrl?: string;
-}) {
-  const hasComment = Boolean(comment?.trim());
-  const hasOfficialUrl = Boolean(officialUrl?.trim());
-  if (!hasComment && !hasOfficialUrl) return null;
-
+export function ProductExtras({ comment }: { comment?: string }) {
+  if (!comment?.trim()) return null;
   return (
-    <div className="mt-3 space-y-1">
-      {hasComment && (
-        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-stone-500">
-          {comment}
-        </p>
-      )}
-      {hasOfficialUrl && officialUrl && (
-        <ProductOfficialLink url={officialUrl} />
-      )}
-    </div>
+    <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-stone-500">
+      {comment}
+    </p>
   );
 }
 
@@ -181,10 +165,8 @@ export function ProductHorizontal({
   showOfficialLink?: boolean;
   lineClamp?: number;
 }) {
-  const extrasComment = showExtras ? comment : undefined;
-  const extrasOfficialUrl = showOfficialLink ? officialUrl : undefined;
-  const showProductExtras =
-    Boolean(extrasComment?.trim()) || Boolean(extrasOfficialUrl?.trim());
+  const linkUrl =
+    showOfficialLink && officialUrl?.trim() ? officialUrl.trim() : undefined;
 
   return (
     <div className={`group flex h-full min-h-0 items-center ${gapClass}`}>
@@ -195,7 +177,7 @@ export function ProductHorizontal({
         onError={onImageError}
         className={imageClassName}
       />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col justify-center">
         <ProductMeta
           brandText={brandText}
           titleText={titleText}
@@ -206,12 +188,8 @@ export function ProductHorizontal({
           titleClass={titleClass}
           lineClamp={lineClamp}
         />
-        {showProductExtras && (
-          <ProductExtras
-            comment={extrasComment}
-            officialUrl={extrasOfficialUrl}
-          />
-        )}
+        {showExtras && <ProductExtras comment={comment} />}
+        {linkUrl && <ProductOfficialLink url={linkUrl} />}
       </div>
     </div>
   );
@@ -252,10 +230,8 @@ export function ProductVertical({
   showOfficialLink?: boolean;
   lineClamp?: number;
 }) {
-  const extrasComment = showExtras ? comment : undefined;
-  const extrasOfficialUrl = showOfficialLink ? officialUrl : undefined;
-  const showProductExtras =
-    Boolean(extrasComment?.trim()) || Boolean(extrasOfficialUrl?.trim());
+  const linkUrl =
+    showOfficialLink && officialUrl?.trim() ? officialUrl.trim() : undefined;
 
   return (
     <div className="group flex h-full min-h-0 flex-col gap-1.5">
@@ -267,7 +243,7 @@ export function ProductVertical({
         className={imageClassName}
         shrink={false}
       />
-      <div className="min-h-0 shrink-0">
+      <div className="relative min-h-0 shrink-0">
         <ProductMeta
           brandText={brandText}
           titleText={titleText}
@@ -279,12 +255,8 @@ export function ProductVertical({
           vertical
           lineClamp={lineClamp}
         />
-        {showProductExtras && (
-          <ProductExtras
-            comment={extrasComment}
-            officialUrl={extrasOfficialUrl}
-          />
-        )}
+        {showExtras && <ProductExtras comment={comment} />}
+        {linkUrl && <ProductOfficialLink url={linkUrl} />}
       </div>
     </div>
   );
