@@ -54,7 +54,7 @@ export function updateChildPlacement(
   placement: BentoCellPlacement,
   options?: { expandRows?: boolean },
 ): Block {
-  const expandRows = options?.expandRows ?? false;
+  const expandRows = options?.expandRows ?? true;
   const currentRows = getBentoRows(bento);
 
   const nextRows = expandRows

@@ -29,6 +29,67 @@ interface BentoBlockProps {
   onPersistBento?: (bentoId: string) => void;
 }
 
+function ChildBody({
+  child,
+  editable,
+  placement,
+  focusBlockId,
+  blockId,
+  blockRef,
+  commitBento,
+  onChildBlur,
+}: {
+  child: Block;
+  editable: boolean;
+  placement: { colSpan: number; rowSpan: number };
+  focusBlockId?: string | null;
+  blockId: string;
+  blockRef: React.MutableRefObject<Block>;
+  commitBento: (next: Block) => void;
+  onChildBlur?: (bentoId: string, childId: string) => void;
+}) {
+  const area = placement.colSpan * placement.rowSpan;
+  const pad =
+    child.type === "product"
+      ? area <= 4
+        ? "p-1"
+        : area <= 9
+          ? "p-1.5"
+          : "p-2"
+      : "p-1.5";
+
+  return (
+    <div
+      className={`pointer-events-none flex min-h-0 flex-1 flex-col overflow-hidden **:pointer-events-auto ${pad}`}
+    >
+      {child.type === "product" ? (
+        <div className="h-full w-full text-left">
+          <BentoChildRenderer
+            block={child}
+            editable={editable}
+            cellSpan={{
+              colSpan: placement.colSpan,
+              rowSpan: placement.rowSpan,
+            }}
+          />
+        </div>
+      ) : (
+        <BentoChildRenderer
+          block={child}
+          editable={editable}
+          autoFocus={focusBlockId === child.id}
+          onUpdateBlockData={(_, data) => {
+            commitBento(
+              updateBentoChildData(blockRef.current, child.id, data),
+            );
+          }}
+          onBlockBlur={() => onChildBlur?.(blockId, child.id)}
+        />
+      )}
+    </div>
+  );
+}
+
 export function BentoBlock({
   block,
   editable = false,
@@ -39,7 +100,6 @@ export function BentoBlock({
   onPersistBento,
 }: BentoBlockProps) {
   const gridRef = useRef<HTMLDivElement>(null);
-  const ghostGridRef = useRef<HTMLDivElement>(null);
   const blockRef = useRef(block);
   useEffect(() => {
     blockRef.current = block;
@@ -54,24 +114,21 @@ export function BentoBlock({
     [block.id, onUpdateBento],
   );
 
-  const { dragPreview, startDrag } = useBentoPointerDrag({
+  const { dragVisual, startDrag } = useBentoPointerDrag({
     editable,
     blockRef,
     gridRef,
-    ghostGridRef,
     onCommit: commitBento,
     onPersist: () => onPersistBento?.(block.id),
   });
 
   const children = getBentoChildren(block);
-  const rowCount = dragPreview?.bentoRows ?? getBentoRows(block);
-
-  function getDisplayPlacement(childId: string) {
-    if (dragPreview?.childId === childId && dragPreview.placement) {
-      return dragPreview.placement;
-    }
-    return getChildPlacement(block, childId);
-  }
+  const rowCount = dragVisual?.bentoRows ?? getBentoRows(block);
+  const draggingChildId =
+    dragVisual?.kind === "child" ? dragVisual.childId : undefined;
+  const floatChild = draggingChildId
+    ? children.find((c) => c.id === draggingChildId)
+    : undefined;
 
   function handleAddChild(type: "product" | "text") {
     const child = createBentoChild(type);
@@ -93,7 +150,6 @@ export function BentoBlock({
       <div className="relative">
         {editable && (
           <div
-            ref={ghostGridRef}
             className="bento-grid pointer-events-none absolute inset-0 grid gap-1 p-1.5"
             style={bentoGridStyle(rowCount)}
             aria-hidden
@@ -114,11 +170,10 @@ export function BentoBlock({
           onClick={() => editable && setSelectedId(null)}
         >
           {children.map((child) => {
-            const placement = getDisplayPlacement(child.id);
+            const placement = getChildPlacement(block, child.id);
             const isSelected = selectedId === child.id;
+            const isDragging = draggingChildId === child.id;
             const style = placementStyle(placement);
-            const isDragging =
-              dragPreview?.childId === child.id && dragPreview.placement;
 
             return (
               <div
@@ -127,25 +182,20 @@ export function BentoBlock({
                   isSelected && editable
                     ? "ring-stone-400"
                     : "ring-stone-200/60"
-                } ${isDragging ? "z-10 opacity-90" : ""}`}
+                } ${isDragging ? "opacity-30" : ""}`}
                 style={style}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (editable) setSelectedId(child.id);
                 }}
               >
-                {editable && isSelected && (
+                {editable && isSelected && !isDragging && (
                   <BentoChildChrome
                     onStartMove={(e) => {
                       setSelectedId(child.id);
                       startDrag(
                         e,
-                        {
-                          kind: "move",
-                          childId: child.id,
-                          startCol: placement.col,
-                          startRow: placement.row,
-                        },
+                        { kind: "move", childId: child.id },
                         placement,
                       );
                     }}
@@ -163,49 +213,58 @@ export function BentoBlock({
                   />
                 )}
 
-                <div
-                  className={`pointer-events-none flex min-h-0 flex-1 flex-col overflow-hidden **:pointer-events-auto ${
-                    child.type === "product"
-                      ? placement.colSpan * placement.rowSpan <= 4
-                        ? "p-1"
-                        : placement.colSpan * placement.rowSpan <= 9
-                          ? "p-1.5"
-                          : "p-2"
-                      : "p-1.5"
-                  }`}
-                >
-                  {child.type === "product" ? (
-                    <div className="h-full w-full text-left">
-                      <BentoChildRenderer
-                        block={child}
-                        editable={editable}
-                        cellSpan={{
-                          colSpan: placement.colSpan,
-                          rowSpan: placement.rowSpan,
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <BentoChildRenderer
-                      block={child}
-                      editable={editable}
-                      autoFocus={focusBlockId === child.id}
-                      onUpdateBlockData={(_, data) => {
-                        commitBento(
-                          updateBentoChildData(
-                            blockRef.current,
-                            child.id,
-                            data,
-                          ),
-                        );
-                      }}
-                      onBlockBlur={() => onChildBlur?.(block.id, child.id)}
-                    />
-                  )}
-                </div>
+                <ChildBody
+                  child={child}
+                  editable={editable}
+                  placement={placement}
+                  focusBlockId={focusBlockId}
+                  blockId={block.id}
+                  blockRef={blockRef}
+                  commitBento={commitBento}
+                  onChildBlur={onChildBlur}
+                />
               </div>
             );
           })}
+
+          {/* スナップ先ゴースト */}
+          {dragVisual?.kind === "child" && dragVisual.snap && (
+            <div
+              className={`pointer-events-none z-10 rounded-md border-2 border-dashed ${
+                dragVisual.blocked
+                  ? "border-red-400 bg-red-50/40"
+                  : "border-stone-500 bg-stone-900/5"
+              }`}
+              style={placementStyle(dragVisual.snap)}
+            />
+          )}
+
+          {/* カーソル追従フロート */}
+          {dragVisual?.kind === "child" &&
+            dragVisual.float &&
+            floatChild &&
+            dragVisual.snap && (
+              <div
+                className={`pointer-events-none absolute z-20 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md bg-white shadow-lg ring-2 ${
+                  dragVisual.blocked ? "ring-red-400" : "ring-stone-500"
+                }`}
+                style={{
+                  left: dragVisual.padLeft + dragVisual.float.x,
+                  top: dragVisual.padTop + dragVisual.float.y,
+                  width: dragVisual.float.w,
+                  height: dragVisual.float.h,
+                }}
+              >
+                <ChildBody
+                  child={floatChild}
+                  editable={false}
+                  placement={dragVisual.snap}
+                  blockId={block.id}
+                  blockRef={blockRef}
+                  commitBento={commitBento}
+                />
+              </div>
+            )}
         </div>
       </div>
 

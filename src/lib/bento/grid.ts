@@ -100,14 +100,14 @@ export function getProductSizeFromPlacement(
   return "xl";
 }
 
-/** ドラッグ中プレビュー用 — 衝突時は clamp のみ返す */
+/** ドラッグ中プレビュー用 — 衝突時は blocked（placement は clamp 済み） */
 export function previewChildPlacement(
   bento: Block,
   childId: string,
   placement: BentoCellPlacement,
   options?: { expandRows?: boolean },
 ): { placement: BentoCellPlacement; bentoRows: number; blocked: boolean } {
-  const expandRows = options?.expandRows ?? false;
+  const expandRows = options?.expandRows ?? true;
   const currentRows = getBentoRows(bento);
 
   const nextRows = expandRows
@@ -131,7 +131,13 @@ export function previewChildPlacement(
     return { placement: clamped, bentoRows: nextRows, blocked: false };
   }
 
-  return { placement: clamped, bentoRows: currentRows, blocked: true };
+  return { placement: clamped, bentoRows: nextRows, blocked: true };
+}
+
+/** @deprecated ピクセル換算は dom.ts / drag.ts を使う */
+export function deltaGridUnits(deltaPx: number, step: number): number {
+  if (step <= 0) return 0;
+  return Math.round(deltaPx / step);
 }
 
 export function placementStyle(placement: BentoCellPlacement): {
@@ -153,10 +159,4 @@ export function bentoGridStyle(rowCount: number): {
     gridTemplateColumns: `repeat(${BENTO_COLS}, minmax(0, 1fr))`,
     gridTemplateRows: `repeat(${rowCount}, var(--bento-cell-size))`,
   };
-}
-
-/** ピクセル移動量をグリッド単位に換算（セル + gap を 1 ステップとする） */
-export function deltaGridUnits(deltaPx: number, step: number): number {
-  if (step <= 0) return 0;
-  return Math.round(deltaPx / step);
 }

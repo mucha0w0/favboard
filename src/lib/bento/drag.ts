@@ -1,6 +1,11 @@
 import type { BentoCellPlacement } from "@/lib/types";
-import { BENTO_COLS } from "./constants";
-import { deltaGridUnits } from "./grid";
+import { BENTO_COLS, MAX_BENTO_ROWS } from "./constants";
+import {
+  type BentoGridGeometry,
+  type PixelRect,
+  clampPixelRectSize,
+  pixelsToPlacement,
+} from "./dom";
 
 export type ResizeEdge =
   | "right"
@@ -13,86 +18,117 @@ export type ResizeEdge =
   | "nw";
 
 export type DragMode =
-  | { kind: "move"; childId: string; startCol: number; startRow: number }
+  | { kind: "move"; childId: string }
   | { kind: "resize"; childId: string; edge: ResizeEdge }
   | { kind: "bento-height" };
 
 export type DragOrigin = {
-  x: number;
-  y: number;
-  placement: BentoCellPlacement;
-  step: number;
+  pointerX: number;
+  pointerY: number;
+  startRect: PixelRect;
+  startPlacement: BentoCellPlacement;
+  geo: BentoGridGeometry;
+  startRows: number;
 };
 
-export function computePlacementFromDrag(
+/** ポインタ差分からフロート矩形を計算（カーソルに 1:1 追従） */
+export function computeFloatRect(
   mode: DragMode,
   origin: DragOrigin,
-  dx: number,
-  dy: number,
-  rowCount: number,
-): { childId: string; placement: BentoCellPlacement } | null {
-  const { step, placement: startP } = origin;
-  const deltaCol = deltaGridUnits(dx, step);
-  const deltaRow = deltaGridUnits(dy, step);
+  clientX: number,
+  clientY: number,
+): PixelRect {
+  const dx = clientX - origin.pointerX;
+  const dy = clientY - origin.pointerY;
+  const { startRect, geo } = origin;
+  const min = geo.cell;
 
   if (mode.kind === "move") {
     return {
-      childId: mode.childId,
-      placement: {
-        ...startP,
-        col: mode.startCol + deltaCol,
-        row: mode.startRow + deltaRow,
-      },
+      x: startRect.x + dx,
+      y: startRect.y + dy,
+      w: startRect.w,
+      h: startRect.h,
     };
   }
 
-  if (mode.kind === "resize") {
-    const edge = mode.edge;
-    let col = startP.col;
-    let row = startP.row;
-    let colSpan = startP.colSpan;
-    let rowSpan = startP.rowSpan;
-
-    const affectsRight = edge === "right" || edge === "se" || edge === "ne";
-    const affectsLeft = edge === "left" || edge === "sw" || edge === "nw";
-    const affectsBottom =
-      edge === "bottom" || edge === "se" || edge === "sw";
-    const affectsTop = edge === "top" || edge === "ne" || edge === "nw";
-
-    if (affectsRight) {
-      colSpan = Math.max(
-        1,
-        Math.min(BENTO_COLS - startP.col, startP.colSpan + deltaCol),
-      );
-    }
-    if (affectsLeft) {
-      col = Math.max(
-        0,
-        Math.min(startP.col + startP.colSpan - 1, startP.col + deltaCol),
-      );
-      colSpan = startP.col + startP.colSpan - col;
-      colSpan = Math.max(1, Math.min(BENTO_COLS - col, colSpan));
-    }
-    if (affectsBottom) {
-      rowSpan = Math.max(
-        1,
-        Math.min(rowCount - startP.row, startP.rowSpan + deltaRow),
-      );
-    }
-    if (affectsTop) {
-      row = Math.max(
-        0,
-        Math.min(startP.row + startP.rowSpan - 1, startP.row + deltaRow),
-      );
-      rowSpan = startP.row + startP.rowSpan - row;
-      rowSpan = Math.max(1, Math.min(rowCount - row, rowSpan));
-    }
-
-    return {
-      childId: mode.childId,
-      placement: { col, row, colSpan, rowSpan },
-    };
+  if (mode.kind !== "resize") {
+    return startRect;
   }
 
-  return null;
+  const edge = mode.edge;
+  const affectsRight = edge === "right" || edge === "se" || edge === "ne";
+  const affectsLeft = edge === "left" || edge === "sw" || edge === "nw";
+  const affectsBottom = edge === "bottom" || edge === "se" || edge === "sw";
+  const affectsTop = edge === "top" || edge === "ne" || edge === "nw";
+
+  let { x, y, w, h } = startRect;
+  const right = x + w;
+  const bottom = y + h;
+
+  if (affectsRight) {
+    w = Math.max(min, startRect.w + dx);
+  }
+  if (affectsLeft) {
+    const nextX = startRect.x + dx;
+    const maxX = right - min;
+    x = Math.min(nextX, maxX);
+    w = right - x;
+  }
+  if (affectsBottom) {
+    h = Math.max(min, startRect.h + dy);
+  }
+  if (affectsTop) {
+    const nextY = startRect.y + dy;
+    const maxY = bottom - min;
+    y = Math.min(nextY, maxY);
+    h = bottom - y;
+  }
+
+  return clampPixelRectSize({ x, y, w, h }, geo);
+}
+
+/**
+ * フロート矩形をスナップした placement に変換。
+ * 下方向リサイズ時は必要に応じて行数を拡張した仮想 rowCount で clamp。
+ */
+export function snapFloatToPlacement(
+  float: PixelRect,
+  geo: BentoGridGeometry,
+  currentRows: number,
+  options?: { expandRows?: boolean },
+): { placement: BentoCellPlacement; bentoRows: number } {
+  const expandRows = options?.expandRows ?? true;
+
+  // 仮の大きな rowCount でスナップしてから行数を決める
+  const provisionalRows = expandRows ? MAX_BENTO_ROWS : currentRows;
+  const raw = pixelsToPlacement(float, geo, provisionalRows);
+
+  const neededRows = raw.row + raw.rowSpan;
+  const bentoRows = expandRows
+    ? Math.min(MAX_BENTO_ROWS, Math.max(currentRows, neededRows))
+    : currentRows;
+
+  const placement = pixelsToPlacement(float, geo, bentoRows);
+
+  // 列は常にグリッド内へ
+  const colSpan = Math.max(1, Math.min(BENTO_COLS, placement.colSpan));
+  const col = Math.max(0, Math.min(BENTO_COLS - colSpan, placement.col));
+
+  return {
+    placement: { ...placement, col, colSpan },
+    bentoRows,
+  };
+}
+
+/** 高さグリップ用: 行数デルタ */
+export function rowsFromPointerDelta(
+  dy: number,
+  step: number,
+  startRows: number,
+  minRows: number,
+): number {
+  if (step <= 0) return startRows;
+  const delta = Math.round(dy / step);
+  return Math.max(minRows, Math.min(MAX_BENTO_ROWS, startRows + delta));
 }

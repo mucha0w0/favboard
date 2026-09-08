@@ -3,49 +3,58 @@
 import {
   type DragMode,
   type DragOrigin,
-  computePlacementFromDrag,
-  deltaGridUnits,
+  type PixelRect,
+  computeFloatRect,
   getBentoRows,
-  measureBentoGridStepFromDOM,
+  measureBentoGridGeometry,
   MIN_BENTO_ROWS,
+  placementToPixels,
   previewChildPlacement,
   requiredBentoRows,
+  rowsFromPointerDelta,
   setBentoRows,
+  snapFloatToPlacement,
   updateChildPlacement,
 } from "@/lib/bento";
 import type { BentoCellPlacement, Block } from "@/lib/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type DragPreview = {
+export type BentoDragVisual = {
+  kind: "child" | "bento-height";
   childId?: string;
-  placement?: BentoCellPlacement;
+  /** content 原点からのフロート矩形（カーソル追従） */
+  float?: PixelRect;
+  /** スナップ先（グリッド上のゴースト） */
+  snap?: BentoCellPlacement;
   bentoRows?: number;
-  blocked?: boolean;
+  blocked: boolean;
+  padLeft: number;
+  padTop: number;
 };
 
 export function useBentoPointerDrag({
   editable,
   blockRef,
   gridRef,
-  ghostGridRef,
   onCommit,
   onPersist,
 }: {
   editable: boolean;
   blockRef: React.MutableRefObject<Block>;
   gridRef: React.RefObject<HTMLDivElement | null>;
-  ghostGridRef: React.RefObject<HTMLDivElement | null>;
   onCommit: (next: Block) => void;
   onPersist: () => void;
 }) {
-  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
-  const dragPreviewRef = useRef<DragPreview | null>(null);
+  const [dragVisual, setDragVisual] = useState<BentoDragVisual | null>(null);
+  const dragVisualRef = useRef<BentoDragVisual | null>(null);
 
   const dragModeRef = useRef<DragMode | null>(null);
-  const dragOrigin = useRef<DragOrigin | null>(null);
-  const bentoStartRows = useRef(0);
+  const dragOriginRef = useRef<DragOrigin | null>(null);
   const captureTarget = useRef<HTMLElement | null>(null);
   const capturePointerId = useRef<number | null>(null);
+  const rafRef = useRef(0);
+  const latestPointerRef = useRef<{ x: number; y: number } | null>(null);
+
   const onCommitRef = useRef(onCommit);
   const onPersistRef = useRef(onPersist);
 
@@ -57,7 +66,18 @@ export function useBentoPointerDrag({
     onPersistRef.current = onPersist;
   }, [onPersist]);
 
+  const applyVisual = useCallback((visual: BentoDragVisual | null) => {
+    dragVisualRef.current = visual;
+    setDragVisual(visual);
+  }, []);
+
   const endDrag = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+    latestPointerRef.current = null;
+
     if (captureTarget.current && capturePointerId.current !== null) {
       try {
         captureTarget.current.releasePointerCapture(capturePointerId.current);
@@ -70,16 +90,11 @@ export function useBentoPointerDrag({
     document.body.style.userSelect = "";
     document.body.style.touchAction = "";
     dragModeRef.current = null;
-    dragOrigin.current = null;
+    dragOriginRef.current = null;
   }, []);
 
   const handlePointerMoveRef = useRef<(e: PointerEvent) => void>(() => {});
   const handlePointerUpRef = useRef<() => void>(() => {});
-
-  const applyDragPreview = useCallback((preview: DragPreview | null) => {
-    dragPreviewRef.current = preview;
-    setDragPreview(preview);
-  }, []);
 
   const stablePointerMove = useCallback((e: PointerEvent) => {
     handlePointerMoveRef.current(e);
@@ -89,104 +104,136 @@ export function useBentoPointerDrag({
     handlePointerUpRef.current();
   }, []);
 
-  useEffect(() => {
-    handlePointerMoveRef.current = (e: PointerEvent) => {
+  const processPointer = useCallback(
+    (clientX: number, clientY: number) => {
       const mode = dragModeRef.current;
-      const origin = dragOrigin.current;
+      const origin = dragOriginRef.current;
       if (!mode || !origin) return;
 
-      const dx = e.clientX - origin.x;
-      const dy = e.clientY - origin.y;
-
       if (mode.kind === "bento-height") {
-        const deltaRows = deltaGridUnits(dy, origin.step);
         const minRows = Math.max(
           MIN_BENTO_ROWS,
           requiredBentoRows(blockRef.current),
         );
-        const nextRows = Math.max(minRows, bentoStartRows.current + deltaRows);
-        const prev = dragPreviewRef.current;
-        if (prev?.bentoRows === nextRows) return;
-        applyDragPreview({ bentoRows: nextRows });
-        return;
-      }
-
-      const currentBlock = blockRef.current;
-      const rowCount = getBentoRows(currentBlock);
-
-      const preview = computePlacementFromDrag(
-        mode,
-        origin,
-        dx,
-        dy,
-        rowCount,
-      );
-      if (!preview?.placement || !preview.childId) return;
-
-      const resolved = previewChildPlacement(
-        currentBlock,
-        preview.childId,
-        preview.placement,
-        { expandRows: false },
-      );
-
-      const prev = dragPreviewRef.current;
-
-      if (resolved.blocked) {
-        if (prev?.childId === preview.childId && prev.placement) {
-          return;
-        }
+        const dy = clientY - origin.pointerY;
+        const nextRows = rowsFromPointerDelta(
+          dy,
+          origin.geo.step,
+          origin.startRows,
+          minRows,
+        );
+        const prev = dragVisualRef.current;
         if (
-          prev?.childId === preview.childId &&
-          prev.blocked &&
-          !prev.placement
+          prev?.kind === "bento-height" &&
+          prev.bentoRows === nextRows &&
+          !prev.blocked
         ) {
           return;
         }
-        applyDragPreview({ childId: preview.childId, blocked: true });
+        applyVisual({
+          kind: "bento-height",
+          bentoRows: nextRows,
+          blocked: false,
+          padLeft: origin.geo.padLeft,
+          padTop: origin.geo.padTop,
+        });
         return;
       }
 
+      const float = computeFloatRect(mode, origin, clientX, clientY);
+      const currentRows = getBentoRows(blockRef.current);
+      const { placement: snapped, bentoRows } = snapFloatToPlacement(
+        float,
+        origin.geo,
+        Math.max(currentRows, origin.startRows),
+        { expandRows: true },
+      );
+
+      const resolved = previewChildPlacement(
+        blockRef.current,
+        mode.childId,
+        snapped,
+        { expandRows: true },
+      );
+
+      const next: BentoDragVisual = {
+        kind: "child",
+        childId: mode.childId,
+        float,
+        snap: resolved.placement,
+        bentoRows: resolved.bentoRows,
+        blocked: resolved.blocked,
+        padLeft: origin.geo.padLeft,
+        padTop: origin.geo.padTop,
+      };
+
+      const prev = dragVisualRef.current;
       if (
-        prev?.childId === preview.childId &&
-        !prev.blocked &&
-        prev.placement?.col === resolved.placement.col &&
-        prev.placement?.row === resolved.placement.row &&
-        prev.placement?.colSpan === resolved.placement.colSpan &&
-        prev.placement?.rowSpan === resolved.placement.rowSpan &&
-        prev.bentoRows === resolved.bentoRows
+        prev?.kind === "child" &&
+        prev.childId === next.childId &&
+        prev.blocked === next.blocked &&
+        prev.bentoRows === next.bentoRows &&
+        prev.float?.x === next.float?.x &&
+        prev.float?.y === next.float?.y &&
+        prev.float?.w === next.float?.w &&
+        prev.float?.h === next.float?.h &&
+        prev.snap?.col === next.snap?.col &&
+        prev.snap?.row === next.snap?.row &&
+        prev.snap?.colSpan === next.snap?.colSpan &&
+        prev.snap?.rowSpan === next.snap?.rowSpan
       ) {
         return;
       }
 
-      applyDragPreview({
-        childId: preview.childId,
-        placement: resolved.placement,
-        bentoRows: resolved.bentoRows,
+      applyVisual(next);
+    },
+    [applyVisual, blockRef],
+  );
+
+  useEffect(() => {
+    handlePointerMoveRef.current = (e: PointerEvent) => {
+      latestPointerRef.current = { x: e.clientX, y: e.clientY };
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = 0;
+        const p = latestPointerRef.current;
+        if (!p) return;
+        processPointer(p.x, p.y);
       });
     };
 
     handlePointerUpRef.current = () => {
-      const mode = dragModeRef.current;
-      const preview = dragPreviewRef.current;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+      // 最終位置を確定してからコミット
+      const pending = latestPointerRef.current;
+      if (pending) {
+        processPointer(pending.x, pending.y);
+      }
 
-      if (mode && preview) {
+      const mode = dragModeRef.current;
+      const visual = dragVisualRef.current;
+
+      if (mode && visual) {
         const currentBlock = blockRef.current;
         let nextBlock = currentBlock;
 
-        if (mode.kind === "bento-height" && preview.bentoRows != null) {
-          nextBlock = setBentoRows(currentBlock, preview.bentoRows);
+        if (mode.kind === "bento-height" && visual.bentoRows != null) {
+          nextBlock = setBentoRows(currentBlock, visual.bentoRows);
         } else if (
-          preview.childId &&
-          preview.placement &&
-          (mode.kind === "move" || mode.kind === "resize") &&
-          !preview.blocked
+          visual.kind === "child" &&
+          visual.childId &&
+          visual.snap &&
+          !visual.blocked &&
+          (mode.kind === "move" || mode.kind === "resize")
         ) {
           nextBlock = updateChildPlacement(
             currentBlock,
-            preview.childId,
-            preview.placement,
-            { expandRows: false },
+            visual.childId,
+            visual.snap,
+            { expandRows: true },
           );
         }
 
@@ -196,16 +243,17 @@ export function useBentoPointerDrag({
         }
       }
 
-      applyDragPreview(null);
+      applyVisual(null);
       endDrag();
       window.removeEventListener("pointermove", stablePointerMove);
       window.removeEventListener("pointerup", stablePointerUp);
       window.removeEventListener("pointercancel", stablePointerUp);
     };
   }, [
-    applyDragPreview,
+    applyVisual,
     blockRef,
     endDrag,
+    processPointer,
     stablePointerMove,
     stablePointerUp,
   ]);
@@ -229,29 +277,54 @@ export function useBentoPointerDrag({
       e.preventDefault();
       e.stopPropagation();
 
-      const measureEl = ghostGridRef.current ?? gridRef.current;
-      const { step } = measureBentoGridStepFromDOM(measureEl);
-      dragOrigin.current = {
-        x: e.clientX,
-        y: e.clientY,
-        placement,
-        step,
+      const geo = measureBentoGridGeometry(gridRef.current);
+      const startRows = getBentoRows(blockRef.current);
+      const startRect = placementToPixels(placement, geo);
+
+      dragOriginRef.current = {
+        pointerX: e.clientX,
+        pointerY: e.clientY,
+        startRect,
+        startPlacement: placement,
+        geo,
+        startRows,
       };
-
-      if (mode.kind === "bento-height") {
-        bentoStartRows.current = getBentoRows(blockRef.current);
-        dragOrigin.current.placement = {
-          ...placement,
-          rowSpan: bentoStartRows.current,
-        };
-      }
-
       dragModeRef.current = mode;
 
-      const target = e.currentTarget as HTMLElement;
+      if (mode.kind === "bento-height") {
+        applyVisual({
+          kind: "bento-height",
+          bentoRows: startRows,
+          blocked: false,
+          padLeft: geo.padLeft,
+          padTop: geo.padTop,
+        });
+      } else {
+        applyVisual({
+          kind: "child",
+          childId: mode.childId,
+          float: startRect,
+          snap: placement,
+          bentoRows: startRows,
+          blocked: false,
+          padLeft: geo.padLeft,
+          padTop: geo.padTop,
+        });
+      }
+
+      // 子ハンドルはドラッグ開始直後にアンマウントされうるので、
+      // グリッド（または高さグリップ自身）に capture する
+      const target =
+        mode.kind === "bento-height"
+          ? (e.currentTarget as HTMLElement)
+          : (gridRef.current as HTMLElement);
       captureTarget.current = target;
       capturePointerId.current = e.pointerId;
-      target.setPointerCapture(e.pointerId);
+      try {
+        target.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
       document.body.style.userSelect = "none";
       document.body.style.touchAction = "none";
 
@@ -262,12 +335,12 @@ export function useBentoPointerDrag({
     [
       editable,
       gridRef,
-      ghostGridRef,
       blockRef,
+      applyVisual,
       stablePointerMove,
       stablePointerUp,
     ],
   );
 
-  return { dragPreview, startDrag };
+  return { dragVisual, startDrag };
 }
