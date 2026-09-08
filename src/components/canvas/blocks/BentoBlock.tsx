@@ -54,14 +54,19 @@ function ChildBody({
   onChildBlur?: (bentoId: string, childId: string) => void;
 }) {
   const area = placement.colSpan * placement.rowSpan;
+  // プレビュー／公開では枠を出さないぶん、商品は余白を削って画像を大きく見せる
   const pad =
-    child.type === "product"
-      ? area <= 16
+    !editable && child.type === "product"
+      ? "p-0"
+      : !editable && child.type === "text"
         ? "p-1"
-        : area <= 36
-          ? "p-1.5"
-          : "p-2"
-      : "p-1.5";
+        : child.type === "product"
+          ? area <= 16
+            ? "p-1"
+            : area <= 36
+              ? "p-1.5"
+              : "p-2"
+          : "p-1.5";
 
   return (
     <div
@@ -222,10 +227,12 @@ export function BentoBlock({
             return (
               <div
                 key={child.id}
-                className={`relative flex min-h-0 min-w-0 flex-col rounded-sm bg-stone-50/90 ring-1 ${
-                  isSelected && editable
-                    ? "ring-stone-400"
-                    : "ring-stone-200/50"
+                className={`relative flex min-h-0 min-w-0 flex-col ${
+                  editable
+                    ? `bg-stone-50/90 ring-1 ${
+                        isSelected ? "ring-stone-400" : "ring-stone-200/50"
+                      }`
+                    : ""
                 }`}
                 style={style}
                 onClick={(e) => {
@@ -274,7 +281,7 @@ export function BentoBlock({
           {/* スナップ先ゴースト */}
           {dragVisual?.kind === "child" && dragVisual.snap && (
             <div
-              className={`pointer-events-none z-10 rounded-sm border border-dashed ${
+              className={`pointer-events-none z-10 border border-dashed ${
                 dragVisual.blocked
                   ? "border-red-400/80 bg-red-50/40"
                   : "border-stone-400/80 bg-stone-900/5"

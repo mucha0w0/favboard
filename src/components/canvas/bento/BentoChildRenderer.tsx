@@ -27,6 +27,7 @@ export function BentoChildRenderer({
         showPlaceholders={editable}
         layout="grid"
         cellSpan={cellSpan}
+        emphasizeImage={!editable}
       />
     );
   }

@@ -35,6 +35,10 @@ export const GRID_SIZE_STYLES: Record<
     imageClass: string;
     /** 左右構成（写真左）向け */
     horizontalImageClass: string;
+    /** プレビュー／公開で枠なし時の上下構成 */
+    emphasizedImageClass: string;
+    /** プレビュー／公開で枠なし時の左右構成 */
+    emphasizedHorizontalImageClass: string;
     titleClass: string;
     gapClass?: string;
     showExtras?: boolean;
@@ -44,6 +48,9 @@ export const GRID_SIZE_STYLES: Record<
   compact: {
     imageClass: "min-h-0 w-full flex-[1.4]",
     horizontalImageClass: "h-full max-h-full aspect-square w-auto max-w-[58%]",
+    emphasizedImageClass: "min-h-0 w-full flex-[1.65]",
+    emphasizedHorizontalImageClass:
+      "h-full max-h-full aspect-square w-auto max-w-[64%]",
     titleClass: "text-[10px] leading-tight",
     gapClass: "gap-1.5",
     showExtras: false,
@@ -52,6 +59,9 @@ export const GRID_SIZE_STYLES: Record<
   standard: {
     imageClass: "min-h-0 w-full flex-[1.5]",
     horizontalImageClass: "h-full max-h-full aspect-square w-auto max-w-[58%]",
+    emphasizedImageClass: "min-h-0 w-full flex-[1.75]",
+    emphasizedHorizontalImageClass:
+      "h-full max-h-full aspect-square w-auto max-w-[64%]",
     titleClass: "text-xs leading-snug",
     gapClass: "gap-2",
     showExtras: false,
@@ -61,6 +71,9 @@ export const GRID_SIZE_STYLES: Record<
     imageClass: "min-h-0 w-full flex-[1.6]",
     horizontalImageClass:
       "h-full max-h-full aspect-square w-auto max-w-[60%]",
+    emphasizedImageClass: "min-h-0 w-full flex-[1.85]",
+    emphasizedHorizontalImageClass:
+      "h-full max-h-full aspect-square w-auto max-w-[66%]",
     titleClass: "text-xs leading-snug",
     gapClass: "gap-2.5",
     showExtras: true,
@@ -70,6 +83,9 @@ export const GRID_SIZE_STYLES: Record<
     imageClass: "min-h-0 w-full flex-[1.8]",
     horizontalImageClass:
       "h-full max-h-full aspect-square w-auto max-w-[62%]",
+    emphasizedImageClass: "min-h-0 w-full flex-[2]",
+    emphasizedHorizontalImageClass:
+      "h-full max-h-full aspect-square w-auto max-w-[68%]",
     titleClass: "text-sm leading-snug",
     gapClass: "gap-3",
     showExtras: true,

@@ -16,6 +16,8 @@ interface ProductBlockProps {
   showPlaceholders?: boolean;
   layout?: "inline" | "grid";
   cellSpan?: { colSpan: number; rowSpan: number };
+  /** プレビュー／公開などで枠がないとき、画像をやや大きめに */
+  emphasizeImage?: boolean;
 }
 
 function ProductCardContent({
@@ -24,12 +26,14 @@ function ProductCardContent({
   size,
   layout,
   cellSpan,
+  emphasizeImage,
 }: {
   block: Block;
   showPlaceholders: boolean;
   size: ProductSize;
   layout: "inline" | "grid";
   cellSpan?: { colSpan: number; rowSpan: number };
+  emphasizeImage?: boolean;
 }) {
   const { title, brand, price, image_url, comment } = block.data;
   const [imageError, setImageError] = useState(false);
@@ -63,8 +67,12 @@ function ProductCardContent({
   const imageClass =
     layout === "grid"
       ? useVertical
-        ? gridStyles.imageClass
-        : gridStyles.horizontalImageClass
+        ? emphasizeImage
+          ? gridStyles.emphasizedImageClass
+          : gridStyles.imageClass
+        : emphasizeImage
+          ? gridStyles.emphasizedHorizontalImageClass
+          : gridStyles.horizontalImageClass
       : inlineStyles.imageClass;
   const titleClass =
     layout === "grid" ? gridStyles.titleClass : inlineStyles.titleClass;
@@ -97,6 +105,7 @@ export function ProductBlock({
   showPlaceholders = false,
   layout = "inline",
   cellSpan,
+  emphasizeImage = false,
 }: ProductBlockProps) {
   const size = getProductSize(block);
 
@@ -112,6 +121,7 @@ export function ProductBlock({
         size={size}
         layout={layout}
         cellSpan={cellSpan}
+        emphasizeImage={emphasizeImage}
       />
     </div>
   );
