@@ -8,7 +8,6 @@ import {
   GRID_SIZE_STYLES,
   PRODUCT_SIZE_STYLES,
   displayValue,
-  resolveImagePosition,
   shouldUseVerticalLayout,
 } from "./product/styles";
 
@@ -66,21 +65,13 @@ function ProductCardContent({
     layout === "grid"
       ? useVertical
         ? gridStyles.imageClass
-        : (gridStyles.horizontalImageClass ?? gridStyles.imageClass)
+        : gridStyles.horizontalImageClass
       : inlineStyles.imageClass;
   const titleClass =
     layout === "grid" ? gridStyles.titleClass : inlineStyles.titleClass;
   const gapClass = layout === "grid" ? gridStyles.gapClass : undefined;
   const showExtras = layout === "grid" ? gridStyles.showExtras : true;
   const lineClamp = layout === "grid" ? gridStyles.lineClamp : undefined;
-  const styleImagePosition =
-    layout === "grid" ? gridStyles.imagePosition : inlineStyles.imagePosition;
-  const imagePosition = resolveImagePosition(
-    layout,
-    effectiveSize,
-    cellSpan,
-    styleImagePosition,
-  );
 
   const layoutProps = {
     ...shared,
@@ -98,7 +89,6 @@ function ProductCardContent({
     <ProductHorizontal
       {...layoutProps}
       gapClass={layout === "grid" ? gapClass : undefined}
-      imagePosition={imagePosition}
     />
   );
 }

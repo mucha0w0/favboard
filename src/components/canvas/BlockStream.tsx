@@ -58,6 +58,7 @@ function BlockStreamView({
           <StaticBlockShell
             key={block.id}
             block={block}
+            editable={editable}
             onEditBlock={onEditBlock}
             onUpdateBlockData={onUpdateBlockData}
             onBlockBlur={onBlockBlur}

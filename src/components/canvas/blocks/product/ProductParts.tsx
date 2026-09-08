@@ -10,16 +10,19 @@ export function ProductImage({
   title,
   onError,
   className,
+  shrink = true,
 }: {
   showImage: boolean;
   imageUrl?: string;
   title?: string;
   onError: () => void;
   className: string;
+  /** 上下構成で flex 伸縮させるときは false */
+  shrink?: boolean;
 }) {
   return (
     <div
-      className={`relative shrink-0 overflow-hidden bg-stone-100 ${className}`}
+      className={`relative overflow-hidden bg-stone-100 ${shrink ? "shrink-0" : "min-h-0"} ${className}`}
     >
       {showImage && imageUrl ? (
         <Image
@@ -142,7 +145,6 @@ export function ProductHorizontal({
   gapClass = "gap-4 sm:gap-5",
   showExtras = true,
   lineClamp,
-  imagePosition = "left",
 }: {
   showImage: boolean;
   imageUrl?: string;
@@ -160,14 +162,9 @@ export function ProductHorizontal({
   gapClass?: string;
   showExtras?: boolean;
   lineClamp?: number;
-  imagePosition?: "left" | "right";
 }) {
   return (
-    <div
-      className={`group flex h-full min-h-0 items-center ${gapClass} ${
-        imagePosition === "right" ? "flex-row-reverse" : ""
-      }`}
-    >
+    <div className={`group flex h-full min-h-0 items-center ${gapClass}`}>
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
@@ -228,15 +225,16 @@ export function ProductVertical({
   lineClamp?: number;
 }) {
   return (
-    <div className="group flex h-full min-h-0 flex-col">
+    <div className="group flex h-full min-h-0 flex-col gap-1.5">
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
         title={title}
         onError={onImageError}
         className={imageClassName}
+        shrink={false}
       />
-      <div className="mt-1.5 shrink-0">
+      <div className="min-h-0 shrink-0">
         <ProductMeta
           brandText={brandText}
           titleText={titleText}
