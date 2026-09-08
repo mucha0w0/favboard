@@ -222,7 +222,7 @@ export function BentoBlock({
             return (
               <div
                 key={child.id}
-                className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-sm bg-stone-50/90 ring-1 ${
+                className={`relative flex min-h-0 min-w-0 flex-col rounded-sm bg-stone-50/90 ring-1 ${
                   isSelected && editable
                     ? "ring-stone-400"
                     : "ring-stone-200/50"

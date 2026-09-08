@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import type { ResizeEdge } from "@/lib/bento";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
 
@@ -83,26 +82,37 @@ export function BentoChildChrome({
 }: BentoChildChromeProps) {
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="secondary"
-        size="icon"
-        className="absolute left-1 top-1 z-30 h-7 w-7 cursor-grab touch-none bg-white/90 text-stone-400 shadow-sm hover:text-stone-600 active:cursor-grabbing"
+        className="absolute -left-0.5 top-0 z-30 -translate-x-full cursor-grab touch-none p-0.5 text-stone-400 hover:text-stone-600 active:cursor-grabbing"
         aria-label="移動"
         onPointerDown={onStartMove}
       >
         <GripVertical className="h-3.5 w-3.5" />
-      </Button>
-      <Button
-        type="button"
-        variant="secondary"
-        size="icon"
-        className="absolute right-1 top-1 z-30 h-7 w-7 bg-white/90 text-stone-400 shadow-sm hover:text-red-600"
-        aria-label="削除"
-        onClick={onDelete}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      </button>
+      <div className="absolute right-1.5 top-1.5 z-30 flex items-center gap-2.5">
+        {showEdit && onEdit && (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 border-b border-stone-300 pb-0.5 text-[11px] text-stone-400 hover:border-stone-500 hover:text-stone-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            <Pencil className="h-3 w-3" />
+            編集
+          </button>
+        )}
+        <button
+          type="button"
+          className="p-0.5 text-stone-400 hover:text-red-600"
+          aria-label="削除"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
       {EDGE_HANDLES.map(({ edge, className, children }) => (
         <div
           key={edge}
@@ -112,21 +122,6 @@ export function BentoChildChrome({
           {children}
         </div>
       ))}
-      {showEdit && onEdit && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="absolute bottom-1 left-1/2 z-30 h-7 -translate-x-1/2 bg-white/95 px-2.5 text-[11px] shadow-sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-        >
-          <Pencil className="h-3 w-3" />
-          編集
-        </Button>
-      )}
     </>
   );
 }
