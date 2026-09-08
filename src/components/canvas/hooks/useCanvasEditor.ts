@@ -3,7 +3,6 @@
 import {
   createTopLevelBlock,
   migrateCanvasBlocks,
-  removeBentoChild,
   updateBentoChildData,
 } from "@/lib/bento";
 import {
@@ -39,10 +38,21 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   const [pendingNewBlockIds, setPendingNewBlockIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const productPersistTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     blocksRef.current = blocks;
   }, [blocks]);
+
+  useEffect(() => {
+    return () => {
+      if (productPersistTimer.current) {
+        clearTimeout(productPersistTimer.current);
+      }
+    };
+  }, []);
 
   const isDirty = useMemo(
     () => title !== canvas.title || !blocksEqual(blocks, canvas.blocks),
@@ -244,43 +254,40 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     await persist(blocksRef.current, title);
   }
 
-  async function handleApplyBlockData(blockId: string, data: BlockData) {
-    let nextBlocks: Block[];
+  function handleProductDataChange(blockId: string, data: BlockData) {
+    const bentoId = editingBentoId;
+    const nextBlocks = blocksRef.current.map((b) => {
+      if (bentoId && b.id === bentoId) {
+        return updateBentoChildData(b, blockId, data);
+      }
+      if (b.id === blockId) {
+        return { ...b, data: { ...b.data, ...data } };
+      }
+      return b;
+    });
 
-    if (editingBentoId) {
-      nextBlocks = blocks.map((b) =>
-        b.id === editingBentoId ? updateBentoChildData(b, blockId, data) : b,
-      );
-    } else {
-      nextBlocks = blocks.map((b) =>
-        b.id === blockId ? { ...b, data: { ...b.data, ...data } } : b,
-      );
-    }
-
+    blocksRef.current = nextBlocks;
     setBlocks(nextBlocks);
-    setEditingBlock(null);
-    setEditingBentoId(null);
-    setIsNewBlock(false);
-    await persist(nextBlocks, title);
+
+    if (productPersistTimer.current) {
+      clearTimeout(productPersistTimer.current);
+    }
+    productPersistTimer.current = setTimeout(() => {
+      productPersistTimer.current = null;
+      void persist(blocksRef.current, title);
+    }, 400);
   }
 
-  function handleDialogCancel() {
-    const cancelNew = isNewBlock;
-    const childId = editingBlock?.id;
-    const bentoId = editingBentoId;
-
+  function handleDialogClose() {
+    if (productPersistTimer.current) {
+      clearTimeout(productPersistTimer.current);
+      productPersistTimer.current = null;
+      void persist(blocksRef.current, title);
+    }
     setIsNewBlock(false);
     setEditingBlock(null);
     setEditingBentoId(null);
-
-    if (cancelNew && childId && bentoId) {
-      const next = blocksRef.current.map((b) =>
-        b.id === bentoId ? removeBentoChild(b, childId) : b,
-      );
-      blocksRef.current = next;
-      setBlocks(next);
-      void persist(next, title);
-    }
+    setDialogOpen(false);
   }
 
   async function handleDeleteBlock(blockId: string) {
@@ -335,8 +342,8 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     handlePersistBento,
     handleBlockBlur,
     handleBentoChildBlur,
-    handleApplyBlockData,
-    handleDialogCancel,
+    handleProductDataChange,
+    handleDialogClose,
     handleDeleteBlock,
     handleTogglePublish,
     handleBackClick,

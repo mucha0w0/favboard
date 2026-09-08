@@ -20,6 +20,7 @@ function normalizePreviewUrl(url: string): string {
 
 export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [urlDraft, setUrlDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewError, setPreviewError] = useState(false);
   const [error, setError] = useState("");
@@ -33,6 +34,7 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
     try {
       const dataUrl = await imageFileToDataUrl(file);
       onChange(dataUrl);
+      setUrlDraft("");
       setPreviewError(false);
     } catch (err) {
       setError(
@@ -54,6 +56,22 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
     if (!imageFile) return;
     e.preventDefault();
     void applyImageFile(imageFile);
+  }
+
+  function handleAddUrl() {
+    const url = urlDraft.trim();
+    if (!url) return;
+    setError("");
+    setPreviewError(false);
+    onChange(url);
+    setUrlDraft("");
+  }
+
+  function handleUrlKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddUrl();
+    }
   }
 
   function handleClear() {
@@ -89,7 +107,7 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
             <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-stone-400">
               <ImageIcon className="h-8 w-8" />
               <p className="text-xs leading-relaxed">
-                デバイスから選ぶか、URLを入力、
+                デバイスから選ぶか、URLを入力して追加、
                 <br />
                 または Ctrl+V / ⌘V で貼り付け
               </p>
@@ -136,17 +154,28 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
         <Label htmlFor="image-url" className="text-xs text-stone-500">
           URLで追加
         </Label>
-        <Input
-          id="image-url"
-          value={value}
-          onChange={(e) => {
-            setPreviewError(false);
-            setError("");
-            onChange(e.target.value);
-          }}
-          onPaste={handlePaste}
-          placeholder="https://..."
-        />
+        <div className="flex gap-2">
+          <Input
+            id="image-url"
+            value={urlDraft}
+            onChange={(e) => {
+              setUrlDraft(e.target.value);
+              setError("");
+            }}
+            onPaste={handlePaste}
+            onKeyDown={handleUrlKeyDown}
+            placeholder="https://..."
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            className="shrink-0"
+            disabled={loading || !urlDraft.trim()}
+            onClick={handleAddUrl}
+          >
+            追加
+          </Button>
+        </div>
       </div>
 
       {error && <p className="text-xs text-red-500">{error}</p>}

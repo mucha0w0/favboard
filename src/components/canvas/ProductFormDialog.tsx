@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +13,7 @@ interface ProductFormDialogProps {
   open: boolean;
   isNew?: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (blockId: string, data: BlockData) => void;
-  onCancel?: () => void;
+  onChange: (blockId: string, data: BlockData) => void;
 }
 
 export function ProductFormDialog({
@@ -23,29 +21,21 @@ export function ProductFormDialog({
   open,
   isNew = false,
   onOpenChange,
-  onSave,
-  onCancel,
+  onChange,
 }: ProductFormDialogProps) {
-  function handleClose() {
-    onCancel?.();
-    onOpenChange(false);
-  }
-
   const dialogTitle = isNew ? "商品を追加" : "商品を編集";
 
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => (next ? onOpenChange(true) : handleClose())}
+      onOpenChange={onOpenChange}
       title={dialogTitle}
     >
       {block && (
         <ProductFormFields
           key={block.id}
           block={block}
-          onSave={onSave}
-          onOpenChange={onOpenChange}
-          onCancel={onCancel}
+          onChange={onChange}
         />
       )}
     </Dialog>
@@ -54,14 +44,10 @@ export function ProductFormDialog({
 
 function ProductFormFields({
   block,
-  onSave,
-  onOpenChange,
-  onCancel,
+  onChange,
 }: {
   block: Block;
-  onSave: (blockId: string, data: BlockData) => void;
-  onOpenChange: (open: boolean) => void;
-  onCancel?: () => void;
+  onChange: (blockId: string, data: BlockData) => void;
 }) {
   const [title, setTitle] = useState(block.data.title || "");
   const [brand, setBrand] = useState(block.data.brand || "");
@@ -69,72 +55,93 @@ function ProductFormFields({
   const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
   const [comment, setComment] = useState(block.data.comment || "");
 
-  function handleClose() {
-    onCancel?.();
-    onOpenChange(false);
-  }
-
-  function handleApply() {
-    onSave(block.id, {
-      title: title.trim() || "Untitled Product",
-      brand: brand.trim(),
-      price: price.trim(),
-      image_url: imageUrl.trim(),
-      comment: comment.trim(),
+  function commit(next: {
+    title?: string;
+    brand?: string;
+    price?: string;
+    image_url?: string;
+    comment?: string;
+  }) {
+    const merged = {
+      title: next.title ?? title,
+      brand: next.brand ?? brand,
+      price: next.price ?? price,
+      image_url: next.image_url ?? imageUrl,
+      comment: next.comment ?? comment,
+    };
+    onChange(block.id, {
+      title: merged.title.trim(),
+      brand: merged.brand.trim(),
+      price: merged.price.trim(),
+      image_url: merged.image_url.trim(),
+      comment: merged.comment.trim(),
     });
-    onOpenChange(false);
   }
 
   return (
-    <>
-      <div className="space-y-4">
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="title">タイトル</Label>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => {
+            const v = e.target.value;
+            setTitle(v);
+            commit({ title: v });
+          }}
+          placeholder="商品名"
+          autoFocus
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="title">タイトル</Label>
+          <Label htmlFor="brand">ブランド</Label>
           <Input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="商品名"
-            autoFocus
+            id="brand"
+            value={brand}
+            onChange={(e) => {
+              const v = e.target.value;
+              setBrand(v);
+              commit({ brand: v });
+            }}
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="brand">ブランド</Label>
-            <Input
-              id="brand"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="price">価格</Label>
-            <Input
-              id="price"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="¥12,800"
-            />
-          </div>
-        </div>
-        <ProductImageInput value={imageUrl} onChange={setImageUrl} />
         <div className="space-y-2">
-          <Label htmlFor="comment">こだわり・コメント</Label>
-          <Textarea
-            id="comment"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="なぜ欲しいのか、どんなこだわりがあるのか..."
-            rows={3}
+          <Label htmlFor="price">価格</Label>
+          <Input
+            id="price"
+            value={price}
+            onChange={(e) => {
+              const v = e.target.value;
+              setPrice(v);
+              commit({ price: v });
+            }}
+            placeholder="¥12,800"
           />
         </div>
       </div>
-      <div className="mt-8 flex justify-end gap-2">
-        <Button variant="outline" onClick={handleClose}>
-          キャンセル
-        </Button>
-        <Button onClick={handleApply}>適用</Button>
+      <ProductImageInput
+        value={imageUrl}
+        onChange={(v) => {
+          setImageUrl(v);
+          commit({ image_url: v });
+        }}
+      />
+      <div className="space-y-2">
+        <Label htmlFor="comment">こだわり・コメント</Label>
+        <Textarea
+          id="comment"
+          value={comment}
+          onChange={(e) => {
+            const v = e.target.value;
+            setComment(v);
+            commit({ comment: v });
+          }}
+          placeholder="なぜ欲しいのか、どんなこだわりがあるのか..."
+          rows={3}
+        />
       </div>
-    </>
+    </div>
   );
 }
