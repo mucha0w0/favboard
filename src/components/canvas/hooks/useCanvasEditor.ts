@@ -35,9 +35,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   const [isNewBlock, setIsNewBlock] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
-  const [pendingNewBlockIds, setPendingNewBlockIds] = useState<Set<string>>(
-    () => new Set(),
-  );
   const productPersistTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -127,7 +124,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
 
     if (type === "heading") {
       setFocusBlockId(newBlock.id);
-      setPendingNewBlockIds((prev) => new Set(prev).add(newBlock.id));
       return;
     }
 
@@ -188,22 +184,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     const block = currentBlocks.find((b) => b.id === blockId);
     if (!block) return;
 
-    const isPendingNew = pendingNewBlockIds.has(blockId);
-    const isEmpty = block.type === "heading" && !block.data.text?.trim();
-
-    if (isPendingNew) {
-      setPendingNewBlockIds((prev) => {
-        const next = new Set(prev);
-        next.delete(blockId);
-        return next;
-      });
-    }
-
-    if (isPendingNew && isEmpty) {
-      setBlocks(currentBlocks.filter((b) => b.id !== blockId));
-      return;
-    }
-
     const saved = canvas.blocks.find((b) => b.id === blockId);
     if (saved && blockDataEqual(saved.data, block.data)) {
       return;
@@ -218,38 +198,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     const bento = blocksRef.current.find((b) => b.id === bentoId);
     const child = bento?.data.children?.find((c) => c.id === childId);
     if (!child || child.type !== "text") return;
-
-    const isPendingNew = pendingNewBlockIds.has(childId);
-    const isEmpty = !child.data.body?.trim();
-
-    if (isPendingNew) {
-      setPendingNewBlockIds((prev) => {
-        const next = new Set(prev);
-        next.delete(childId);
-        return next;
-      });
-    }
-
-    if (isPendingNew && isEmpty) {
-      setBlocks((prev) =>
-        prev.map((b) => {
-          if (b.id !== bentoId) return b;
-          return {
-            ...b,
-            data: {
-              ...b.data,
-              children: b.data.children?.filter((c) => c.id !== childId),
-              child_placements: Object.fromEntries(
-                Object.entries(b.data.child_placements ?? {}).filter(
-                  ([id]) => id !== childId,
-                ),
-              ),
-            },
-          };
-        }),
-      );
-      return;
-    }
 
     await persist(blocksRef.current, title);
   }
