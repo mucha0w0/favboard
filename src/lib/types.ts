@@ -36,7 +36,6 @@ export interface BlockData {
   brand?: string;
   price?: string;
   image_url?: string;
-  product_url?: string;
   comment?: string;
   product_size?: ProductSize | "banner";
   /** Bento コンテナ */
@@ -62,13 +61,6 @@ export interface Canvas {
   is_published: boolean;
   created_at: string;
   updated_at: string;
-}
-
-export interface OgpData {
-  title?: string;
-  image?: string;
-  description?: string;
-  siteName?: string;
 }
 
 export function isTopLevelBlockType(type: BlockType): type is TopLevelBlockType {

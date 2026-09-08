@@ -176,13 +176,3 @@ body {
 .stagger-2 { animation-delay: 0.12s; }
 .stagger-3 { animation-delay: 0.2s; }
 .stagger-4 { animation-delay: 0.28s; }
-
-/* ── Product link hover ── */
-
-.product-link {
-  transition: color 0.15s ease;
-}
-
-.product-link:hover {
-  color: var(--accent);
-}

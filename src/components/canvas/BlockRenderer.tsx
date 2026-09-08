@@ -14,7 +14,11 @@ interface BlockRendererProps {
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
   onUpdateBento?: (bentoId: string, data: Partial<BlockData>) => void;
-  onEditBentoChild?: (bentoId: string, child: Block) => void;
+  onEditBentoChild?: (
+    bentoId: string,
+    child: Block,
+    opts?: { isNew?: boolean },
+  ) => void;
   onBentoChildBlur?: (bentoId: string, childId: string) => void;
   onPersistBento?: (bentoId: string) => void;
   autoFocus?: boolean;

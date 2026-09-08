@@ -25,7 +25,11 @@ interface BentoBlockProps {
   editable?: boolean;
   focusBlockId?: string | null;
   onUpdateBento?: (bentoId: string, data: Partial<BlockData>) => void;
-  onEditChild?: (bentoId: string, child: Block) => void;
+  onEditChild?: (
+    bentoId: string,
+    child: Block,
+    opts?: { isNew?: boolean },
+  ) => void;
   onChildBlur?: (bentoId: string, childId: string) => void;
   onPersistBento?: (bentoId: string) => void;
 }
@@ -134,6 +138,9 @@ export function BentoBlock({
     commitBento(next);
     setSelectedId(child.id);
     onPersistBento?.(block.id);
+    if (type === "product") {
+      onEditChild?.(block.id, child, { isNew: true });
+    }
   }
 
   function handleDeleteChild(childId: string) {

@@ -31,7 +31,7 @@ function ProductCardContent({
   layout: "inline" | "grid";
   cellSpan?: { colSpan: number; rowSpan: number };
 }) {
-  const { title, brand, price, image_url, product_url, comment } = block.data;
+  const { title, brand, price, image_url, comment } = block.data;
   const [imageError, setImageError] = useState(false);
   const showImage = Boolean(image_url && !imageError);
 
@@ -51,7 +51,6 @@ function ProductCardContent({
     brand,
     price,
     comment,
-    product_url,
   };
 
   const effectiveSize =

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import Image from "next/image";
 import { normalizeImageUrl } from "./styles";
 
@@ -98,33 +98,12 @@ export function ProductMeta({
   );
 }
 
-export function ProductExtras({
-  comment,
-  product_url,
-}: {
-  comment?: string;
-  product_url?: string;
-}) {
+export function ProductExtras({ comment }: { comment?: string }) {
+  if (!comment?.trim()) return null;
   return (
-    <>
-      {comment?.trim() && (
-        <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-stone-500">
-          {comment}
-        </p>
-      )}
-      {product_url && (
-        <a
-          href={product_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="product-link mt-3 inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.08em] text-stone-400"
-          onClick={(e) => e.stopPropagation()}
-        >
-          公式ページを見る
-          <ArrowUpRight className="h-3 w-3" />
-        </a>
-      )}
-    </>
+    <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-stone-500">
+      {comment}
+    </p>
   );
 }
 
@@ -141,7 +120,6 @@ export function ProductHorizontal({
   price,
   titleClass,
   comment,
-  product_url,
   gapClass = "gap-4 sm:gap-5",
   showExtras = true,
   lineClamp,
@@ -158,7 +136,6 @@ export function ProductHorizontal({
   price?: string;
   titleClass?: string;
   comment?: string;
-  product_url?: string;
   gapClass?: string;
   showExtras?: boolean;
   lineClamp?: number;
@@ -183,9 +160,7 @@ export function ProductHorizontal({
           titleClass={titleClass}
           lineClamp={lineClamp}
         />
-        {showExtras && (
-          <ProductExtras comment={comment} product_url={product_url} />
-        )}
+        {showExtras && <ProductExtras comment={comment} />}
       </div>
     </div>
   );
@@ -204,7 +179,6 @@ export function ProductVertical({
   price,
   titleClass,
   comment,
-  product_url,
   showExtras = true,
   lineClamp,
 }: {
@@ -220,7 +194,6 @@ export function ProductVertical({
   price?: string;
   titleClass?: string;
   comment?: string;
-  product_url?: string;
   showExtras?: boolean;
   lineClamp?: number;
 }) {
@@ -246,9 +219,7 @@ export function ProductVertical({
           vertical
           lineClamp={lineClamp}
         />
-        {showExtras && (
-          <ProductExtras comment={comment} product_url={product_url} />
-        )}
+        {showExtras && <ProductExtras comment={comment} />}
       </div>
     </div>
   );

@@ -17,7 +17,10 @@ const BlockStreamEditor = dynamic(
 interface BlockStreamProps {
   blocks: Block[];
   editable?: boolean;
-  onEditBlock?: (block: Block, context?: { bentoId: string }) => void;
+  onEditBlock?: (
+    block: Block,
+    context?: { bentoId: string; isNew?: boolean },
+  ) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;
   focusBlockId?: string | null;

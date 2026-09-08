@@ -10,7 +10,6 @@
 - **Styling**: Tailwind CSS v4, shadcn/ui 風コンポーネント
 - **Layout**: 縦ドキュメント + Bento グリッド（商品 / テキストを配置）
 - **Backend / Database**: Supabase (PostgreSQL, Auth, RLS) またはローカル JSON
-- **OGP Fetcher**: open-graph-scraper
 - **Deployment**: Vercel
 
 ## セットアップ
@@ -75,16 +74,14 @@ http://localhost:3000 を開く
 | `/dashboard` | マイキャンバス一覧 |
 | `/edit/[id]` | キャンバス編集 |
 | `/c/[slug]` | 公開閲覧ページ |
-| `/api/ogp` | OGP 自動取得 API |
 | `/api/canvases` | キャンバス CRUD API |
 
 ## コア機能
 
 - **編集画面**: Bento・見出し・区切り線を縦に追加
 - **Bento**: グリッド上に商品・テキストを配置・リサイズ
-- **OGP 自動補完**: EC サイト URL からタイトル・画像を取得
 - **公開 & シェア**: 固有 slug URL、Twitter OGP 対応
-- **決済排除**: 公式ページへの外部リンクのみ
+- **決済なし**: 物欲・こだわりのポートフォリオに特化
 
 ## ソース構成（概要）
 

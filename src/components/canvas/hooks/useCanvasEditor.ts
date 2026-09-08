@@ -3,6 +3,7 @@
 import {
   createTopLevelBlock,
   migrateCanvasBlocks,
+  removeBentoChild,
   updateBentoChildData,
 } from "@/lib/bento";
 import {
@@ -131,11 +132,14 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     [persist, title],
   );
 
-  function handleEditBlock(block: Block, context?: { bentoId: string }) {
+  function handleEditBlock(
+    block: Block,
+    context?: { bentoId: string; isNew?: boolean },
+  ) {
     if (block.type !== "product") return;
     setEditingBlock(block);
     setEditingBentoId(context?.bentoId ?? null);
-    setIsNewBlock(false);
+    setIsNewBlock(Boolean(context?.isNew));
     setDialogOpen(true);
   }
 
@@ -261,9 +265,22 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   }
 
   function handleDialogCancel() {
+    const cancelNew = isNewBlock;
+    const childId = editingBlock?.id;
+    const bentoId = editingBentoId;
+
     setIsNewBlock(false);
     setEditingBlock(null);
     setEditingBentoId(null);
+
+    if (cancelNew && childId && bentoId) {
+      const next = blocksRef.current.map((b) =>
+        b.id === bentoId ? removeBentoChild(b, childId) : b,
+      );
+      blocksRef.current = next;
+      setBlocks(next);
+      void persist(next, title);
+    }
   }
 
   async function handleDeleteBlock(blockId: string) {

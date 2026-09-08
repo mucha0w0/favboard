@@ -79,8 +79,8 @@ export default function HomePage() {
             />
             <Feature
               number="02"
-              title="URLから自動入力"
-              description="商品URLを貼るだけでタイトルと画像を取得。手動での編集も自由に。"
+              title="こだわりを残す"
+              description="ブランド・価格・画像・コメントで、欲しい理由ごと記録。手入力で自分らしい一冊に。"
             />
             <Feature
               number="03"

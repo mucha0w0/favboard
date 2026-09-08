@@ -15,7 +15,10 @@ import { BlockRenderer } from "./BlockRenderer";
 
 export interface BlockStreamShellProps {
   blocks: Block[];
-  onEditBlock?: (block: Block, context?: { bentoId: string }) => void;
+  onEditBlock?: (
+    block: Block,
+    context?: { bentoId: string; isNew?: boolean },
+  ) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
   focusBlockId?: string | null;
@@ -58,7 +61,10 @@ interface BlockShellCommonProps {
   className?: string;
   /** When false, hide grips, menus, and pass read-only to BlockRenderer. */
   editable?: boolean;
-  onEditBlock?: (block: Block, context?: { bentoId: string }) => void;
+  onEditBlock?: (
+    block: Block,
+    context?: { bentoId: string; isNew?: boolean },
+  ) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
   focusBlockId?: string | null;
@@ -223,7 +229,9 @@ function BlockItem({
       onUpdateBlockData={onUpdateBlockData}
       onBlockBlur={onBlockBlur}
       onUpdateBento={onUpdateBento}
-      onEditBentoChild={(bentoId, child) => onEditBlock?.(child, { bentoId })}
+      onEditBentoChild={(bentoId, child, opts) =>
+        onEditBlock?.(child, { bentoId, isNew: opts?.isNew })
+      }
       onBentoChildBlur={onBentoChildBlur}
       onPersistBento={onPersistBento}
     />
