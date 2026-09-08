@@ -58,6 +58,7 @@ export function BlockRenderer({
           showPlaceholders={editable}
           layout={productLayout}
           cellSpan={cellSpan}
+          showOfficialLink={!editable}
         />
       );
     case "heading":

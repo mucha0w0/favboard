@@ -1,8 +1,15 @@
 "use client";
 
-import { Package } from "lucide-react";
+import { ExternalLink, Package } from "lucide-react";
 import Image from "next/image";
 import { normalizeImageUrl } from "./styles";
+
+function normalizeExternalUrl(url: string): string {
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  return `https://${trimmed}`;
+}
 
 export function ProductImage({
   showImage,
@@ -98,12 +105,42 @@ export function ProductMeta({
   );
 }
 
-export function ProductExtras({ comment }: { comment?: string }) {
-  if (!comment?.trim()) return null;
+export function ProductOfficialLink({ url }: { url: string }) {
   return (
-    <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-stone-500">
-      {comment}
-    </p>
+    <a
+      href={normalizeExternalUrl(url)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-[12px] text-stone-600 underline underline-offset-2 transition-colors hover:text-stone-900"
+    >
+      <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+      公式サイトに移動
+    </a>
+  );
+}
+
+export function ProductExtras({
+  comment,
+  officialUrl,
+}: {
+  comment?: string;
+  officialUrl?: string;
+}) {
+  const hasComment = Boolean(comment?.trim());
+  const hasOfficialUrl = Boolean(officialUrl?.trim());
+  if (!hasComment && !hasOfficialUrl) return null;
+
+  return (
+    <div className="mt-3 space-y-1">
+      {hasComment && (
+        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-stone-500">
+          {comment}
+        </p>
+      )}
+      {hasOfficialUrl && officialUrl && (
+        <ProductOfficialLink url={officialUrl} />
+      )}
+    </div>
   );
 }
 
@@ -120,8 +157,10 @@ export function ProductHorizontal({
   price,
   titleClass,
   comment,
+  officialUrl,
   gapClass = "gap-4 sm:gap-5",
   showExtras = true,
+  showOfficialLink = false,
   lineClamp,
 }: {
   showImage: boolean;
@@ -136,10 +175,17 @@ export function ProductHorizontal({
   price?: string;
   titleClass?: string;
   comment?: string;
+  officialUrl?: string;
   gapClass?: string;
   showExtras?: boolean;
+  showOfficialLink?: boolean;
   lineClamp?: number;
 }) {
+  const extrasComment = showExtras ? comment : undefined;
+  const extrasOfficialUrl = showOfficialLink ? officialUrl : undefined;
+  const showProductExtras =
+    Boolean(extrasComment?.trim()) || Boolean(extrasOfficialUrl?.trim());
+
   return (
     <div className={`group flex h-full min-h-0 items-center ${gapClass}`}>
       <ProductImage
@@ -160,7 +206,12 @@ export function ProductHorizontal({
           titleClass={titleClass}
           lineClamp={lineClamp}
         />
-        {showExtras && <ProductExtras comment={comment} />}
+        {showProductExtras && (
+          <ProductExtras
+            comment={extrasComment}
+            officialUrl={extrasOfficialUrl}
+          />
+        )}
       </div>
     </div>
   );
@@ -179,7 +230,9 @@ export function ProductVertical({
   price,
   titleClass,
   comment,
+  officialUrl,
   showExtras = true,
+  showOfficialLink = false,
   lineClamp,
 }: {
   showImage: boolean;
@@ -194,9 +247,16 @@ export function ProductVertical({
   price?: string;
   titleClass?: string;
   comment?: string;
+  officialUrl?: string;
   showExtras?: boolean;
+  showOfficialLink?: boolean;
   lineClamp?: number;
 }) {
+  const extrasComment = showExtras ? comment : undefined;
+  const extrasOfficialUrl = showOfficialLink ? officialUrl : undefined;
+  const showProductExtras =
+    Boolean(extrasComment?.trim()) || Boolean(extrasOfficialUrl?.trim());
+
   return (
     <div className="group flex h-full min-h-0 flex-col gap-1.5">
       <ProductImage
@@ -219,7 +279,12 @@ export function ProductVertical({
           vertical
           lineClamp={lineClamp}
         />
-        {showExtras && <ProductExtras comment={comment} />}
+        {showProductExtras && (
+          <ProductExtras
+            comment={extrasComment}
+            officialUrl={extrasOfficialUrl}
+          />
+        )}
       </div>
     </div>
   );

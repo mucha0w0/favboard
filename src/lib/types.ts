@@ -36,6 +36,8 @@ export interface BlockData {
   brand?: string;
   price?: string;
   image_url?: string;
+  /** 公式サイト URL */
+  official_url?: string;
   comment?: string;
   product_size?: ProductSize | "banner";
   /** Bento コンテナ */

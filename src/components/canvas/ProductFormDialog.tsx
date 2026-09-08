@@ -53,6 +53,9 @@ function ProductFormFields({
   const [brand, setBrand] = useState(block.data.brand || "");
   const [price, setPrice] = useState(block.data.price || "");
   const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
+  const [officialUrl, setOfficialUrl] = useState(
+    block.data.official_url || "",
+  );
   const [comment, setComment] = useState(block.data.comment || "");
 
   function commit(next: {
@@ -60,6 +63,7 @@ function ProductFormFields({
     brand?: string;
     price?: string;
     image_url?: string;
+    official_url?: string;
     comment?: string;
   }) {
     const merged = {
@@ -67,6 +71,7 @@ function ProductFormFields({
       brand: next.brand ?? brand,
       price: next.price ?? price,
       image_url: next.image_url ?? imageUrl,
+      official_url: next.official_url ?? officialUrl,
       comment: next.comment ?? comment,
     };
     onChange(block.id, {
@@ -74,6 +79,7 @@ function ProductFormFields({
       brand: merged.brand.trim(),
       price: merged.price.trim(),
       image_url: merged.image_url.trim(),
+      official_url: merged.official_url.trim(),
       comment: merged.comment.trim(),
     });
   }
@@ -128,6 +134,20 @@ function ProductFormFields({
           commit({ image_url: v });
         }}
       />
+      <div className="space-y-2">
+        <Label htmlFor="official_url">公式サイト</Label>
+        <Input
+          id="official_url"
+          type="url"
+          value={officialUrl}
+          onChange={(e) => {
+            const v = e.target.value;
+            setOfficialUrl(v);
+            commit({ official_url: v });
+          }}
+          placeholder="https://example.com/product"
+        />
+      </div>
       <div className="space-y-2">
         <Label htmlFor="comment">こだわり・コメント</Label>
         <Textarea

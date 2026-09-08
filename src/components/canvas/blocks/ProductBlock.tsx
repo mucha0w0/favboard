@@ -18,6 +18,8 @@ interface ProductBlockProps {
   cellSpan?: { colSpan: number; rowSpan: number };
   /** プレビュー／公開などで枠がないとき、画像をやや大きめに */
   emphasizeImage?: boolean;
+  /** プレビュー／公開画面のみ公式サイトリンクを表示 */
+  showOfficialLink?: boolean;
 }
 
 function ProductCardContent({
@@ -27,6 +29,7 @@ function ProductCardContent({
   layout,
   cellSpan,
   emphasizeImage,
+  showOfficialLink,
 }: {
   block: Block;
   showPlaceholders: boolean;
@@ -34,8 +37,9 @@ function ProductCardContent({
   layout: "inline" | "grid";
   cellSpan?: { colSpan: number; rowSpan: number };
   emphasizeImage?: boolean;
+  showOfficialLink?: boolean;
 }) {
-  const { title, brand, price, image_url, comment } = block.data;
+  const { title, brand, price, image_url, official_url, comment } = block.data;
   const [imageError, setImageError] = useState(false);
   const showImage = Boolean(image_url && !imageError);
 
@@ -55,6 +59,8 @@ function ProductCardContent({
     brand,
     price,
     comment,
+    officialUrl: official_url,
+    showOfficialLink,
   };
 
   const effectiveSize =
@@ -106,6 +112,7 @@ export function ProductBlock({
   layout = "inline",
   cellSpan,
   emphasizeImage = false,
+  showOfficialLink = false,
 }: ProductBlockProps) {
   const size = getProductSize(block);
 
@@ -122,6 +129,7 @@ export function ProductBlock({
         layout={layout}
         cellSpan={cellSpan}
         emphasizeImage={emphasizeImage}
+        showOfficialLink={showOfficialLink}
       />
     </div>
   );

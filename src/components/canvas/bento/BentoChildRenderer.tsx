@@ -28,6 +28,7 @@ export function BentoChildRenderer({
         layout="grid"
         cellSpan={cellSpan}
         emphasizeImage={!editable}
+        showOfficialLink={!editable}
       />
     );
   }
