@@ -73,8 +73,13 @@ body {
 }
 
 /* Bento: 列幅ベースの正方形セル — 行数だけで高さが決まる */
-.bento-grid {
+/* cqi はコンテナ自身では解決できないため、ホストに container を置き子で参照する */
+.bento-grid-host {
   container-type: inline-size;
+  container-name: bento;
+}
+
+.bento-grid {
   --bento-cols: 24;
   --bento-gap: 0.25rem;
   --bento-pad: 0.375rem;

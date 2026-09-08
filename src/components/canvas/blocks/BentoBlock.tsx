@@ -177,7 +177,7 @@ export function BentoBlock({
         </div>
       )}
 
-      <div className="relative">
+      <div className="bento-grid-host relative">
         {editable && (
           <div
             className="bento-grid pointer-events-none absolute inset-0 grid gap-1 p-1.5"

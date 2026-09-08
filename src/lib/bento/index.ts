@@ -33,15 +33,18 @@ export {
 export { migrateCanvasBlocks } from "./migrate";
 export {
   clampPixelRectSize,
+  gridContentSize,
   measureBentoGridGeometry,
   measureBentoGridMetrics,
   measureBentoGridStepFromDOM,
   placementToPixels,
   pixelsToPlacement,
+  pixelsToPlacementRaw,
   type BentoGridGeometry,
   type PixelRect,
 } from "./dom";
 export {
+  clampResizePlacement,
   computeFloatRect,
   rowsFromPointerDelta,
   snapFloatToPlacement,

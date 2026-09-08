@@ -139,7 +139,15 @@ export function useBentoPointerDrag({
         float,
         origin.geo,
         Math.max(currentRows, origin.startRows),
-        { expandRows: true },
+        {
+          expandRows: true,
+          ...(mode.kind === "resize"
+            ? {
+                resizeEdge: mode.edge,
+                startPlacement: origin.startPlacement,
+              }
+            : {}),
+        },
       );
 
       const resolved = previewChildPlacement(

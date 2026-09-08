@@ -68,20 +68,43 @@ export function placementToPixels(
 }
 
 /**
- * ピクセル矩形 → グリッド placement。
- * 辺をグリッド線に丸め、最低 1×1。
+ * ピクセル矩形 → グリッド placement（未 clamp）。
+ * 辺をグリッド線に丸め、最低 1×1。負座標やグリッド外もそのまま返す。
  */
-export function pixelsToPlacement(
+export function pixelsToPlacementRaw(
   rect: PixelRect,
   geo: BentoGridGeometry,
-  rowCount: number,
 ): BentoCellPlacement {
   const { step, gap } = geo;
   const col = Math.round(rect.x / step);
   const row = Math.round(rect.y / step);
   const colSpan = Math.max(1, Math.round((rect.w + gap) / step));
   const rowSpan = Math.max(1, Math.round((rect.h + gap) / step));
-  return clampPlacement({ col, row, colSpan, rowSpan }, rowCount);
+  return { col, row, colSpan, rowSpan };
+}
+
+/**
+ * ピクセル矩形 → グリッド placement。
+ * 辺をグリッド線に丸め、最低 1×1。グリッド内へ clamp。
+ */
+export function pixelsToPlacement(
+  rect: PixelRect,
+  geo: BentoGridGeometry,
+  rowCount: number,
+): BentoCellPlacement {
+  return clampPlacement(pixelsToPlacementRaw(rect, geo), rowCount);
+}
+
+/** グリッド content 領域のピクセルサイズ */
+export function gridContentSize(
+  geo: BentoGridGeometry,
+  rowCount: number,
+): { width: number; height: number } {
+  const { cell, gap } = geo;
+  return {
+    width: BENTO_COLS * cell + Math.max(0, BENTO_COLS - 1) * gap,
+    height: rowCount * cell + Math.max(0, rowCount - 1) * gap,
+  };
 }
 
 /** 1 セル分の最小サイズを保証 */
