@@ -8,28 +8,16 @@ import {
   getBentoChildren,
   getBentoRows,
   getChildPlacement,
-  deltaGridUnits,
-  measureBentoGridStepFromDOM,
-  MIN_BENTO_ROWS,
   placementStyle,
-  previewChildPlacement,
   removeBentoChild,
-  requiredBentoRows,
-  setBentoRows,
-  updateChildPlacement,
   updateBentoChildData,
-} from "@/lib/bento-layout";
-import type { BentoCellPlacement, Block, BlockData } from "@/lib/types";
-import {
-  AlignLeft,
-  GripHorizontal,
-  Package,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+} from "@/lib/bento";
+import type { Block, BlockData } from "@/lib/types";
+import { AlignLeft, GripHorizontal, Package, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BlockRenderer } from "../BlockRenderer";
+import { BentoChildChrome } from "../bento/BentoChildChrome";
+import { BentoChildRenderer } from "../bento/BentoChildRenderer";
+import { useBentoPointerDrag } from "../bento/useBentoPointerDrag";
 
 interface BentoBlockProps {
   block: Block;
@@ -39,110 +27,6 @@ interface BentoBlockProps {
   onEditChild?: (bentoId: string, child: Block) => void;
   onChildBlur?: (bentoId: string, childId: string) => void;
   onPersistBento?: (bentoId: string) => void;
-}
-
-type ResizeEdge =
-  | "right"
-  | "bottom"
-  | "left"
-  | "top"
-  | "se"
-  | "sw"
-  | "ne"
-  | "nw";
-
-type DragMode =
-  | { kind: "move"; childId: string; startCol: number; startRow: number }
-  | { kind: "resize"; childId: string; edge: ResizeEdge }
-  | { kind: "bento-height" };
-
-type DragPreview = {
-  childId?: string;
-  placement?: BentoCellPlacement;
-  bentoRows?: number;
-  blocked?: boolean;
-};
-
-type DragOrigin = {
-  x: number;
-  y: number;
-  placement: BentoCellPlacement;
-  step: number;
-};
-
-function computePlacementFromDrag(
-  mode: DragMode,
-  origin: DragOrigin,
-  dx: number,
-  dy: number,
-  rowCount: number,
-): { childId: string; placement: BentoCellPlacement } | null {
-  const { step, placement: startP } = origin;
-  const deltaCol = deltaGridUnits(dx, step);
-  const deltaRow = deltaGridUnits(dy, step);
-
-  if (mode.kind === "move") {
-    return {
-      childId: mode.childId,
-      placement: {
-        ...startP,
-        col: mode.startCol + deltaCol,
-        row: mode.startRow + deltaRow,
-      },
-    };
-  }
-
-  if (mode.kind === "resize") {
-    const edge = mode.edge;
-    let col = startP.col;
-    let row = startP.row;
-    let colSpan = startP.colSpan;
-    let rowSpan = startP.rowSpan;
-
-    const affectsRight =
-      edge === "right" || edge === "se" || edge === "ne";
-    const affectsLeft =
-      edge === "left" || edge === "sw" || edge === "nw";
-    const affectsBottom =
-      edge === "bottom" || edge === "se" || edge === "sw";
-    const affectsTop = edge === "top" || edge === "ne" || edge === "nw";
-
-    if (affectsRight) {
-      colSpan = Math.max(
-        1,
-        Math.min(BENTO_COLS - startP.col, startP.colSpan + deltaCol),
-      );
-    }
-    if (affectsLeft) {
-      col = Math.max(
-        0,
-        Math.min(startP.col + startP.colSpan - 1, startP.col + deltaCol),
-      );
-      colSpan = startP.col + startP.colSpan - col;
-      colSpan = Math.max(1, Math.min(BENTO_COLS - col, colSpan));
-    }
-    if (affectsBottom) {
-      rowSpan = Math.max(
-        1,
-        Math.min(rowCount - startP.row, startP.rowSpan + deltaRow),
-      );
-    }
-    if (affectsTop) {
-      row = Math.max(
-        0,
-        Math.min(startP.row + startP.rowSpan - 1, startP.row + deltaRow),
-      );
-      rowSpan = startP.row + startP.rowSpan - row;
-      rowSpan = Math.max(1, Math.min(rowCount - row, rowSpan));
-    }
-
-    return {
-      childId: mode.childId,
-      placement: { col, row, colSpan, rowSpan },
-    };
-  }
-
-  return null;
 }
 
 export function BentoBlock({
@@ -157,20 +41,11 @@ export function BentoBlock({
   const gridRef = useRef<HTMLDivElement>(null);
   const ghostGridRef = useRef<HTMLDivElement>(null);
   const blockRef = useRef(block);
-  blockRef.current = block;
+  useEffect(() => {
+    blockRef.current = block;
+  }, [block]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
-  const dragPreviewRef = useRef<DragPreview | null>(null);
-
-  const dragModeRef = useRef<DragMode | null>(null);
-  const dragOrigin = useRef<DragOrigin | null>(null);
-  const bentoStartRows = useRef(0);
-  const captureTarget = useRef<HTMLElement | null>(null);
-  const capturePointerId = useRef<number | null>(null);
-
-  const children = getBentoChildren(block);
-  const rowCount = dragPreview?.bentoRows ?? getBentoRows(block);
 
   const commitBento = useCallback(
     (next: Block) => {
@@ -179,203 +54,19 @@ export function BentoBlock({
     [block.id, onUpdateBento],
   );
 
-  const endDrag = useCallback(() => {
-    if (captureTarget.current && capturePointerId.current !== null) {
-      try {
-        captureTarget.current.releasePointerCapture(capturePointerId.current);
-      } catch {
-        /* already released */
-      }
-    }
-    captureTarget.current = null;
-    capturePointerId.current = null;
-    document.body.style.userSelect = "";
-    document.body.style.touchAction = "";
-    dragModeRef.current = null;
-    dragOrigin.current = null;
-  }, []);
+  const { dragPreview, startDrag } = useBentoPointerDrag({
+    editable,
+    blockRef,
+    gridRef,
+    ghostGridRef,
+    onCommit: commitBento,
+    onPersist: () => onPersistBento?.(block.id),
+  });
 
-  const handlePointerMoveRef = useRef<(e: PointerEvent) => void>(() => {});
-  const handlePointerUpRef = useRef<(e: PointerEvent) => void>(() => {});
+  const children = getBentoChildren(block);
+  const rowCount = dragPreview?.bentoRows ?? getBentoRows(block);
 
-  function applyDragPreview(preview: DragPreview | null) {
-    dragPreviewRef.current = preview;
-    setDragPreview(preview);
-  }
-
-  handlePointerMoveRef.current = (e: PointerEvent) => {
-    const mode = dragModeRef.current;
-    const origin = dragOrigin.current;
-    if (!mode || !origin) return;
-
-    const dx = e.clientX - origin.x;
-    const dy = e.clientY - origin.y;
-
-    if (mode.kind === "bento-height") {
-      const deltaRows = deltaGridUnits(dy, origin.step);
-      const minRows = Math.max(
-        MIN_BENTO_ROWS,
-        requiredBentoRows(blockRef.current),
-      );
-      const nextRows = Math.max(minRows, bentoStartRows.current + deltaRows);
-      const prev = dragPreviewRef.current;
-      if (prev?.bentoRows === nextRows) return;
-      applyDragPreview({ bentoRows: nextRows });
-      return;
-    }
-
-    const currentBlock = blockRef.current;
-    const rowCount = getBentoRows(currentBlock);
-
-    const preview = computePlacementFromDrag(
-      mode,
-      origin,
-      dx,
-      dy,
-      rowCount,
-    );
-    if (!preview?.placement || !preview.childId) return;
-
-    const resolved = previewChildPlacement(
-      currentBlock,
-      preview.childId,
-      preview.placement,
-      { expandRows: false },
-    );
-
-    const prev = dragPreviewRef.current;
-
-    if (resolved.blocked) {
-      // 重なり時は最後に有効だったプレビュー位置を維持
-      if (prev?.childId === preview.childId && prev.placement) {
-        return;
-      }
-      if (prev?.childId === preview.childId && prev.blocked && !prev.placement) {
-        return;
-      }
-      applyDragPreview({ childId: preview.childId, blocked: true });
-      return;
-    }
-
-    if (
-      prev?.childId === preview.childId &&
-      !prev.blocked &&
-      prev.placement?.col === resolved.placement.col &&
-      prev.placement?.row === resolved.placement.row &&
-      prev.placement?.colSpan === resolved.placement.colSpan &&
-      prev.placement?.rowSpan === resolved.placement.rowSpan &&
-      prev.bentoRows === resolved.bentoRows
-    ) {
-      return;
-    }
-
-    applyDragPreview({
-      childId: preview.childId,
-      placement: resolved.placement,
-      bentoRows: resolved.bentoRows,
-    });
-  };
-
-  handlePointerUpRef.current = () => {
-    const mode = dragModeRef.current;
-    const preview = dragPreviewRef.current;
-
-    if (mode && preview) {
-      const currentBlock = blockRef.current;
-      let nextBlock = currentBlock;
-
-      if (mode.kind === "bento-height" && preview.bentoRows != null) {
-        nextBlock = setBentoRows(currentBlock, preview.bentoRows);
-      } else if (
-        preview.childId &&
-        preview.placement &&
-        (mode.kind === "move" || mode.kind === "resize") &&
-        !preview.blocked
-      ) {
-        nextBlock = updateChildPlacement(
-          currentBlock,
-          preview.childId,
-          preview.placement,
-          { expandRows: false },
-        );
-      }
-
-      if (nextBlock !== currentBlock) {
-        commitBento(nextBlock);
-        onPersistBento?.(currentBlock.id);
-      }
-    }
-
-    applyDragPreview(null);
-    endDrag();
-    window.removeEventListener("pointermove", stablePointerMove);
-    window.removeEventListener("pointerup", stablePointerUp);
-    window.removeEventListener("pointercancel", stablePointerUp);
-  };
-
-  const stablePointerMove = useCallback((e: PointerEvent) => {
-    handlePointerMoveRef.current(e);
-  }, []);
-
-  const stablePointerUp = useCallback((e: PointerEvent) => {
-    handlePointerUpRef.current(e);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      window.removeEventListener("pointermove", stablePointerMove);
-      window.removeEventListener("pointerup", stablePointerUp);
-      window.removeEventListener("pointercancel", stablePointerUp);
-      endDrag();
-    };
-  }, [stablePointerMove, stablePointerUp, endDrag]);
-
-  const startDrag = useCallback(
-    (
-      e: React.PointerEvent,
-      mode: DragMode,
-      placement: BentoCellPlacement,
-    ) => {
-      if (!editable || !gridRef.current) return;
-      e.preventDefault();
-      e.stopPropagation();
-
-      if ("childId" in mode) setSelectedId(mode.childId);
-
-      const measureEl = ghostGridRef.current ?? gridRef.current;
-      const { step } = measureBentoGridStepFromDOM(measureEl);
-      dragOrigin.current = {
-        x: e.clientX,
-        y: e.clientY,
-        placement,
-        step,
-      };
-
-      if (mode.kind === "bento-height") {
-        bentoStartRows.current = getBentoRows(blockRef.current);
-        dragOrigin.current.placement = {
-          ...placement,
-          rowSpan: bentoStartRows.current,
-        };
-      }
-
-      dragModeRef.current = mode;
-
-      const target = e.currentTarget as HTMLElement;
-      captureTarget.current = target;
-      capturePointerId.current = e.pointerId;
-      target.setPointerCapture(e.pointerId);
-      document.body.style.userSelect = "none";
-      document.body.style.touchAction = "none";
-
-      window.addEventListener("pointermove", stablePointerMove);
-      window.addEventListener("pointerup", stablePointerUp);
-      window.addEventListener("pointercancel", stablePointerUp);
-    },
-    [editable, stablePointerMove, stablePointerUp],
-  );
-
-  function getDisplayPlacement(childId: string): BentoCellPlacement {
+  function getDisplayPlacement(childId: string) {
     if (dragPreview?.childId === childId && dragPreview.placement) {
       return dragPreview.placement;
     }
@@ -444,135 +135,32 @@ export function BentoBlock({
                 }}
               >
                 {editable && isSelected && (
-                  <>
-                    <button
-                      type="button"
-                      className="absolute left-1 top-1 z-30 flex h-6 w-6 cursor-grab touch-none items-center justify-center rounded bg-white/90 text-stone-400 shadow-sm active:cursor-grabbing"
-                      aria-label="移動"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          {
-                            kind: "move",
-                            childId: child.id,
-                            startCol: placement.col,
-                            startRow: placement.row,
-                          },
-                          placement,
-                        )
-                      }
-                    >
-                      <GripHorizontal className="h-3.5 w-3.5 rotate-90" />
-                    </button>
-                    <button
-                      type="button"
-                      className="absolute right-1 top-1 z-30 flex h-6 w-6 items-center justify-center rounded bg-white/90 text-red-500 shadow-sm"
-                      aria-label="削除"
-                      onClick={() => handleDeleteChild(child.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                    {/* 四辺リサイズ */}
-                    <div
-                      className="absolute inset-y-2 left-0 z-20 w-2 cursor-w-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "left" },
-                          placement,
-                        )
-                      }
-                    />
-                    <div
-                      className="absolute inset-x-2 top-0 z-20 flex h-3 cursor-n-resize touch-none items-start justify-center"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "top" },
-                          placement,
-                        )
-                      }
-                    >
-                      <span className="mt-0.5 h-1 w-8 rounded-full bg-stone-300/80" />
-                    </div>
-                    <div
-                      className="absolute inset-y-2 right-0 z-20 w-2 cursor-e-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "right" },
-                          placement,
-                        )
-                      }
-                    />
-                    <div
-                      className="absolute inset-x-2 bottom-0 z-20 flex h-3 cursor-s-resize touch-none items-end justify-center"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "bottom" },
-                          placement,
-                        )
-                      }
-                    >
-                      <span className="mb-0.5 h-1 w-8 rounded-full bg-stone-300/80" />
-                    </div>
-                    {/* 四隅リサイズ */}
-                    <div
-                      className="absolute left-0 top-0 z-20 h-4 w-4 cursor-nw-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "nw" },
-                          placement,
-                        )
-                      }
-                    />
-                    <div
-                      className="absolute right-0 top-0 z-20 h-4 w-4 cursor-ne-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "ne" },
-                          placement,
-                        )
-                      }
-                    />
-                    <div
-                      className="absolute bottom-0 left-0 z-20 h-4 w-4 cursor-sw-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "sw" },
-                          placement,
-                        )
-                      }
-                    />
-                    <div
-                      className="absolute bottom-0 right-0 z-20 h-4 w-4 cursor-se-resize touch-none"
-                      onPointerDown={(e) =>
-                        startDrag(
-                          e,
-                          { kind: "resize", childId: child.id, edge: "se" },
-                          placement,
-                        )
-                      }
-                    />
-                  </>
-                )}
-
-                {editable && child.type === "product" && (
-                  <button
-                    type="button"
-                    className="absolute bottom-1 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-medium text-stone-600 shadow-sm ring-1 ring-stone-200/80 transition-colors hover:bg-white hover:text-stone-900"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditChild?.(block.id, child);
+                  <BentoChildChrome
+                    onStartMove={(e) => {
+                      setSelectedId(child.id);
+                      startDrag(
+                        e,
+                        {
+                          kind: "move",
+                          childId: child.id,
+                          startCol: placement.col,
+                          startRow: placement.row,
+                        },
+                        placement,
+                      );
                     }}
-                  >
-                    <Pencil className="h-3 w-3" />
-                    編集
-                  </button>
+                    onStartResize={(e, edge) => {
+                      setSelectedId(child.id);
+                      startDrag(
+                        e,
+                        { kind: "resize", childId: child.id, edge },
+                        placement,
+                      );
+                    }}
+                    onDelete={() => handleDeleteChild(child.id)}
+                    showEdit={child.type === "product"}
+                    onEdit={() => onEditChild?.(block.id, child)}
+                  />
                 )}
 
                 <div
@@ -588,10 +176,9 @@ export function BentoBlock({
                 >
                   {child.type === "product" ? (
                     <div className="h-full w-full text-left">
-                      <BlockRenderer
+                      <BentoChildRenderer
                         block={child}
                         editable={editable}
-                        productLayout="grid"
                         cellSpan={{
                           colSpan: placement.colSpan,
                           rowSpan: placement.rowSpan,
@@ -599,7 +186,7 @@ export function BentoBlock({
                       />
                     </div>
                   ) : (
-                    <BlockRenderer
+                    <BentoChildRenderer
                       block={child}
                       editable={editable}
                       autoFocus={focusBlockId === child.id}

@@ -4,7 +4,7 @@ import {
   getCanvasBySlugForView,
   getPublishedCanvasBySlug,
 } from "@/lib/canvas-service";
-import { type Canvas } from "@/lib/types";
+import { findFirstProductImage } from "@/lib/canvas-utils";
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -14,13 +14,6 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-function getOgpImage(canvas: Canvas): string | undefined {
-  const productBlock = canvas.blocks.find(
-    (b) => b.type === "product" && b.data.image_url,
-  );
-  return productBlock?.data.image_url;
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const canvas = await getPublishedCanvasBySlug(slug);
@@ -28,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const shareUrl = `${appUrl}/c/${slug}`;
-  const ogImage = getOgpImage(canvas);
+  const ogImage = findFirstProductImage(canvas.blocks);
 
   return {
     title: canvas.title,

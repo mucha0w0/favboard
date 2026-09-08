@@ -1,10 +1,8 @@
 "use client";
 
-import { getBlockDisplayLayout } from "@/lib/block-layout";
-import { createBentoBlock } from "@/lib/bento-layout";
+import { createTopLevelBlock } from "@/lib/bento";
 import { type Block, type TopLevelBlockType } from "@/lib/types";
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
 import { StaticBlockShell } from "./BlockStreamParts";
 
 const BlockStreamEditor = dynamic(
@@ -30,13 +28,9 @@ interface BlockStreamProps {
   onPersistBento?: (bentoId: string) => void;
 }
 
+/** @deprecated Use createTopLevelBlock from `@/lib/bento` */
 export function createBlock(type: TopLevelBlockType): Block {
-  if (type === "bento") return createBentoBlock();
-  return {
-    id: crypto.randomUUID(),
-    type,
-    data: type === "heading" ? { text: "" } : {},
-  };
+  return createTopLevelBlock(type);
 }
 
 function BlockStreamView({
@@ -51,16 +45,6 @@ function BlockStreamView({
   onBentoChildBlur,
   onPersistBento,
 }: BlockStreamProps) {
-  const blockLayouts = useMemo(
-    () =>
-      blocks.map((block, index) => ({
-        block,
-        index,
-        layout: getBlockDisplayLayout(blocks, index),
-      })),
-    [blocks],
-  );
-
   return (
     <div className="document-body w-full">
       {blocks.length === 0 && editable && (
@@ -70,11 +54,10 @@ function BlockStreamView({
       )}
 
       <div className="flex flex-col">
-        {blockLayouts.map(({ block, index, layout }) => (
+        {blocks.map((block, index) => (
           <StaticBlockShell
             key={block.id}
             block={block}
-            className={layout.colClass}
             onEditBlock={onEditBlock}
             onUpdateBlockData={onUpdateBlockData}
             onBlockBlur={onBlockBlur}
@@ -101,6 +84,3 @@ export function BlockStream(props: BlockStreamProps) {
 
   return <BlockStreamEditor {...props} />;
 }
-
-/** @deprecated Use BlockStream */
-export const CardStack = BlockStream;

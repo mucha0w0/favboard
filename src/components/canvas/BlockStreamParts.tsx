@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { BlockRenderer } from "./BlockRenderer";
 
 export interface BlockStreamShellProps {
@@ -70,35 +70,53 @@ interface BlockShellCommonProps {
   canMoveDown: boolean;
 }
 
-export function StaticBlockShell(props: BlockShellCommonProps) {
-  const { block } = props;
+function GripSlot({
+  isDivider,
+  children,
+}: {
+  isDivider: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={
+        isDivider
+          ? "absolute -left-7 top-1/2 z-10 flex h-9 w-7 -translate-y-1/2 items-center justify-center text-stone-300"
+          : "absolute -left-7 top-0.5 flex h-9 w-7 items-center justify-center text-stone-300"
+      }
+    >
+      {children}
+    </div>
+  );
+}
+
+function BlockShellFrame({
+  block,
+  className,
+  grip,
+  ...itemProps
+}: BlockShellCommonProps & { grip: ReactNode }) {
   const isDivider = block.type === "divider";
 
   return (
     <div
       data-block-id={block.id}
-      className={`relative ${blockClass(block.type)} ${props.className ?? ""}`}
+      className={`relative ${blockClass(block.type)} ${className ?? ""}`}
     >
       <div className="group/block relative">
-        {!isDivider && (
-          <div
-            className="absolute -left-7 top-0.5 flex h-9 w-7 items-center justify-center text-stone-300"
-            aria-hidden
-          >
-            <GripVertical className="h-4 w-4" />
-          </div>
-        )}
-        {isDivider && (
-          <div
-            className="pointer-events-none absolute -left-7 top-1/2 flex h-9 w-7 -translate-y-1/2 items-center justify-center text-stone-300"
-            aria-hidden
-          >
-            <GripVertical className="h-4 w-4" />
-          </div>
-        )}
-        <BlockItem {...props} fullWidth={isDivider} />
+        <GripSlot isDivider={isDivider}>{grip}</GripSlot>
+        <BlockItem {...itemProps} block={block} fullWidth={isDivider} />
       </div>
     </div>
+  );
+}
+
+export function StaticBlockShell(props: BlockShellCommonProps) {
+  return (
+    <BlockShellFrame
+      {...props}
+      grip={<GripVertical className="h-4 w-4" aria-hidden />}
+    />
   );
 }
 
@@ -123,8 +141,6 @@ export function SortableBlockShell(props: BlockShellCommonProps) {
     position: "relative" as const,
   };
 
-  const isDivider = block.type === "divider";
-
   return (
     <div
       ref={setNodeRef}
@@ -135,40 +151,24 @@ export function SortableBlockShell(props: BlockShellCommonProps) {
           : ""
       }`}
     >
-      <div
-        data-block-id={block.id}
-        className={`relative ${blockClass(block.type)}`}
-        style={isDragging ? { opacity: 0 } : undefined}
-      >
-        <div className="group/block relative">
-          {!isDivider && (
+      <div style={isDragging ? { opacity: 0 } : undefined}>
+        <BlockShellFrame
+          {...props}
+          className=""
+          grip={
             <button
               type="button"
               ref={setActivatorNodeRef}
               {...attributes}
               {...listeners}
-              className="absolute -left-7 top-0.5 flex h-9 w-7 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
+              className="flex h-9 w-7 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
               aria-label="ドラッグして並べ替え"
               onClick={(e) => e.stopPropagation()}
             >
               <GripVertical className="h-4 w-4" />
             </button>
-          )}
-          {isDivider && (
-            <button
-              type="button"
-              ref={setActivatorNodeRef}
-              {...attributes}
-              {...listeners}
-              className="absolute -left-7 top-1/2 z-10 flex h-9 w-7 -translate-y-1/2 cursor-grab touch-none items-center justify-center text-stone-300 transition-colors hover:text-stone-500 active:cursor-grabbing"
-              aria-label="ドラッグして並べ替え"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="h-4 w-4" />
-            </button>
-          )}
-          <BlockItem {...props} fullWidth={isDivider} />
-        </div>
+          }
+        />
       </div>
     </div>
   );

@@ -2,14 +2,14 @@
 
 代払い（決済・ギフト）機能を持たない、純粋な物欲・こだわり・関心のポートフォリオ共有ツール。
 
-カードを縦に並べて、商品の画像・ブランド・価格・こだわりコメントをリスト形式で公開できます。
+見出し・区切り線・Bento グリッドでドキュメントを組み立て、商品の画像・ブランド・価格・こだわりコメントを公開できます。
 
 ## 技術スタック
 
 - **Framework**: Next.js 16 (App Router, TypeScript)
 - **Styling**: Tailwind CSS v4, shadcn/ui 風コンポーネント
-- **Layout**: 縦積みカードスタック（無制限追加）
-- **Backend / Database**: Supabase (PostgreSQL, Auth, RLS)
+- **Layout**: 縦ドキュメント + Bento グリッド（商品 / テキストを配置）
+- **Backend / Database**: Supabase (PostgreSQL, Auth, RLS) またはローカル JSON
 - **OGP Fetcher**: open-graph-scraper
 - **Deployment**: Vercel
 
@@ -73,18 +73,28 @@ http://localhost:3000 を開く
 | `/` | ランディングページ |
 | `/login` | ログイン / 新規登録 |
 | `/dashboard` | マイキャンバス一覧 |
-| `/edit/[id]` | カードリスト編集 |
+| `/edit/[id]` | キャンバス編集 |
 | `/c/[slug]` | 公開閲覧ページ |
 | `/api/ogp` | OGP 自動取得 API |
 | `/api/canvases` | キャンバス CRUD API |
 
 ## コア機能
 
-- **編集画面**: カードを縦に追加、追加数に応じてリストが伸長
-- **ブロック種別**: 商品 / 見出し / 区切り線
+- **編集画面**: Bento・見出し・区切り線を縦に追加
+- **Bento**: グリッド上に商品・テキストを配置・リサイズ
 - **OGP 自動補完**: EC サイト URL からタイトル・画像を取得
 - **公開 & シェア**: 固有 slug URL、Twitter OGP 対応
 - **決済排除**: 公式ページへの外部リンクのみ
+
+## ソース構成（概要）
+
+```
+src/
+  app/                 # ルート・API
+  components/canvas/   # エディタ UI（bento / blocks / hooks）
+  lib/bento/           # グリッド計算・配置操作・マイグレーション
+  lib/canvas-service.ts
+```
 
 ## Vercel デプロイ
 

@@ -71,17 +71,6 @@ export interface OgpData {
   siteName?: string;
 }
 
-export const PRODUCT_SIZES: {
-  value: ProductSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: "compact", label: "S", description: "コンパクト" },
-  { value: "standard", label: "M", description: "標準" },
-  { value: "large", label: "L", description: "ラージ" },
-  { value: "xl", label: "XL", description: "エクストララージ" },
-];
-
 export function isTopLevelBlockType(type: BlockType): type is TopLevelBlockType {
   return type === "heading" || type === "divider" || type === "bento";
 }

@@ -3,8 +3,8 @@
 import { BlockStream } from "@/components/canvas/BlockStream";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { migrateCanvasBlocks } from "@/lib/bento-layout";
-import { type Block, type Canvas } from "@/lib/types";
+import { countProducts } from "@/lib/canvas-utils";
+import { type Canvas } from "@/lib/types";
 import { Share2 } from "lucide-react";
 
 interface PublicCanvasViewProps {
@@ -30,19 +30,7 @@ export function PublicCanvasView({
     day: "numeric",
   });
 
-  const displayBlocks = migrateCanvasBlocks(canvas.blocks);
-
-  function countProducts(blockList: Block[]): number {
-    return blockList.reduce((count, block) => {
-      if (block.type === "product") return count + 1;
-      if (block.type === "bento") {
-        return count + countProducts(block.data.children ?? []);
-      }
-      return count;
-    }, 0);
-  }
-
-  const productCount = countProducts(displayBlocks);
+  const productCount = countProducts(canvas.blocks);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -80,13 +68,13 @@ export function PublicCanvasView({
             </p>
           </header>
 
-          {displayBlocks.length === 0 ? (
+          {canvas.blocks.length === 0 ? (
             <p className="py-16 text-center text-[15px] text-stone-400">
               コンテンツはまだありません
             </p>
           ) : (
             <div className="document-body">
-              <BlockStream blocks={displayBlocks} />
+              <BlockStream blocks={canvas.blocks} />
             </div>
           )}
         </article>

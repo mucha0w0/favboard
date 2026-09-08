@@ -1,3 +1,5 @@
+import { migrateCanvasBlocks } from "@/lib/bento";
+import { normalizeCanvas } from "@/lib/canvas-utils";
 import { isSupabaseConfigured } from "@/lib/config";
 import {
   localCreateCanvas,
@@ -27,7 +29,7 @@ export async function getAuthUserId(): Promise<string | null> {
 
 export async function listCanvases(userId: string): Promise<Canvas[]> {
   if (!isSupabaseConfigured()) {
-    return localListCanvases(userId);
+    return (await localListCanvases(userId)).map(normalizeCanvas);
   }
 
   const supabase = await createClient();
@@ -38,7 +40,7 @@ export async function listCanvases(userId: string): Promise<Canvas[]> {
     .order("updated_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data as Canvas[];
+  return (data as Canvas[]).map(normalizeCanvas);
 }
 
 export async function createCanvas(
@@ -46,7 +48,7 @@ export async function createCanvas(
   title: string,
 ): Promise<Canvas> {
   if (!isSupabaseConfigured()) {
-    return localCreateCanvas(userId, title);
+    return normalizeCanvas(await localCreateCanvas(userId, title));
   }
 
   const supabase = await createClient();
@@ -63,7 +65,7 @@ export async function createCanvas(
     .single();
 
   if (error) throw new Error(error.message);
-  return data as Canvas;
+  return normalizeCanvas(data as Canvas);
 }
 
 export async function getCanvasForView(
@@ -71,7 +73,8 @@ export async function getCanvasForView(
   userId: string | null,
 ): Promise<Canvas | null> {
   if (!isSupabaseConfigured()) {
-    return localGetCanvasWithAccess(id, userId);
+    const canvas = await localGetCanvasWithAccess(id, userId);
+    return canvas ? normalizeCanvas(canvas) : null;
   }
 
   const supabase = await createClient();
@@ -84,14 +87,15 @@ export async function getCanvasForView(
   if (!data) return null;
   const canvas = data as Canvas;
   if (!canvas.is_published && canvas.user_id !== userId) return null;
-  return canvas;
+  return normalizeCanvas(canvas);
 }
 
 export async function getPublishedCanvasBySlug(
   slug: string,
 ): Promise<Canvas | null> {
   if (!isSupabaseConfigured()) {
-    return localGetCanvasBySlug(slug);
+    const canvas = await localGetCanvasBySlug(slug);
+    return canvas ? normalizeCanvas(canvas) : null;
   }
 
   const supabase = await createClient();
@@ -102,7 +106,7 @@ export async function getPublishedCanvasBySlug(
     .eq("is_published", true)
     .single();
 
-  return (data as Canvas) ?? null;
+  return data ? normalizeCanvas(data as Canvas) : null;
 }
 
 export async function getCanvasBySlugForView(
@@ -110,7 +114,8 @@ export async function getCanvasBySlugForView(
   userId: string | null,
 ): Promise<Canvas | null> {
   if (!isSupabaseConfigured()) {
-    return localGetCanvasBySlugForView(slug, userId);
+    const canvas = await localGetCanvasBySlugForView(slug, userId);
+    return canvas ? normalizeCanvas(canvas) : null;
   }
 
   const supabase = await createClient();
@@ -123,7 +128,7 @@ export async function getCanvasBySlugForView(
   if (!data) return null;
   const canvas = data as Canvas;
   if (!canvas.is_published && canvas.user_id !== userId) return null;
-  return canvas;
+  return normalizeCanvas(canvas);
 }
 
 export async function updateCanvas(
@@ -131,21 +136,29 @@ export async function updateCanvas(
   userId: string,
   updates: Partial<Pick<Canvas, "title" | "blocks" | "is_published">>,
 ): Promise<Canvas | null> {
+  const normalizedUpdates = {
+    ...updates,
+    ...(updates.blocks
+      ? { blocks: migrateCanvasBlocks(updates.blocks) }
+      : {}),
+  };
+
   if (!isSupabaseConfigured()) {
-    return localUpdateCanvas(id, userId, updates);
+    const canvas = await localUpdateCanvas(id, userId, normalizedUpdates);
+    return canvas ? normalizeCanvas(canvas) : null;
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("canvases")
-    .update(updates)
+    .update(normalizedUpdates)
     .eq("id", id)
     .eq("user_id", userId)
     .select()
     .single();
 
   if (error) throw new Error(error.message);
-  return data as Canvas;
+  return data ? normalizeCanvas(data as Canvas) : null;
 }
 
 export async function deleteCanvas(

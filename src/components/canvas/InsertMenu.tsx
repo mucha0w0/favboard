@@ -10,7 +10,11 @@ interface InsertMenuProps {
   disabled?: boolean;
 }
 
-const ITEMS: { type: TopLevelBlockType; label: string; icon: typeof LayoutGrid }[] = [
+const ITEMS: {
+  type: TopLevelBlockType;
+  label: string;
+  icon: typeof LayoutGrid;
+}[] = [
   { type: "bento", label: "Bento", icon: LayoutGrid },
   { type: "heading", label: "見出し", icon: Type },
   { type: "divider", label: "区切り線", icon: Minus },
@@ -58,6 +62,3 @@ export function InsertMenu({ onAdd, disabled }: InsertMenuProps) {
     </div>
   );
 }
-
-/** @deprecated Use InsertMenu */
-export const AddBlockBar = InsertMenu;

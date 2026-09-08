@@ -1,6 +1,5 @@
 "use client";
 
-import { getBlockDisplayLayout } from "@/lib/block-layout";
 import { type Block, blocksEqual } from "@/lib/types";
 import {
   DndContext,
@@ -19,7 +18,7 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BlockPreview,
   SortableBlockShell,
@@ -49,8 +48,13 @@ export function BlockStreamEditor({
   const blocksRef = useRef(blocks);
   const onReorderRef = useRef(onReorder);
 
-  blocksRef.current = blocks;
-  onReorderRef.current = onReorder;
+  useEffect(() => {
+    blocksRef.current = blocks;
+  }, [blocks]);
+
+  useEffect(() => {
+    onReorderRef.current = onReorder;
+  }, [onReorder]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: POINTER_ACTIVATION }),
@@ -147,28 +151,24 @@ export function BlockStreamEditor({
 
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
           <div ref={listContainerRef} className="flex flex-col">
-            {displayBlocks.map((block, index) => {
-              const layout = getBlockDisplayLayout(displayBlocks, index);
-              return (
-                <SortableBlockShell
-                  key={block.id}
-                  block={block}
-                  className={layout.colClass}
-                  onEditBlock={onEditBlock}
-                  onUpdateBlockData={onUpdateBlockData}
-                  onBlockBlur={onBlockBlur}
-                  focusBlockId={focusBlockId}
-                  onDeleteBlock={onDeleteBlock}
-                  onUpdateBento={onUpdateBento}
-                  onBentoChildBlur={onBentoChildBlur}
-                  onPersistBento={onPersistBento}
-                  onMoveUp={() => moveBlock(block.id, "up")}
-                  onMoveDown={() => moveBlock(block.id, "down")}
-                  canMoveUp={index > 0}
-                  canMoveDown={index < displayBlocks.length - 1}
-                />
-              );
-            })}
+            {displayBlocks.map((block, index) => (
+              <SortableBlockShell
+                key={block.id}
+                block={block}
+                onEditBlock={onEditBlock}
+                onUpdateBlockData={onUpdateBlockData}
+                onBlockBlur={onBlockBlur}
+                focusBlockId={focusBlockId}
+                onDeleteBlock={onDeleteBlock}
+                onUpdateBento={onUpdateBento}
+                onBentoChildBlur={onBentoChildBlur}
+                onPersistBento={onPersistBento}
+                onMoveUp={() => moveBlock(block.id, "up")}
+                onMoveDown={() => moveBlock(block.id, "down")}
+                canMoveUp={index > 0}
+                canMoveDown={index < displayBlocks.length - 1}
+              />
+            ))}
           </div>
         </SortableContext>
       </div>

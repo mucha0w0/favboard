@@ -1,18 +1,13 @@
 "use client";
 
-import { BlockStream, createBlock } from "@/components/canvas/BlockStream";
+import { BlockStream } from "@/components/canvas/BlockStream";
 import { InsertMenu } from "@/components/canvas/InsertMenu";
 import { ProductFormDialog } from "@/components/canvas/ProductFormDialog";
+import { useCanvasEditor } from "@/components/canvas/hooks/useCanvasEditor";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { migrateCanvasBlocks, updateBentoChildData } from "@/lib/bento-layout";
-import {
-  type Block,
-  type BlockData,
-  type Canvas,
-  type TopLevelBlockType,
-} from "@/lib/types";
+import { type Canvas } from "@/lib/types";
 import {
   Check,
   ExternalLink,
@@ -22,317 +17,34 @@ import {
   Save,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface CanvasEditorProps {
   canvas: Canvas;
 }
 
-function blocksEqual(a: Block[], b: Block[]) {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
 export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
-  const router = useRouter();
-  const [canvas, setCanvas] = useState(initialCanvas);
-  const migratedInitial = useMemo(
-    () => migrateCanvasBlocks(initialCanvas.blocks),
-    [initialCanvas.blocks],
-  );
-  const [blocks, setBlocks] = useState<Block[]>(migratedInitial);
-  const blocksRef = useRef(blocks);
-  blocksRef.current = blocks;
-  const [title, setTitle] = useState(initialCanvas.title);
-  const [saving, setSaving] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const [error, setError] = useState("");
-  const [editingBlock, setEditingBlock] = useState<Block | null>(null);
-  const [editingBentoId, setEditingBentoId] = useState<string | null>(null);
-  const [isNewBlock, setIsNewBlock] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
-  const [pendingNewBlockIds, setPendingNewBlockIds] = useState<Set<string>>(
-    () => new Set(),
-  );
-
-  const isDirty = useMemo(
-    () => title !== canvas.title || !blocksEqual(blocks, canvas.blocks),
-    [title, blocks, canvas.title, canvas.blocks],
-  );
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [isDirty]);
-
-  const persist = useCallback(
-    async (
-      nextBlocks: Block[],
-      nextTitle: string,
-      updates: Partial<Canvas> = {},
-    ): Promise<boolean> => {
-      setSaving(true);
-      setError("");
-      setSavedFlash(false);
-      try {
-        const res = await fetch(`/api/canvases/${canvas.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: nextTitle,
-            blocks: nextBlocks,
-            ...updates,
-          }),
-        });
-
-        if (res.status === 401) {
-          router.push("/login");
-          return false;
-        }
-
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "保存に失敗しました");
-          return false;
-        }
-
-        const updated = data as Canvas;
-        setCanvas(updated);
-        setTitle(updated.title);
-        setBlocks(migrateCanvasBlocks(updated.blocks));
-        setSavedFlash(true);
-        setTimeout(() => setSavedFlash(false), 2000);
-        return true;
-      } catch {
-        setError("保存に失敗しました");
-        return false;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [canvas.id, router],
-  );
-
-  async function handleSave() {
-    await persist(blocks, title);
-  }
-
-  function handleAddBlock(type: TopLevelBlockType) {
-    const newBlock = createBlock(type);
-    const nextBlocks = [...blocks, newBlock];
-    setBlocks(nextBlocks);
-
-    if (type === "heading") {
-      setFocusBlockId(newBlock.id);
-      setPendingNewBlockIds((prev) => new Set(prev).add(newBlock.id));
-      return;
-    }
-
-    if (type === "bento") {
-      persist(nextBlocks, title);
-      return;
-    }
-
-    persist(nextBlocks, title);
-  }
-
-  const handleReorder = useCallback(
-    async (nextBlocks: Block[]) => {
-      setBlocks(nextBlocks);
-      await persist(nextBlocks, title);
-    },
-    [persist, title],
-  );
-
-  function handleEditBlock(block: Block, context?: { bentoId: string }) {
-    if (block.type !== "product") return;
-    setEditingBlock(block);
-    setEditingBentoId(context?.bentoId ?? null);
-    setIsNewBlock(false);
-    setDialogOpen(true);
-  }
-
-  function handleUpdateBlockData(blockId: string, data: Partial<BlockData>) {
-    setBlocks((prev) =>
-      prev.map((b) =>
-        b.id === blockId ? { ...b, data: { ...b.data, ...data } } : b,
-      ),
-    );
-  }
-
-  function handleUpdateBento(bentoId: string, data: Partial<BlockData>) {
-    setBlocks((prev) => {
-      const next = prev.map((b) =>
-        b.id === bentoId ? { ...b, data: { ...b.data, ...data } } : b,
-      );
-      blocksRef.current = next;
-      return next;
-    });
-  }
-
-  async function handlePersistBento(bentoId: string) {
-    const bento = blocksRef.current.find((b) => b.id === bentoId);
-    const saved = canvas.blocks.find((b) => b.id === bentoId);
-    if (!bento || (saved && JSON.stringify(saved.data) === JSON.stringify(bento.data))) {
-      return;
-    }
-    await persist(blocksRef.current, title);
-  }
-
-  async function handleBlockBlur(blockId: string) {
-    setFocusBlockId(null);
-
-    const currentBlocks = blocksRef.current;
-    const block = currentBlocks.find((b) => b.id === blockId);
-    if (!block) return;
-
-    const isPendingNew = pendingNewBlockIds.has(blockId);
-    const isEmpty =
-      block.type === "heading" && !block.data.text?.trim();
-
-    if (isPendingNew) {
-      setPendingNewBlockIds((prev) => {
-        const next = new Set(prev);
-        next.delete(blockId);
-        return next;
-      });
-    }
-
-    if (isPendingNew && isEmpty) {
-      setBlocks(currentBlocks.filter((b) => b.id !== blockId));
-      return;
-    }
-
-    const saved = canvas.blocks.find((b) => b.id === blockId);
-    if (saved && JSON.stringify(saved.data) === JSON.stringify(block.data)) {
-      return;
-    }
-
-    await persist(currentBlocks, title);
-  }
-
-  async function handleBentoChildBlur(bentoId: string, childId: string) {
-    setFocusBlockId(null);
-
-    const bento = blocksRef.current.find((b) => b.id === bentoId);
-    const child = bento?.data.children?.find((c) => c.id === childId);
-    if (!child || child.type !== "text") return;
-
-    const isPendingNew = pendingNewBlockIds.has(childId);
-    const isEmpty = !child.data.body?.trim();
-
-    if (isPendingNew) {
-      setPendingNewBlockIds((prev) => {
-        const next = new Set(prev);
-        next.delete(childId);
-        return next;
-      });
-    }
-
-    if (isPendingNew && isEmpty) {
-      setBlocks((prev) =>
-        prev.map((b) => {
-          if (b.id !== bentoId) return b;
-          return {
-            ...b,
-            data: {
-              ...b.data,
-              children: b.data.children?.filter((c) => c.id !== childId),
-              child_placements: Object.fromEntries(
-                Object.entries(b.data.child_placements ?? {}).filter(
-                  ([id]) => id !== childId,
-                ),
-              ),
-            },
-          };
-        }),
-      );
-      return;
-    }
-
-    await persist(blocksRef.current, title);
-  }
-
-  async function handleApplyBlockData(blockId: string, data: BlockData) {
-    let nextBlocks: Block[];
-
-    if (editingBentoId) {
-      nextBlocks = blocks.map((b) =>
-        b.id === editingBentoId ? updateBentoChildData(b, blockId, data) : b,
-      );
-    } else {
-      nextBlocks = blocks.map((b) =>
-        b.id === blockId ? { ...b, data: { ...b.data, ...data } } : b,
-      );
-    }
-
-    setBlocks(nextBlocks);
-    setEditingBlock(null);
-    setEditingBentoId(null);
-    setIsNewBlock(false);
-    await persist(nextBlocks, title);
-  }
-
-  function handleDialogCancel() {
-    setIsNewBlock(false);
-    setEditingBlock(null);
-    setEditingBentoId(null);
-  }
-
-  async function handleDeleteBlock(blockId: string) {
-    const nextBlocks = blocks.filter((b) => b.id !== blockId);
-    setBlocks(nextBlocks);
-    await persist(nextBlocks, title);
-  }
-
-  async function handleTogglePublish() {
-    setPublishing(true);
-    setError("");
-    const nextPublished = !canvas.is_published;
-    const ok = await persist(blocks, title, { is_published: nextPublished });
-    if (!ok) {
-      setError(
-        nextPublished ? "公開に失敗しました" : "非公開に失敗しました",
-      );
-    }
-    setPublishing(false);
-  }
-
-  function handleBackClick(e: React.MouseEvent) {
-    if (!isDirty) return;
-    if (!confirm("未保存の変更があります。ページを離れますか？")) {
-      e.preventDefault();
-    }
-  }
-
-  const publicUrl = `/c/${canvas.slug}`;
+  const editor = useCanvasEditor(initialCanvas);
 
   return (
     <div className="min-h-screen bg-stone-50">
       <AppHeader
         backHref="/dashboard"
         backLabel="一覧"
-        onBackClick={handleBackClick}
+        onBackClick={editor.handleBackClick}
         maxWidth="4xl"
         title={
           <div className="flex items-center gap-2 text-xs text-stone-400">
-            {isDirty && <span className="text-stone-600">未保存</span>}
-            {!isDirty && savedFlash && <span>保存済</span>}
-            {!isDirty && !savedFlash && (
-              <span>{canvas.is_published ? "公開中" : "下書き"}</span>
+            {editor.isDirty && <span className="text-stone-600">未保存</span>}
+            {!editor.isDirty && editor.savedFlash && <span>保存済</span>}
+            {!editor.isDirty && !editor.savedFlash && (
+              <span>{editor.canvas.is_published ? "公開中" : "下書き"}</span>
             )}
           </div>
         }
         actions={
           <>
             <Link
-              href={publicUrl}
+              href={editor.publicUrl}
               target="_blank"
               className="hidden items-center gap-1 text-xs text-stone-500 hover:text-stone-800 sm:inline-flex"
             >
@@ -342,13 +54,13 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleSave}
-              disabled={saving || !isDirty}
+              onClick={editor.handleSave}
+              disabled={editor.saving || !editor.isDirty}
               className="text-stone-600"
             >
-              {saving ? (
+              {editor.saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : savedFlash ? (
+              ) : editor.savedFlash ? (
                 <Check className="h-4 w-4" />
               ) : (
                 <Save className="h-4 w-4" />
@@ -357,14 +69,13 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             </Button>
             <Button
               size="sm"
-              variant={canvas.is_published ? "outline" : "default"}
-              onClick={handleTogglePublish}
-              disabled={publishing || saving}
-              className={canvas.is_published ? "" : undefined}
+              variant={editor.canvas.is_published ? "outline" : "default"}
+              onClick={editor.handleTogglePublish}
+              disabled={editor.publishing || editor.saving}
             >
-              {publishing ? (
+              {editor.publishing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : canvas.is_published ? (
+              ) : editor.canvas.is_published ? (
                 <>
                   <EyeOff className="h-4 w-4" />
                   非公開
@@ -382,19 +93,19 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
 
       <main className="px-4 py-8 sm:px-6">
         <div className="content-column min-h-[60vh] py-6 sm:py-10">
-          {error && (
+          {editor.error && (
             <Alert variant="error" className="mb-8">
-              {error}
+              {editor.error}
             </Alert>
           )}
 
           <input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={editor.title}
+            onChange={(e) => editor.setTitle(e.target.value)}
             onBlur={() => {
-              if (title !== canvas.title) {
-                persist(blocks, title);
+              if (editor.title !== editor.canvas.title) {
+                editor.persist(editor.blocks, editor.title);
               }
             }}
             placeholder="タイトル"
@@ -402,31 +113,31 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
           />
 
           <BlockStream
-            blocks={blocks}
+            blocks={editor.blocks}
             editable
-            onEditBlock={handleEditBlock}
-            onUpdateBlockData={handleUpdateBlockData}
-            onBlockBlur={handleBlockBlur}
-            focusBlockId={focusBlockId}
-            onDeleteBlock={handleDeleteBlock}
-            onReorder={handleReorder}
-            onUpdateBento={handleUpdateBento}
-            onBentoChildBlur={handleBentoChildBlur}
-            onPersistBento={handlePersistBento}
+            onEditBlock={editor.handleEditBlock}
+            onUpdateBlockData={editor.handleUpdateBlockData}
+            onBlockBlur={editor.handleBlockBlur}
+            focusBlockId={editor.focusBlockId}
+            onDeleteBlock={editor.handleDeleteBlock}
+            onReorder={editor.handleReorder}
+            onUpdateBento={editor.handleUpdateBento}
+            onBentoChildBlur={editor.handleBentoChildBlur}
+            onPersistBento={editor.handlePersistBento}
           />
 
-          <InsertMenu onAdd={handleAddBlock} disabled={saving} />
+          <InsertMenu onAdd={editor.handleAddBlock} disabled={editor.saving} />
         </div>
       </main>
 
-      {editingBlock?.type === "product" && (
+      {editor.editingBlock?.type === "product" && (
         <ProductFormDialog
-          block={editingBlock}
-          open={dialogOpen}
-          isNew={isNewBlock}
-          onOpenChange={setDialogOpen}
-          onSave={handleApplyBlockData}
-          onCancel={handleDialogCancel}
+          block={editor.editingBlock}
+          open={editor.dialogOpen}
+          isNew={editor.isNewBlock}
+          onOpenChange={editor.setDialogOpen}
+          onSave={editor.handleApplyBlockData}
+          onCancel={editor.handleDialogCancel}
         />
       )}
     </div>
