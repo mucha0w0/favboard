@@ -48,6 +48,24 @@ function LoginForm() {
     setLoading(false);
   }
 
+  async function handleXLogin() {
+    setLoading(true);
+    setMessage("");
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "x",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}`,
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
+    }
+  }
+
   async function handleSupabaseLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -137,47 +155,71 @@ function LoginForm() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSupabaseLogin} className="space-y-6">
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="email">メールアドレス</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password">パスワード</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSignUp ? "アカウント作成" : "ログイン"}
-            </Button>
-            <button
+          <div className="space-y-6">
+            <Button
               type="button"
-              className="w-full text-center text-xs text-stone-400 transition-colors hover:text-stone-700"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setMessage("");
-              }}
+              className="w-full bg-black text-white hover:bg-neutral-800"
+              onClick={handleXLogin}
+              disabled={loading}
             >
-              {isSignUp
-                ? "すでにアカウントをお持ちの方はこちら"
-                : "新規アカウントを作成"}
-            </button>
-          </form>
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <span className="text-base leading-none" aria-hidden>
+                  𝕏
+                </span>
+              )}
+              Xでログイン
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-stone-200" />
+              <span className="text-xs text-stone-400">または</span>
+              <div className="h-px flex-1 bg-stone-200" />
+            </div>
+
+            <form onSubmit={handleSupabaseLogin} className="space-y-6">
+              <div className="space-y-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">メールアドレス</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password">パスワード</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isSignUp ? "アカウント作成" : "ログイン"}
+              </Button>
+              <button
+                type="button"
+                className="w-full text-center text-xs text-stone-400 transition-colors hover:text-stone-700"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setMessage("");
+                }}
+              >
+                {isSignUp
+                  ? "すでにアカウントをお持ちの方はこちら"
+                  : "新規アカウントを作成"}
+              </button>
+            </form>
+          </div>
         )}
       </div>
     </div>

@@ -25,6 +25,7 @@ npm install
 1. [Supabase](https://supabase.com) で新規プロジェクトを作成
 2. SQL Editor で `supabase/migrations/001_canvases.sql` を実行
 3. Authentication → Providers で Email を有効化
+4. （任意）X / Twitter ログインを使う場合は下記「X（Twitter）ログイン」を設定
 
 ### 3. ワンコマンドセットアップ（Windows）
 
@@ -57,7 +58,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### 5. 開発サーバー起動
+### 5. X（Twitter）ログイン（任意）
+
+メール／パスワードに加えて、Supabase の **X / Twitter (OAuth 2.0)** でログインできます。Client ID / Secret は Next.js の `.env` ではなく **Supabase Dashboard** に保存します。
+
+1. [X Developer Portal](https://developer.x.com/) でアプリを作成し、OAuth 2.0 を有効化
+2. Callback URL に `https://<project-ref>.supabase.co/auth/v1/callback` を登録（アプリの `localhost` ではない）
+3. 可能なら「Request email from users」を有効化
+4. Supabase Dashboard → Authentication → Providers → **X / Twitter (OAuth 2.0)** を ON にし、Client ID / Secret を貼り付け
+5. Authentication → URL Configuration の Redirect URLs に `http://localhost:3000/auth/callback` と本番の `/auth/callback` を追加
+
+設定後、`/login` の「Xでログイン」から認可フローが始まり、成功すると `/dashboard` に戻ります。
+
+### 6. 開発サーバー起動
 
 ```bash
 npm run dev
