@@ -285,7 +285,7 @@ export function BentoBlock({
             )
           }
         >
-          <span className="h-1.5 w-10 rounded-full bg-stone-400/80" />
+          <span className="h-0.5 w-8 rounded-full bg-stone-400/70" />
         </div>
       )}
     </div>
