@@ -13,7 +13,8 @@ import {
   updateBentoChildData,
 } from "@/lib/bento";
 import type { Block, BlockData } from "@/lib/types";
-import { AlignLeft, GripHorizontal, Package, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlignLeft, Package, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BentoChildChrome } from "../bento/BentoChildChrome";
 import { BentoChildRenderer } from "../bento/BentoChildRenderer";
@@ -147,6 +148,31 @@ export function BentoBlock({
 
   return (
     <div>
+      {editable && (
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleAddChild("product")}
+          >
+            <Plus className="h-3 w-3" />
+            <Package className="h-3 w-3" />
+            商品
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleAddChild("text")}
+          >
+            <Plus className="h-3 w-3" />
+            <AlignLeft className="h-3 w-3" />
+            テキスト
+          </Button>
+        </div>
+      )}
+
       <div className="relative">
         {editable && (
           <div
@@ -165,7 +191,9 @@ export function BentoBlock({
 
         <div
           ref={gridRef}
-          className="bento-grid relative grid gap-1 rounded-lg border border-stone-200/80 bg-stone-100/20 p-1.5"
+          className={`bento-grid relative grid gap-1 rounded-sm p-1.5 ${
+            editable ? "bg-stone-100/30" : ""
+          }`}
           style={bentoGridStyle(rowCount)}
           onClick={() => editable && setSelectedId(null)}
         >
@@ -178,10 +206,10 @@ export function BentoBlock({
             return (
               <div
                 key={child.id}
-                className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md bg-white shadow-sm ring-1 ${
+                className={`relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-sm bg-stone-50/90 ring-1 ${
                   isSelected && editable
                     ? "ring-stone-400"
-                    : "ring-stone-200/60"
+                    : "ring-stone-200/50"
                 } ${isDragging ? "opacity-30" : ""}`}
                 style={style}
                 onClick={(e) => {
@@ -230,10 +258,10 @@ export function BentoBlock({
           {/* スナップ先ゴースト */}
           {dragVisual?.kind === "child" && dragVisual.snap && (
             <div
-              className={`pointer-events-none z-10 rounded-md border-2 border-dashed ${
+              className={`pointer-events-none z-10 rounded-sm border border-dashed ${
                 dragVisual.blocked
-                  ? "border-red-400 bg-red-50/40"
-                  : "border-stone-500 bg-stone-900/5"
+                  ? "border-red-400/80 bg-red-50/40"
+                  : "border-stone-400/80 bg-stone-900/5"
               }`}
               style={placementStyle(dragVisual.snap)}
             />
@@ -245,8 +273,10 @@ export function BentoBlock({
             floatChild &&
             dragVisual.snap && (
               <div
-                className={`pointer-events-none absolute z-20 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md bg-white shadow-lg ring-2 ${
-                  dragVisual.blocked ? "ring-red-400" : "ring-stone-500"
+                className={`pointer-events-none absolute z-20 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-sm bg-white shadow-lg ring-1 ${
+                  dragVisual.blocked
+                    ? "ring-red-400/80"
+                    : "ring-stone-200/80"
                 }`}
                 style={{
                   left: dragVisual.padLeft + dragVisual.float.x,
@@ -269,31 +299,8 @@ export function BentoBlock({
       </div>
 
       {editable && (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:text-stone-900"
-            onClick={() => handleAddChild("product")}
-          >
-            <Plus className="h-3 w-3" />
-            <Package className="h-3 w-3" />
-            商品
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-600 transition-colors hover:border-stone-300 hover:text-stone-900"
-            onClick={() => handleAddChild("text")}
-          >
-            <Plus className="h-3 w-3" />
-            <AlignLeft className="h-3 w-3" />
-            テキスト
-          </button>
-        </div>
-      )}
-
-      {editable && (
         <div
-          className="mx-auto mt-1 flex h-4 w-16 cursor-ns-resize touch-none items-center justify-center rounded-full text-stone-300 transition-colors hover:bg-stone-100 hover:text-stone-500"
+          className="mx-auto mt-1 flex h-4 w-16 cursor-ns-resize touch-none items-center justify-center rounded-full transition-colors hover:bg-stone-100"
           aria-label="Bento の高さを調整"
           onPointerDown={(e) =>
             startDrag(
@@ -303,7 +310,7 @@ export function BentoBlock({
             )
           }
         >
-          <GripHorizontal className="h-4 w-4" />
+          <span className="h-1.5 w-10 rounded-full bg-stone-400/80" />
         </div>
       )}
     </div>
