@@ -18,5 +18,5 @@ export const DEFAULT_CHILD_SIZE: Record<
   Pick<BentoCellPlacement, "colSpan" | "rowSpan">
 > = {
   product: { colSpan: 4, rowSpan: 4 },
-  text: { colSpan: 12, rowSpan: 1 },
+  text: { colSpan: 3, rowSpan: 4 },
 };
