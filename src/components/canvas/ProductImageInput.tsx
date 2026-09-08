@@ -1,10 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClipboardImageFile, imageFileToDataUrl } from "@/lib/image-input";
-import { ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { ImageIcon, Link2, Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 
@@ -129,7 +128,7 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -141,21 +140,17 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
           type="button"
           variant="outline"
           size="sm"
-          className="shrink-0"
+          className="w-full justify-center sm:w-auto sm:justify-start"
           disabled={loading}
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="h-3.5 w-3.5" />
           デバイスから選ぶ
         </Button>
-      </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="image-url" className="text-xs text-stone-500">
-          URLで追加
-        </Label>
-        <div className="flex gap-2">
-          <Input
+        <div className="flex h-8 items-center gap-2 rounded-full border border-stone-200 bg-white px-3 text-stone-700 transition-colors focus-within:border-stone-300">
+          <Link2 className="h-3.5 w-3.5 shrink-0 text-stone-500" aria-hidden />
+          <input
             id="image-url"
             value={urlDraft}
             onChange={(e) => {
@@ -164,17 +159,18 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
             }}
             onPaste={handlePaste}
             onKeyDown={handleUrlKeyDown}
-            placeholder="https://..."
+            placeholder="URLで追加"
+            disabled={loading}
+            className="min-w-0 flex-1 bg-transparent text-xs text-stone-700 outline-none placeholder:text-stone-400 disabled:opacity-40"
           />
-          <Button
+          <button
             type="button"
-            variant="secondary"
-            className="shrink-0"
             disabled={loading || !urlDraft.trim()}
             onClick={handleAddUrl}
+            className="shrink-0 text-xs font-medium text-stone-700 transition-opacity hover:text-stone-900 disabled:pointer-events-none disabled:opacity-40"
           >
             追加
-          </Button>
+          </button>
         </div>
       </div>
 

@@ -16,7 +16,7 @@ export interface BlockLayout {
   h: number;
 }
 
-/** Bento 内グリッド上の配置（12列ベース） */
+/** Bento 内グリッド上の配置（24列ベース） */
 export interface BentoCellPlacement {
   col: number;
   row: number;
@@ -40,6 +40,8 @@ export interface BlockData {
   product_size?: ProductSize | "banner";
   /** Bento コンテナ */
   bento_rows?: number;
+  /** 保存時の列数（未設定は旧 12 列としてマイグレート） */
+  bento_cols?: number;
   children?: Block[];
   child_placements?: Record<string, BentoCellPlacement>;
 }

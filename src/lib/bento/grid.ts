@@ -94,9 +94,10 @@ export function getProductSizeFromPlacement(
 ): ProductSize {
   const area = colSpan * rowSpan;
   const maxDim = Math.max(colSpan, rowSpan);
-  if (area <= 4 || maxDim <= 2) return "compact";
-  if (area <= 9 || maxDim <= 3) return "standard";
-  if (area <= 20 || maxDim <= 5) return "large";
+  // 24 列基準（旧 12 列の閾値を ×4 / ×2）
+  if (area <= 16 || maxDim <= 4) return "compact";
+  if (area <= 36 || maxDim <= 6) return "standard";
+  if (area <= 80 || maxDim <= 10) return "large";
   return "xl";
 }
 

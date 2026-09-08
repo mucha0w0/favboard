@@ -56,9 +56,9 @@ function ChildBody({
   const area = placement.colSpan * placement.rowSpan;
   const pad =
     child.type === "product"
-      ? area <= 4
+      ? area <= 16
         ? "p-1"
-        : area <= 9
+        : area <= 36
           ? "p-1.5"
           : "p-2"
       : "p-1.5";

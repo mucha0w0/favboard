@@ -183,6 +183,7 @@ export function createBentoBlock(): Block {
     type: "bento",
     data: {
       bento_rows: DEFAULT_BENTO_ROWS,
+      bento_cols: BENTO_COLS,
       children: [],
       child_placements: {},
     },
