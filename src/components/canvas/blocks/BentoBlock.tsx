@@ -153,11 +153,12 @@ export function BentoBlock({
   return (
     <div>
       {editable && (
-        <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="mb-2 flex flex-wrap items-center gap-4">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
+            className="h-auto gap-1 rounded-none border-b border-stone-300 px-0 pb-0.5 text-stone-400 hover:bg-transparent hover:border-stone-500 hover:text-stone-600"
             onClick={() => handleAddChild("product")}
           >
             <Plus className="h-3 w-3" />
@@ -166,8 +167,9 @@ export function BentoBlock({
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
+            className="h-auto gap-1 rounded-none border-b border-stone-300 px-0 pb-0.5 text-stone-400 hover:bg-transparent hover:border-stone-500 hover:text-stone-600"
             onClick={() => handleAddChild("text")}
           >
             <Plus className="h-3 w-3" />
@@ -184,12 +186,22 @@ export function BentoBlock({
             style={bentoGridStyle(rowCount)}
             aria-hidden
           >
-            {Array.from({ length: rowCount * BENTO_COLS }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-sm border border-dashed border-stone-200/60 bg-stone-50/50"
-              />
-            ))}
+            {Array.from({ length: rowCount * BENTO_COLS }).map((_, i) => {
+              const col = i % BENTO_COLS;
+              const row = Math.floor(i / BENTO_COLS);
+              return (
+                <div
+                  key={i}
+                  className={[
+                    "bento-grid-guide-cell",
+                    col === BENTO_COLS - 1 ? "is-last-col" : "",
+                    row === rowCount - 1 ? "is-last-row" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
+              );
+            })}
           </div>
         )}
 
