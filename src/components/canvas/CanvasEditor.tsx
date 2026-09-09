@@ -3,27 +3,37 @@
 import { BlockStream } from "@/components/canvas/BlockStream";
 import { InsertMenu } from "@/components/canvas/InsertMenu";
 import { ProductFormDialog } from "@/components/canvas/ProductFormDialog";
+import {
+  ViewModeToggle,
+  type ViewMode,
+} from "@/components/canvas/ViewModeToggle";
 import { useCanvasEditor } from "@/components/canvas/hooks/useCanvasEditor";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { type Canvas } from "@/lib/types";
-import {
-  Check,
-  ExternalLink,
-  EyeOff,
-  Globe,
-  Loader2,
-  Save,
-} from "lucide-react";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Check, EyeOff, Globe, Loader2, Save } from "lucide-react";
+import { useState } from "react";
 
 interface CanvasEditorProps {
   canvas: Canvas;
 }
 
+const TITLE_CLASS =
+  "mb-10 w-full border-none bg-transparent text-[1.75rem] font-bold leading-tight tracking-tight text-stone-900 outline-none sm:text-[2rem]";
+
 export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   const editor = useCanvasEditor(initialCanvas);
+  const [viewMode, setViewMode] = useState<ViewMode>("edit");
+  const isEditing = viewMode === "edit";
+
+  function handleViewModeChange(mode: ViewMode) {
+    if (mode === "preview" && editor.dialogOpen) {
+      editor.handleDialogClose();
+    }
+    setViewMode(mode);
+  }
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -33,24 +43,19 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         onBackClick={editor.handleBackClick}
         maxWidth="4xl"
         title={
-          <div className="flex items-center gap-2 text-xs text-stone-400">
-            {editor.isDirty && <span className="text-stone-600">未保存</span>}
-            {!editor.isDirty && editor.savedFlash && <span>保存済</span>}
-            {!editor.isDirty && !editor.savedFlash && (
-              <span>{editor.canvas.is_published ? "公開中" : "下書き"}</span>
-            )}
+          <div className="flex items-center gap-3">
+            <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
+            <div className="hidden items-center gap-2 text-xs text-stone-400 sm:flex">
+              {editor.isDirty && <span className="text-stone-600">未保存</span>}
+              {!editor.isDirty && editor.savedFlash && <span>保存済</span>}
+              {!editor.isDirty && !editor.savedFlash && (
+                <span>{editor.canvas.is_published ? "公開中" : "下書き"}</span>
+              )}
+            </div>
           </div>
         }
         actions={
           <>
-            <Link
-              href={editor.publicUrl}
-              target="_blank"
-              className="hidden items-center gap-1 text-xs text-stone-500 hover:text-stone-800 sm:inline-flex"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              プレビュー
-            </Link>
             <Button
               variant="ghost"
               size="sm"
@@ -99,22 +104,28 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             </Alert>
           )}
 
-          <input
-            type="text"
-            value={editor.title}
-            onChange={(e) => editor.setTitle(e.target.value)}
-            onBlur={() => {
-              if (editor.title !== editor.canvas.title) {
-                editor.persist(editor.blocks, editor.title);
-              }
-            }}
-            placeholder="タイトル"
-            className="mb-10 w-full border-none bg-transparent text-[1.75rem] font-bold leading-tight tracking-tight text-stone-900 placeholder:text-stone-300 outline-none sm:text-[2rem]"
-          />
+          {isEditing ? (
+            <input
+              type="text"
+              value={editor.title}
+              onChange={(e) => editor.setTitle(e.target.value)}
+              onBlur={() => {
+                if (editor.title !== editor.canvas.title) {
+                  editor.persist(editor.blocks, editor.title);
+                }
+              }}
+              placeholder="タイトル"
+              className={`${TITLE_CLASS} placeholder:text-stone-300`}
+            />
+          ) : (
+            <h1 className={cn(TITLE_CLASS, !editor.title && "text-stone-300")}>
+              {editor.title || "タイトル"}
+            </h1>
+          )}
 
           <BlockStream
             blocks={editor.blocks}
-            editable
+            editable={isEditing}
             onEditBlock={editor.handleEditBlock}
             onUpdateBlockData={editor.handleUpdateBlockData}
             onBlockBlur={editor.handleBlockBlur}
@@ -126,11 +137,13 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
             onPersistBento={editor.handlePersistBento}
           />
 
-          <InsertMenu onAdd={editor.handleAddBlock} disabled={editor.saving} />
+          {isEditing && (
+            <InsertMenu onAdd={editor.handleAddBlock} disabled={editor.saving} />
+          )}
         </div>
       </main>
 
-      {editor.editingBlock?.type === "product" && (
+      {isEditing && editor.editingBlock?.type === "product" && (
         <ProductFormDialog
           block={editor.editingBlock}
           open={editor.dialogOpen}

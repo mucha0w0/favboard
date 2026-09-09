@@ -55,6 +55,11 @@ function BlockStreamView({
           下の ＋ から、Bento・見出し・区切り線を追加できます
         </p>
       )}
+      {blocks.length === 0 && !editable && (
+        <p className="py-16 text-center text-[15px] text-stone-400">
+          コンテンツはまだありません
+        </p>
+      )}
 
       <div className="flex flex-col">
         {blocks.map((block, index) => (

@@ -279,7 +279,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     setDialogOpen,
     focusBlockId,
     isDirty,
-    publicUrl: `/c/${canvas.slug}`,
     persist,
     handleSave,
     handleAddBlock,
