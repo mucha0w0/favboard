@@ -119,7 +119,7 @@ function LoginForm() {
             href="/"
             className="text-sm font-medium tracking-tight text-stone-900 transition-opacity hover:opacity-70"
           >
-            Visual Wishlist
+            Favboard
           </Link>
           <p className="mt-3 text-sm text-stone-500">
             {isLocalMode

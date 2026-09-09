@@ -22,19 +22,20 @@ export default function HomePage() {
 
       <main>
         <section className="mx-auto max-w-3xl px-5 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
-          <p className="animate-fade-up text-xs font-medium uppercase tracking-[0.2em] text-stone-400">
-            Visual Portfolio
-          </p>
-          <h1 className="animate-fade-up stagger-1 mt-5 text-balance text-3xl font-semibold leading-[1.25] tracking-tight text-stone-900 sm:text-[2.75rem]">
-            物欲の方向性を、
-            <br />
-            ひとつのページに。
+          <h1 className="animate-fade-up text-balance text-4xl font-semibold leading-[1.15] tracking-tight text-stone-900 sm:text-5xl">
+            Favboard
           </h1>
-          <p className="animate-fade-up stagger-2 mt-6 max-w-md text-[15px] leading-relaxed text-stone-500">
+          <p className="animate-fade-up stagger-1 mt-2 text-sm tracking-wide text-stone-400">
+            ファブボード
+          </p>
+          <p className="animate-fade-up stagger-2 mt-6 text-balance text-xl font-medium leading-snug tracking-tight text-stone-800 sm:text-2xl">
+            好きを、ひとつのボードに。
+          </p>
+          <p className="animate-fade-up stagger-3 mt-5 max-w-md text-[15px] leading-relaxed text-stone-500">
             欲しいもの・こだわり・美学を、文章のように綴って共有。
             クリエイターのポートフォリオのように、あなたの「好き」を世界に届けます。
           </p>
-          <div className="animate-fade-up stagger-3 mt-10 flex flex-wrap items-center gap-3">
+          <div className="animate-fade-up stagger-4 mt-10 flex flex-wrap items-center gap-3">
             <Link href="/login">
               <Button size="lg">無料ではじめる</Button>
             </Link>
@@ -92,9 +93,7 @@ export default function HomePage() {
 
         <section className="mx-auto max-w-3xl px-5 py-20 text-center sm:px-6 sm:py-28">
           <h2 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
-            あなたの物欲を、
-            <br className="sm:hidden" />
-            形にしよう。
+            Favboard ではじめよう
           </h2>
           <p className="mx-auto mt-4 max-w-sm text-sm text-stone-500">
             アカウント不要のローカルモードでも試せます。
@@ -106,7 +105,7 @@ export default function HomePage() {
 
         <footer className="mx-auto max-w-3xl px-5 py-8 sm:px-6">
           <p className="text-xs text-stone-400">
-            公式ページへのリンクのみ。ねだり・代払い要素はありません。
+            Favboard · 公式ページへのリンクのみ。ねだり・代払い要素はありません。
           </p>
         </footer>
       </main>

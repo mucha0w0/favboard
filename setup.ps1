@@ -1,6 +1,6 @@
-# Visual Wishlist — Windows セットアップ
+# Favboard — Windows セットアップ
 
-Write-Host "=== Visual Wishlist Setup ===" -ForegroundColor Cyan
+Write-Host "=== Favboard Setup ===" -ForegroundColor Cyan
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $projectRoot

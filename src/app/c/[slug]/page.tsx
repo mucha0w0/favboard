@@ -25,10 +25,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: canvas.title,
-    description: `${canvas.title} — 物欲・こだわりのビジュアルポートフォリオ`,
+    description: `${canvas.title} — Favboard（ファブボード）`,
     openGraph: {
       title: canvas.title,
-      description: "Visual Wishlist Canvas — 純粋な物欲のポートフォリオ",
+      description: "Favboard — 好きを集めるビジュアルボード",
       url: shareUrl,
       type: "website",
       ...(ogImage ? { images: [{ url: ogImage }] } : {}),
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card: ogImage ? "summary_large_image" : "summary",
       title: canvas.title,
-      description: "Visual Wishlist Canvas",
+      description: "Favboard（ファブボード）",
       ...(ogImage ? { images: [ogImage] } : {}),
     },
   };

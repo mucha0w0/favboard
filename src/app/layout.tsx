@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Visual Wishlist — 物欲のビジュアルポートフォリオ",
+  title: "Favboard（ファブボード）— 好きを集めるビジュアルボード",
   description:
-    "代払い機能なし。純粋な物欲・こだわりを、文章のように綴って共有。",
+    "代払い機能なし。欲しいものやこだわりを、ボードに綴って共有。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

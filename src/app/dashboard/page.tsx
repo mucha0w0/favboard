@@ -114,7 +114,7 @@ export default function DashboardPage() {
             href="/"
             className="text-sm font-medium tracking-tight text-stone-900"
           >
-            Visual Wishlist
+            Favboard
           </Link>
         }
         actions={

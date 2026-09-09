@@ -19,7 +19,7 @@ export function PublicCanvasView({
   isDraftPreview = false,
 }: PublicCanvasViewProps) {
   function handleShare() {
-    const text = `${canvas.title} — Visual Wishlist`;
+    const text = `${canvas.title} — Favboard`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
   }
@@ -57,7 +57,7 @@ export function PublicCanvasView({
         <article className="content-column animate-fade-in">
           <header className="mb-12 sm:mb-14">
             <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
-              {isDraftPreview ? "Draft Preview" : "Wishlist"}
+              {isDraftPreview ? "Draft Preview" : "Favboard"}
             </p>
             <h1 className="mt-3 text-[1.75rem] font-bold leading-tight tracking-tight text-stone-900 sm:text-[2.25rem]">
               {canvas.title}
@@ -82,7 +82,7 @@ export function PublicCanvasView({
 
       <footer className="content-column px-5 py-8 sm:px-0">
         <p className="text-center text-[11px] tracking-wide text-stone-400">
-          Visual Wishlist
+          Favboard
         </p>
       </footer>
     </div>
