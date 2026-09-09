@@ -1,22 +1,39 @@
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/button";
+import { getAuthUserId } from "@/lib/canvas-service";
 import Link from "next/link";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  let userId: string | null = null;
+  try {
+    userId = await getAuthUserId();
+  } catch {
+    userId = null;
+  }
+  const startHref = userId ? "/dashboard" : "/login";
+
   return (
     <div className="min-h-screen bg-stone-50">
       <SiteHeader
         actions={
-          <>
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                ログイン
-              </Button>
+          userId ? (
+            <Link href="/dashboard">
+              <Button size="sm">マイリスト</Button>
             </Link>
-            <Link href="/login">
-              <Button size="sm">はじめる</Button>
-            </Link>
-          </>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  ログイン
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="sm">はじめる</Button>
+              </Link>
+            </>
+          )
         }
       />
 
@@ -36,8 +53,10 @@ export default function HomePage() {
             クリエイターのポートフォリオのように、あなたの「好き」を世界に届けます。
           </p>
           <div className="animate-fade-up stagger-4 mt-10 flex flex-wrap items-center gap-3">
-            <Link href="/login">
-              <Button size="lg">無料ではじめる</Button>
+            <Link href={startHref}>
+              <Button size="lg">
+                {userId ? "マイリストを開く" : "無料ではじめる"}
+              </Button>
             </Link>
             <span className="text-xs text-stone-400">
               代払い機能なし · 純粋な共有
@@ -98,8 +117,10 @@ export default function HomePage() {
           <p className="mx-auto mt-4 max-w-sm text-sm text-stone-500">
             アカウント不要のローカルモードでも試せます。
           </p>
-          <Link href="/login" className="mt-8 inline-block">
-            <Button size="lg">はじめる</Button>
+          <Link href={startHref} className="mt-8 inline-block">
+            <Button size="lg">
+              {userId ? "マイリストを開く" : "はじめる"}
+            </Button>
           </Link>
         </section>
 

@@ -95,6 +95,7 @@ export default function DashboardPage() {
       await supabase.auth.signOut();
     }
     router.push("/");
+    router.refresh();
   }
 
   if (loading) {
