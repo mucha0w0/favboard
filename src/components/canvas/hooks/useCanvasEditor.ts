@@ -26,6 +26,9 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   const [blocks, setBlocks] = useState<Block[]>(migratedInitial);
   const blocksRef = useRef(blocks);
   const [title, setTitle] = useState(initialCanvas.title);
+  const titleRef = useRef(title);
+  const canvasRef = useRef(canvas);
+  const persistSeq = useRef(0);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -42,6 +45,14 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   useEffect(() => {
     blocksRef.current = blocks;
   }, [blocks]);
+
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
+
+  useEffect(() => {
+    canvasRef.current = canvas;
+  }, [canvas]);
 
   useEffect(() => {
     return () => {
@@ -71,6 +82,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
       nextTitle: string,
       updates: Partial<Canvas> = {},
     ): Promise<boolean> => {
+      const seq = ++persistSeq.current;
       setSaving(true);
       setError("");
       setSavedFlash(false);
@@ -92,22 +104,42 @@ export function useCanvasEditor(initialCanvas: Canvas) {
 
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error || "保存に失敗しました");
+          if (seq === persistSeq.current) {
+            setError(data.error || "保存に失敗しました");
+          }
           return false;
         }
 
         const updated = data as Canvas;
-        setCanvas(updated);
-        setTitle(updated.title);
-        setBlocks(migrateCanvasBlocks(updated.blocks));
+        const migrated = migrateCanvasBlocks(updated.blocks);
+
+        // 古い保存の応答で、リサイズ後のローカル状態を巻き戻さない
+        if (seq !== persistSeq.current) {
+          return true;
+        }
+
+        setCanvas({ ...updated, blocks: migrated });
+        if (titleRef.current === nextTitle) {
+          setTitle(updated.title);
+        }
+        if (
+          blocksEqual(blocksRef.current, nextBlocks) &&
+          !blocksEqual(blocksRef.current, migrated)
+        ) {
+          setBlocks(migrated);
+        }
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 2000);
         return true;
       } catch {
-        setError("保存に失敗しました");
+        if (seq === persistSeq.current) {
+          setError("保存に失敗しました");
+        }
         return false;
       } finally {
-        setSaving(false);
+        if (seq === persistSeq.current) {
+          setSaving(false);
+        }
       }
     },
     [canvas.id, router],
@@ -127,15 +159,15 @@ export function useCanvasEditor(initialCanvas: Canvas) {
       return;
     }
 
-    persist(nextBlocks, title);
+    persist(nextBlocks, titleRef.current);
   }
 
   const handleReorder = useCallback(
     async (nextBlocks: Block[]) => {
       setBlocks(nextBlocks);
-      await persist(nextBlocks, title);
+      await persist(nextBlocks, titleRef.current);
     },
-    [persist, title],
+    [persist],
   );
 
   function handleEditBlock(
@@ -157,25 +189,28 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     );
   }
 
-  function handleUpdateBento(bentoId: string, data: Partial<BlockData>) {
-    const next = blocksRef.current.map((b) =>
-      b.id === bentoId ? { ...b, data: { ...b.data, ...data } } : b,
-    );
-    blocksRef.current = next;
-    setBlocks(next);
-  }
+  const handleUpdateBento = useCallback(
+    (bentoId: string, data: Partial<BlockData>) => {
+      const next = blocksRef.current.map((b) =>
+        b.id === bentoId ? { ...b, data: { ...b.data, ...data } } : b,
+      );
+      blocksRef.current = next;
+      setBlocks(next);
+    },
+    [],
+  );
 
-  async function handlePersistBento(bentoId: string) {
-    const bento = blocksRef.current.find((b) => b.id === bentoId);
-    const saved = canvas.blocks.find((b) => b.id === bentoId);
-    if (
-      !bento ||
-      (saved && blockDataEqual(saved.data, bento.data))
-    ) {
-      return;
-    }
-    await persist(blocksRef.current, title);
-  }
+  const handlePersistBento = useCallback(
+    async (bentoId: string) => {
+      const bento = blocksRef.current.find((b) => b.id === bentoId);
+      const saved = canvasRef.current.blocks.find((b) => b.id === bentoId);
+      if (!bento || (saved && blockDataEqual(saved.data, bento.data))) {
+        return;
+      }
+      await persist(blocksRef.current, titleRef.current);
+    },
+    [persist],
+  );
 
   async function handleBlockBlur(blockId: string) {
     setFocusBlockId(null);
@@ -184,12 +219,12 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     const block = currentBlocks.find((b) => b.id === blockId);
     if (!block) return;
 
-    const saved = canvas.blocks.find((b) => b.id === blockId);
+    const saved = canvasRef.current.blocks.find((b) => b.id === blockId);
     if (saved && blockDataEqual(saved.data, block.data)) {
       return;
     }
 
-    await persist(currentBlocks, title);
+    await persist(currentBlocks, titleRef.current);
   }
 
   async function handleBentoChildBlur(bentoId: string, childId: string) {
@@ -199,7 +234,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     const child = bento?.data.children?.find((c) => c.id === childId);
     if (!child || child.type !== "text") return;
 
-    await persist(blocksRef.current, title);
+    await persist(blocksRef.current, titleRef.current);
   }
 
   function handleProductDataChange(blockId: string, data: BlockData) {
@@ -222,7 +257,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     }
     productPersistTimer.current = setTimeout(() => {
       productPersistTimer.current = null;
-      void persist(blocksRef.current, title);
+      void persist(blocksRef.current, titleRef.current);
     }, 400);
   }
 
@@ -230,7 +265,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     if (productPersistTimer.current) {
       clearTimeout(productPersistTimer.current);
       productPersistTimer.current = null;
-      void persist(blocksRef.current, title);
+      void persist(blocksRef.current, titleRef.current);
     }
     setIsNewBlock(false);
     setEditingBlock(null);
@@ -241,14 +276,16 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   async function handleDeleteBlock(blockId: string) {
     const nextBlocks = blocks.filter((b) => b.id !== blockId);
     setBlocks(nextBlocks);
-    await persist(nextBlocks, title);
+    await persist(nextBlocks, titleRef.current);
   }
 
   async function handleTogglePublish() {
     setPublishing(true);
     setError("");
-    const nextPublished = !canvas.is_published;
-    const ok = await persist(blocks, title, { is_published: nextPublished });
+    const nextPublished = !canvasRef.current.is_published;
+    const ok = await persist(blocksRef.current, titleRef.current, {
+      is_published: nextPublished,
+    });
     if (!ok) {
       setError(
         nextPublished ? "公開に失敗しました" : "非公開に失敗しました",

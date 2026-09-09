@@ -17,6 +17,7 @@ import {
 } from "@/lib/bento";
 import type { BentoCellPlacement, Block } from "@/lib/types";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 export type BentoDragVisual = {
   kind: "child" | "bento-height";
@@ -241,7 +242,10 @@ export function useBentoPointerDrag({
         }
 
         if (nextBlock !== currentBlock) {
-          onCommitRef.current(nextBlock);
+          // プレビューを消す前に確定サイズを描画し、旧サイズへの巻き戻りを防ぐ
+          flushSync(() => {
+            onCommitRef.current(nextBlock);
+          });
           onPersistRef.current();
         }
       }

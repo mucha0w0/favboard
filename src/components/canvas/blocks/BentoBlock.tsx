@@ -119,6 +119,7 @@ export function BentoBlock({
 
   const commitBento = useCallback(
     (next: Block) => {
+      blockRef.current = next;
       onUpdateBento?.(block.id, next.data);
     },
     [block.id, onUpdateBento],
@@ -219,7 +220,12 @@ export function BentoBlock({
           onClick={() => editable && setSelectedId(null)}
         >
           {children.map((child) => {
-            const placement = getChildPlacement(block, child.id);
+            const placement =
+              dragVisual?.kind === "child" &&
+              dragVisual.childId === child.id &&
+              dragVisual.snap
+                ? dragVisual.snap
+                : getChildPlacement(block, child.id);
             const isSelected = selectedId === child.id;
             const isDragging = draggingChildId === child.id;
             const style = placementStyle(placement);
