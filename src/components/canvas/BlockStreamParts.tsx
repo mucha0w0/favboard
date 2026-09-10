@@ -162,13 +162,11 @@ export function SortableBlockShell(props: BlockShellCommonProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`${className} ${
-        isDragging
-          ? "rounded-sm border border-dashed border-stone-200 bg-stone-50/50"
-          : ""
-      }`}
+      className={className}
     >
-      <div style={isDragging ? { opacity: 0 } : undefined}>
+      {isDragging ? (
+        <div className="h-px w-full bg-black" aria-hidden />
+      ) : (
         <BlockShellFrame
           {...props}
           editable
@@ -187,7 +185,7 @@ export function SortableBlockShell(props: BlockShellCommonProps) {
             </button>
           }
         />
-      </div>
+      )}
     </div>
   );
 }
