@@ -155,7 +155,13 @@ export function BlockStreamEditor({
     orderedBlocksRef.current = blocksRef.current;
     setOrderedBlocks(blocksRef.current);
     setActiveId(id);
-    setDragSpacerHeight(event.active.rect.current.initial?.height ?? 0);
+
+    // active.rect.initial is still null here (dnd-kit fills it after render).
+    // Measure the live node before React collapses it to the drop line.
+    const node = listContainerRef.current?.querySelector(
+      `[data-sortable-id="${CSS.escape(id)}"]`,
+    );
+    setDragSpacerHeight(node?.getBoundingClientRect().height ?? 0);
 
     const listWidth = listContainerRef.current?.getBoundingClientRect().width;
     if (listWidth) setOverlayWidth(listWidth);

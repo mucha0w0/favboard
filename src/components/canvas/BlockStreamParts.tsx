@@ -163,6 +163,7 @@ export function SortableBlockShell(props: BlockShellCommonProps) {
       ref={setNodeRef}
       style={style}
       className={className}
+      data-sortable-id={block.id}
     >
       {isDragging ? (
         <div className="flex items-center py-5" aria-hidden>
