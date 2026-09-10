@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PRICE_CURRENCY,
   type BentoCellPlacement,
   type BentoChildType,
   type Block,
@@ -197,7 +198,7 @@ export function createBentoChild(type: BentoChildType): Block {
     data:
       type === "text"
         ? { body: "" }
-        : { title: "", brand: "", price: "" },
+        : { title: "", brand: "", price: "", price_currency: DEFAULT_PRICE_CURRENCY },
   };
 }
 

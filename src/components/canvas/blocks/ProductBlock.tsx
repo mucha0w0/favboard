@@ -1,7 +1,13 @@
 "use client";
 
 import { getProductSizeFromPlacement } from "@/lib/bento";
-import { getProductSize, type Block, type ProductSize } from "@/lib/types";
+import {
+  formatProductPrice,
+  parseStoredPrice,
+  getProductSize,
+  type Block,
+  type ProductSize,
+} from "@/lib/types";
 import { useState } from "react";
 import { ProductHorizontal, ProductVertical } from "./product/ProductParts";
 import {
@@ -39,13 +45,23 @@ function ProductCardContent({
   emphasizeImage?: boolean;
   showOfficialLink?: boolean;
 }) {
-  const { title, brand, price, image_url, official_url, comment } = block.data;
+  const { title, brand, price, price_currency, image_url, official_url, comment } =
+    block.data;
   const [imageError, setImageError] = useState(false);
   const showImage = Boolean(image_url && !imageError);
 
+  const { amount: priceAmount, currency } = parseStoredPrice(
+    price,
+    price_currency,
+  );
+  const formattedPrice = formatProductPrice(price, price_currency);
   const brandText = displayValue(brand, "ブランド名", showPlaceholders);
   const titleText = displayValue(title, "商品名", showPlaceholders);
-  const priceText = displayValue(price, "¥ —", showPlaceholders);
+  const priceText = displayValue(
+    formattedPrice,
+    `${currency} —`,
+    showPlaceholders,
+  );
   const onImageError = () => setImageError(true);
 
   const shared = {
@@ -57,7 +73,7 @@ function ProductCardContent({
     titleText,
     priceText,
     brand,
-    price,
+    price: priceAmount,
     comment,
     officialUrl: official_url,
     showOfficialLink,

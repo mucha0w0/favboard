@@ -4,7 +4,14 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { type Block, type BlockData } from "@/lib/types";
+import {
+  DEFAULT_PRICE_CURRENCY,
+  parseStoredPrice,
+  sanitizePriceInput,
+  type Block,
+  type BlockData,
+  type PriceCurrency,
+} from "@/lib/types";
 import { useState } from "react";
 import { ProductImageInput } from "./ProductImageInput";
 
@@ -49,9 +56,16 @@ function ProductFormFields({
   block: Block;
   onChange: (blockId: string, data: BlockData) => void;
 }) {
+  const initialPrice = parseStoredPrice(
+    block.data.price,
+    block.data.price_currency,
+  );
   const [title, setTitle] = useState(block.data.title || "");
   const [brand, setBrand] = useState(block.data.brand || "");
-  const [price, setPrice] = useState(block.data.price || "");
+  const [price, setPrice] = useState(initialPrice.amount);
+  const [priceCurrency, setPriceCurrency] = useState<PriceCurrency>(
+    initialPrice.currency,
+  );
   const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
   const [officialUrl, setOfficialUrl] = useState(
     block.data.official_url || "",
@@ -62,6 +76,7 @@ function ProductFormFields({
     title?: string;
     brand?: string;
     price?: string;
+    price_currency?: PriceCurrency;
     image_url?: string;
     official_url?: string;
     comment?: string;
@@ -70,6 +85,7 @@ function ProductFormFields({
       title: next.title ?? title,
       brand: next.brand ?? brand,
       price: next.price ?? price,
+      price_currency: next.price_currency ?? priceCurrency,
       image_url: next.image_url ?? imageUrl,
       official_url: next.official_url ?? officialUrl,
       comment: next.comment ?? comment,
@@ -77,7 +93,8 @@ function ProductFormFields({
     onChange(block.id, {
       title: merged.title.trim(),
       brand: merged.brand.trim(),
-      price: merged.price.trim(),
+      price: sanitizePriceInput(merged.price).trim(),
+      price_currency: merged.price_currency || DEFAULT_PRICE_CURRENCY,
       image_url: merged.image_url.trim(),
       official_url: merged.official_url.trim(),
       comment: merged.comment.trim(),
@@ -115,16 +132,34 @@ function ProductFormFields({
         </div>
         <div className="space-y-2">
           <Label htmlFor="price">価格</Label>
-          <Input
-            id="price"
-            value={price}
-            onChange={(e) => {
-              const v = e.target.value;
-              setPrice(v);
-              commit({ price: v });
-            }}
-            placeholder="¥12,800"
-          />
+          <div className="flex items-end gap-2">
+            <select
+              id="price_currency"
+              aria-label="通貨"
+              value={priceCurrency}
+              onChange={(e) => {
+                const v = e.target.value as PriceCurrency;
+                setPriceCurrency(v);
+                commit({ price_currency: v });
+              }}
+              className="field-input h-9 w-12 shrink-0 cursor-pointer text-sm text-stone-900 focus-visible:outline-none"
+            >
+              <option value="¥">¥</option>
+              <option value="$">$</option>
+            </select>
+            <Input
+              id="price"
+              inputMode="decimal"
+              value={price}
+              onChange={(e) => {
+                const v = sanitizePriceInput(e.target.value);
+                setPrice(v);
+                commit({ price: v });
+              }}
+              placeholder="12,800"
+              className="min-w-0 flex-1"
+            />
+          </div>
         </div>
       </div>
       <ProductImageInput

@@ -8,6 +8,42 @@ export type BentoChildType = "product" | "text";
 
 export type ProductSize = "compact" | "standard" | "large" | "xl";
 
+export type PriceCurrency = "¥" | "$";
+
+export const DEFAULT_PRICE_CURRENCY: PriceCurrency = "¥";
+
+/** 価格入力から通貨記号などを除き、数値・カンマ・小数点のみ残す */
+export function sanitizePriceInput(value: string): string {
+  return value.replace(/[^\d.,]/g, "");
+}
+
+/** 保存済み価格を金額と通貨に分解（旧データ互換） */
+export function parseStoredPrice(
+  price?: string,
+  currency?: PriceCurrency,
+): { amount: string; currency: PriceCurrency } {
+  if (currency === "$" || currency === "¥") {
+    return { amount: sanitizePriceInput(price ?? ""), currency };
+  }
+  const raw = (price ?? "").trim();
+  if (raw.startsWith("$") || raw.startsWith("＄")) {
+    return { amount: sanitizePriceInput(raw.slice(1)), currency: "$" };
+  }
+  if (raw.startsWith("¥") || raw.startsWith("￥")) {
+    return { amount: sanitizePriceInput(raw.slice(1)), currency: "¥" };
+  }
+  return { amount: sanitizePriceInput(raw), currency: DEFAULT_PRICE_CURRENCY };
+}
+
+export function formatProductPrice(
+  price?: string,
+  currency?: PriceCurrency,
+): string | undefined {
+  const { amount, currency: resolved } = parseStoredPrice(price, currency);
+  if (!amount) return undefined;
+  return `${resolved}${amount}`;
+}
+
 /** @deprecated Legacy bento layout — ignored */
 export interface BlockLayout {
   x: number;
@@ -34,7 +70,10 @@ export interface BlockData {
   /** 商品 */
   title?: string;
   brand?: string;
+  /** 金額（数値・カンマ・小数点のみ）。通貨は price_currency */
   price?: string;
+  /** 価格の通貨記号。未設定時は ¥ */
+  price_currency?: PriceCurrency;
   image_url?: string;
   /** 公式サイト URL */
   official_url?: string;
