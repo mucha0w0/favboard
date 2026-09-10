@@ -1,14 +1,12 @@
 "use client";
 
 import type { ResizeEdge } from "@/lib/bento";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 
 interface BentoChildChromeProps {
   onStartMove: (e: React.PointerEvent) => void;
   onStartResize: (e: React.PointerEvent, edge: ResizeEdge) => void;
   onDelete: () => void;
-  showEdit?: boolean;
-  onEdit?: () => void;
 }
 
 /** リサイズ用の細いバー（移動の6ドットと視覚的に区別） */
@@ -79,8 +77,6 @@ export function BentoChildChrome({
   onStartMove,
   onStartResize,
   onDelete,
-  showEdit,
-  onEdit,
 }: BentoChildChromeProps) {
   return (
     <>
@@ -92,29 +88,17 @@ export function BentoChildChrome({
       >
         <GripVertical className="h-3.5 w-3.5" />
       </button>
-      <div className="absolute right-1.5 top-1.5 z-30 flex items-center gap-2.5">
-        {showEdit && onEdit && (
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 border-b border-stone-300 pb-0.5 text-[11px] text-stone-400 hover:border-stone-500 hover:text-stone-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Pencil className="h-3 w-3" />
-            編集
-          </button>
-        )}
-        <button
-          type="button"
-          className="p-0.5 text-stone-400 hover:text-red-600"
-          aria-label="削除"
-          onClick={onDelete}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      <button
+        type="button"
+        className="absolute right-1.5 top-1.5 z-30 p-0.5 text-stone-400 hover:text-red-600"
+        aria-label="削除"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
       {EDGE_HANDLES.map(({ edge, className, children }) => (
         <div
           key={edge}

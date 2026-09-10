@@ -170,11 +170,16 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     block: Block,
     context?: { bentoId: string; isNew?: boolean },
   ) {
-    if (block.type !== "product") return;
-    setEditingBlock(block);
-    setEditingBentoId(context?.bentoId ?? null);
-    setIsNewBlock(Boolean(context?.isNew));
-    setDialogOpen(true);
+    if (block.type === "product") {
+      setEditingBlock(block);
+      setEditingBentoId(context?.bentoId ?? null);
+      setIsNewBlock(Boolean(context?.isNew));
+      setDialogOpen(true);
+      return;
+    }
+    if (block.type === "text") {
+      setFocusBlockId(block.id);
+    }
   }
 
   function handleUpdateBlockData(blockId: string, data: Partial<BlockData>) {

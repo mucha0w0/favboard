@@ -86,7 +86,7 @@ function ChildBody({
       ) : (
         <BentoChildRenderer
           block={child}
-          editable={editable}
+          editable={editable && focusBlockId === child.id}
           autoFocus={focusBlockId === child.id}
           onUpdateBlockData={(_, data) => {
             commitBento(
@@ -143,7 +143,21 @@ export function BentoBlock({
     const next = addBentoChild(block, child);
     commitBento(next);
     setSelectedId(child.id);
+    if (type === "text") {
+      onEditChild?.(block.id, child);
+    }
     onPersistBento?.(block.id);
+  }
+
+  function handleChildClick(child: Block, isSelected: boolean) {
+    if (isSelected) {
+      onEditChild?.(block.id, child);
+      return;
+    }
+    if (focusBlockId) {
+      onChildBlur?.(block.id, focusBlockId);
+    }
+    setSelectedId(child.id);
   }
 
   function handleDeleteChild(childId: string) {
@@ -214,7 +228,13 @@ export function BentoBlock({
             editable ? "bg-stone-100/30" : ""
           }`}
           style={bentoGridStyle(rowCount)}
-          onClick={() => editable && setSelectedId(null)}
+          onClick={() => {
+            if (!editable) return;
+            if (focusBlockId) {
+              onChildBlur?.(block.id, focusBlockId);
+            }
+            setSelectedId(null);
+          }}
         >
           {children.map((child) => {
             const placement =
@@ -242,7 +262,7 @@ export function BentoBlock({
                 style={style}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (editable) setSelectedId(child.id);
+                  if (editable) handleChildClick(child, isSelected);
                 }}
               >
                 {editable && isSelected && !isDragging && (
@@ -264,8 +284,6 @@ export function BentoBlock({
                       );
                     }}
                     onDelete={() => handleDeleteChild(child.id)}
-                    showEdit={child.type === "product"}
-                    onEdit={() => onEditChild?.(block.id, child)}
                   />
                 )}
 
