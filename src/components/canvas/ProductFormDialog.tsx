@@ -104,7 +104,7 @@ function ProductFormFields({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="title">タイトル</Label>
+        <Label htmlFor="title">商品名</Label>
         <Input
           id="title"
           value={title}
@@ -113,13 +113,13 @@ function ProductFormFields({
             setTitle(v);
             commit({ title: v });
           }}
-          placeholder="商品名"
+          placeholder="ProPad Air 11インチ"
           autoFocus
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="brand">ブランド</Label>
+          <Label htmlFor="brand">ブランド名</Label>
           <Input
             id="brand"
             value={brand}
@@ -128,6 +128,7 @@ function ProductFormFields({
               setBrand(v);
               commit({ brand: v });
             }}
+            placeholder="Ample"
           />
         </div>
         <div className="space-y-2">
