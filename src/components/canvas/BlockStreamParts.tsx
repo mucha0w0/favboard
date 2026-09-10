@@ -166,7 +166,7 @@ export function SortableBlockShell(props: BlockShellCommonProps) {
     >
       {isDragging ? (
         <div className="flex items-center py-5" aria-hidden>
-          <div className="h-1 w-full bg-black" />
+          <div className="h-1 w-full rounded-full bg-black" />
         </div>
       ) : (
         <BlockShellFrame
