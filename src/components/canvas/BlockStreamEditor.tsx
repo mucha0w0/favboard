@@ -9,6 +9,8 @@ import {
   closestCorners,
   useSensor,
   useSensors,
+  type ClientRect,
+  type CollisionDetection,
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -26,6 +28,24 @@ import {
 } from "./BlockStreamParts";
 
 const POINTER_ACTIVATION = { distance: 8 } as const;
+
+/** Match grip / first-row chrome (h-9). Tall blocks only hit-test this band. */
+const DRAG_HIT_BAND_HEIGHT = 36;
+
+function topBandRect(rect: ClientRect): ClientRect {
+  const height = Math.min(DRAG_HIT_BAND_HEIGHT, rect.height);
+  return {
+    ...rect,
+    height,
+    bottom: rect.top + height,
+  };
+}
+
+const closestCornersTopBand: CollisionDetection = (args) =>
+  closestCorners({
+    ...args,
+    collisionRect: topBandRect(args.collisionRect),
+  });
 
 export function BlockStreamEditor({
   blocks,
@@ -136,7 +156,7 @@ export function BlockStreamEditor({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={closestCornersTopBand}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
