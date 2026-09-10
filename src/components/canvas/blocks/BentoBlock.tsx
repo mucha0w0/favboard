@@ -144,9 +144,6 @@ export function BentoBlock({
     commitBento(next);
     setSelectedId(child.id);
     onPersistBento?.(block.id);
-    if (type === "product") {
-      onEditChild?.(block.id, child, { isNew: true });
-    }
   }
 
   function handleDeleteChild(childId: string) {
