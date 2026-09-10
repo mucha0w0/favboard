@@ -238,7 +238,7 @@ export function BlockStreamEditor({
       <DragOverlay dropAnimation={null}>
         {activeBlock ? (
           <div
-            className="cursor-grabbing bg-white"
+            className="cursor-grabbing bg-transparent"
             style={overlayWidth ? { width: overlayWidth } : undefined}
           >
             <BlockPreview block={activeBlock} />
