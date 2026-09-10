@@ -13,7 +13,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { type Canvas } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Check, EyeOff, Globe, Loader2, Save } from "lucide-react";
+import { EyeOff, Globe, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface CanvasEditorProps {
@@ -54,22 +54,6 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         actions={
           <>
             <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={editor.handleSave}
-              disabled={editor.saving || !editor.isDirty}
-              className="text-stone-600"
-            >
-              {editor.saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : editor.savedFlash ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              保存
-            </Button>
             <Button
               size="sm"
               variant={editor.canvas.is_published ? "outline" : "default"}

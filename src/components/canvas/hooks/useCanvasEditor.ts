@@ -145,10 +145,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     [canvas.id, router],
   );
 
-  async function handleSave() {
-    await persist(blocks, title);
-  }
-
   function handleAddBlock(type: TopLevelBlockType) {
     const newBlock = createTopLevelBlock(type);
     const nextBlocks = [...blocks, newBlock];
@@ -317,7 +313,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     focusBlockId,
     isDirty,
     persist,
-    handleSave,
     handleAddBlock,
     handleReorder,
     handleEditBlock,
