@@ -32,44 +32,46 @@ const EDGE_HANDLES: {
   {
     edge: "left",
     className:
-      "absolute inset-y-2 left-1.5 z-20 flex w-3 cursor-w-resize touch-none items-center justify-start",
+      "absolute inset-y-2 left-0 z-20 flex w-3 -translate-x-full cursor-w-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="vertical" />,
   },
   {
     edge: "top",
     className:
-      "absolute inset-x-2 top-1.5 z-20 flex h-3 cursor-n-resize touch-none items-start justify-center",
+      "absolute inset-x-2 top-0 z-20 flex h-3 -translate-y-full cursor-n-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="horizontal" />,
   },
   {
     edge: "right",
     className:
-      "absolute inset-y-2 right-1.5 z-20 flex w-3 cursor-e-resize touch-none items-center justify-end",
+      "absolute inset-y-2 right-0 z-20 flex w-3 translate-x-full cursor-e-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="vertical" />,
   },
   {
     edge: "bottom",
     className:
-      "absolute inset-x-2 bottom-1.5 z-20 flex h-3 cursor-s-resize touch-none items-end justify-center",
+      "absolute inset-x-2 bottom-0 z-20 flex h-3 translate-y-full cursor-s-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="horizontal" />,
   },
   {
     edge: "nw",
-    className: "absolute left-1 top-1 z-20 h-4 w-4 cursor-nw-resize touch-none",
+    className:
+      "absolute left-0 top-0 z-20 h-4 w-4 -translate-x-full -translate-y-full cursor-nw-resize touch-none",
   },
   {
     edge: "ne",
-    className: "absolute right-1 top-1 z-20 h-4 w-4 cursor-ne-resize touch-none",
+    className:
+      "absolute right-0 top-0 z-20 h-4 w-4 translate-x-full -translate-y-full cursor-ne-resize touch-none",
   },
   {
     edge: "sw",
     className:
-      "absolute bottom-1 left-1 z-20 h-4 w-4 cursor-sw-resize touch-none",
+      "absolute bottom-0 left-0 z-20 h-4 w-4 -translate-x-full translate-y-full cursor-sw-resize touch-none",
   },
   {
     edge: "se",
     className:
-      "absolute bottom-1 right-1 z-20 h-4 w-4 cursor-se-resize touch-none",
+      "absolute bottom-0 right-0 z-20 h-4 w-4 translate-x-full translate-y-full cursor-se-resize touch-none",
   },
 ];
 

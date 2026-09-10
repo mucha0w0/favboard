@@ -233,7 +233,9 @@ export function BentoBlock({
                 className={`relative flex min-h-0 min-w-0 flex-col ${
                   editable
                     ? `bg-stone-50/90 ring-1 ${
-                        isSelected ? "ring-stone-400" : "ring-stone-200/50"
+                        isSelected
+                          ? "z-10 ring-stone-400"
+                          : "ring-stone-200/50"
                       }`
                     : ""
                 }`}
