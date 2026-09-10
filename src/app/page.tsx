@@ -64,29 +64,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="animate-fade-up stagger-4 mx-auto max-w-3xl px-5 pb-24 sm:px-6">
-          <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-stone-400">
-            Preview
-          </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-stone-900">
-            Spring Essentials
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-stone-500">
-            春に向けて揃えたい、ミニマルで長く使えるアイテムたち。
-          </p>
-          <div className="mt-8 grid grid-cols-3 gap-4 sm:gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <div className="aspect-square bg-stone-100" />
-                <div className="space-y-1">
-                  <div className="h-2 w-8 bg-stone-200" />
-                  <div className="h-2.5 w-full bg-stone-200" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section className="mx-auto max-w-3xl px-5 py-20 sm:px-6 sm:py-28">
           <h2 className="text-lg font-semibold tracking-tight text-stone-900">
             シンプルに、美しく
