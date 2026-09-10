@@ -43,19 +43,17 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         onBackClick={editor.handleBackClick}
         maxWidth="4xl"
         title={
-          <div className="flex items-center gap-3">
-            <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
-            <div className="hidden items-center gap-2 text-xs text-stone-400 sm:flex">
-              {editor.isDirty && <span className="text-stone-600">未保存</span>}
-              {!editor.isDirty && editor.savedFlash && <span>保存済</span>}
-              {!editor.isDirty && !editor.savedFlash && (
-                <span>{editor.canvas.is_published ? "公開中" : "下書き"}</span>
-              )}
-            </div>
+          <div className="hidden items-center gap-2 text-xs text-stone-400 sm:flex">
+            {editor.isDirty && <span className="text-stone-600">未保存</span>}
+            {!editor.isDirty && editor.savedFlash && <span>保存済</span>}
+            {!editor.isDirty && !editor.savedFlash && (
+              <span>{editor.canvas.is_published ? "公開中" : "下書き"}</span>
+            )}
           </div>
         }
         actions={
           <>
+            <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
             <Button
               variant="ghost"
               size="sm"

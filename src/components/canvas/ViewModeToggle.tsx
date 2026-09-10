@@ -20,7 +20,7 @@ export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
     <div
       role="radiogroup"
       aria-label="表示モード"
-      className="flex items-center rounded-full bg-stone-100 p-0.5"
+      className="inline-flex h-8 items-center rounded-full border border-stone-200 bg-white p-0.5"
     >
       {OPTIONS.map(({ mode, label, icon: Icon }) => {
         const selected = value === mode;
@@ -33,10 +33,10 @@ export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
             aria-label={label}
             onClick={() => onChange(mode)}
             className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all sm:px-3 sm:text-xs",
+              "inline-flex h-full items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors sm:px-3",
               selected
-                ? "bg-white text-stone-900 shadow-sm"
-                : "text-stone-500 hover:text-stone-700",
+                ? "bg-stone-900 text-white"
+                : "text-stone-500 hover:text-stone-900",
             )}
           >
             <Icon className="h-3.5 w-3.5" />
