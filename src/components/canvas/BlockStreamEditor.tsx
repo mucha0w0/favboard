@@ -96,6 +96,7 @@ export function BlockStreamEditor({
 }: BlockStreamShellProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overlayWidth, setOverlayWidth] = useState<number | null>(null);
+  const [dragSpacerHeight, setDragSpacerHeight] = useState(0);
   const [orderedBlocks, setOrderedBlocks] = useState(blocks);
 
   const orderedBlocksRef = useRef(blocks);
@@ -154,6 +155,7 @@ export function BlockStreamEditor({
     orderedBlocksRef.current = blocksRef.current;
     setOrderedBlocks(blocksRef.current);
     setActiveId(id);
+    setDragSpacerHeight(event.active.rect.current.initial?.height ?? 0);
 
     const listWidth = listContainerRef.current?.getBoundingClientRect().width;
     if (listWidth) setOverlayWidth(listWidth);
@@ -179,11 +181,13 @@ export function BlockStreamEditor({
     commitBlocks(orderedBlocksRef.current);
     setActiveId(null);
     setOverlayWidth(null);
+    setDragSpacerHeight(0);
   }, [commitBlocks]);
 
   const handleDragCancel = useCallback(() => {
     setActiveId(null);
     setOverlayWidth(null);
+    setDragSpacerHeight(0);
     orderedBlocksRef.current = blocksRef.current;
     setOrderedBlocks(blocksRef.current);
   }, []);
@@ -224,6 +228,9 @@ export function BlockStreamEditor({
                 canMoveDown={index < displayBlocks.length - 1}
               />
             ))}
+            {dragSpacerHeight > 0 ? (
+              <div style={{ height: dragSpacerHeight }} aria-hidden />
+            ) : null}
           </div>
         </SortableContext>
       </div>
