@@ -117,9 +117,9 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
         {showPreview && (
           <Button
             type="button"
-            variant="secondary"
+            variant="ghost"
             size="icon"
-            className="absolute right-2 top-2 h-7 w-7 bg-white/90 shadow-sm"
+            className="absolute right-2 top-2 h-7 w-7 text-stone-400"
             onClick={handleClear}
             aria-label="画像を削除"
           >
