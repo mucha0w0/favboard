@@ -6,10 +6,9 @@ import {
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
+  closestCenter,
   useSensor,
   useSensors,
-  type ClientRect,
   type CollisionDetection,
   type DragOverEvent,
   type DragStartEvent,
@@ -17,7 +16,7 @@ import {
 import {
   SortableContext,
   arrayMove,
-  rectSortingStrategy,
+  verticalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,23 +28,59 @@ import {
 
 const POINTER_ACTIVATION = { distance: 8 } as const;
 
-/** Match grip / first-row chrome (h-9). Tall blocks only hit-test this band. */
-const DRAG_HIT_BAND_HEIGHT = 36;
+/**
+ * Mixed-height vertical list: collide by pointer Y vs each target's midpoint.
+ * - Target above: only after the pointer crosses that midpoint (moving up)
+ * - Target below: only after the pointer crosses that midpoint (moving down)
+ * Avoids both "must lift a tall block a lot" and "tiny move jumps over a short neighbor".
+ */
+const verticalPointerMidpoint: CollisionDetection = (args) => {
+  const {
+    active,
+    collisionRect,
+    droppableRects,
+    droppableContainers,
+    pointerCoordinates,
+  } = args;
 
-function topBandRect(rect: ClientRect): ClientRect {
-  const height = Math.min(DRAG_HIT_BAND_HEIGHT, rect.height);
-  return {
-    ...rect,
-    height,
-    bottom: rect.top + height,
-  };
-}
+  if (!pointerCoordinates) {
+    return closestCenter(args);
+  }
 
-const closestCornersTopBand: CollisionDetection = (args) =>
-  closestCorners({
-    ...args,
-    collisionRect: topBandRect(args.collisionRect),
-  });
+  const pointerY = pointerCoordinates.y;
+  const activeRect = droppableRects.get(active.id);
+  const activeCenterY = activeRect
+    ? activeRect.top + activeRect.height / 2
+    : collisionRect.top + collisionRect.height / 2;
+
+  const collisions = [];
+
+  for (const droppableContainer of droppableContainers) {
+    const { id } = droppableContainer;
+    const rect = droppableRects.get(id);
+    if (!rect) continue;
+
+    const centerY = rect.top + rect.height / 2;
+
+    if (id !== active.id) {
+      if (centerY < activeCenterY) {
+        if (pointerY > centerY) continue;
+      } else if (centerY > activeCenterY) {
+        if (pointerY < centerY) continue;
+      }
+    }
+
+    collisions.push({
+      id,
+      data: {
+        droppableContainer,
+        value: Math.abs(pointerY - centerY),
+      },
+    });
+  }
+
+  return collisions.sort((a, b) => a.data.value - b.data.value);
+};
 
 export function BlockStreamEditor({
   blocks,
@@ -156,7 +191,7 @@ export function BlockStreamEditor({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCornersTopBand}
+      collisionDetection={verticalPointerMidpoint}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -169,7 +204,7 @@ export function BlockStreamEditor({
           </p>
         )}
 
-        <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div ref={listContainerRef} className="flex flex-col">
             {displayBlocks.map((block, index) => (
               <SortableBlockShell
