@@ -150,7 +150,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     const nextBlocks = [...blocks, newBlock];
     setBlocks(nextBlocks);
 
-    if (type === "heading") {
+    if (type === "heading" || type === "text") {
       setFocusBlockId(newBlock.id);
       return;
     }

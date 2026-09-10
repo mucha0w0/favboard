@@ -14,7 +14,7 @@ import {
 } from "./grid";
 import { addBentoChild, createBentoBlock } from "./ops";
 
-/** 旧データ: トップレベルの product/text を Bento に包む */
+/** 旧データ: トップレベルの product を Bento に包む（text はトップレベル可） */
 export function migrateCanvasBlocks(blocks: Block[]): Block[] {
   const result: Block[] = [];
   let legacyBuffer: Block[] = [];
@@ -30,7 +30,7 @@ export function migrateCanvasBlocks(blocks: Block[]): Block[] {
   }
 
   for (const block of blocks) {
-    if (block.type === "product" || block.type === "text") {
+    if (block.type === "product") {
       legacyBuffer.push(block);
       continue;
     }

@@ -145,7 +145,7 @@ export function BlockStreamEditor({
       <div className="document-body w-full">
         {displayBlocks.length === 0 && (
           <p className="py-12 text-[15px] leading-relaxed text-stone-400">
-            下の ＋ から、Bento・見出し・区切り線を追加できます
+            下の ＋ から、Bento・見出し・テキスト・区切り線を追加できます
           </p>
         )}
 

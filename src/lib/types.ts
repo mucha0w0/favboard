@@ -1,7 +1,7 @@
 export type BlockType = "product" | "heading" | "divider" | "text" | "bento";
 
 /** トップレベルに置けるブロック */
-export type TopLevelBlockType = "heading" | "divider" | "bento";
+export type TopLevelBlockType = "heading" | "divider" | "text" | "bento";
 
 /** Bento 内に置けるブロック */
 export type BentoChildType = "product" | "text";
@@ -107,7 +107,12 @@ export interface Canvas {
 }
 
 export function isTopLevelBlockType(type: BlockType): type is TopLevelBlockType {
-  return type === "heading" || type === "divider" || type === "bento";
+  return (
+    type === "heading" ||
+    type === "divider" ||
+    type === "text" ||
+    type === "bento"
+  );
 }
 
 export function isBentoChildType(type: BlockType): type is BentoChildType {

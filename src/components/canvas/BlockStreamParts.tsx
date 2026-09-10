@@ -32,6 +32,7 @@ export interface BlockStreamShellProps {
 const TYPE_LABELS: Record<TopLevelBlockType, string> = {
   bento: "Bento",
   heading: "見出し",
+  text: "テキスト",
   divider: "区切り線",
 };
 
@@ -39,6 +40,8 @@ function blockClass(type: Block["type"]): string {
   switch (type) {
     case "heading":
       return "block-heading";
+    case "text":
+      return "block-text";
     case "bento":
       return "block-bento";
     case "divider":
@@ -208,7 +211,7 @@ function BlockItem({
 }: BlockShellCommonProps & { fullWidth?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  if (block.type === "product" || block.type === "text") {
+  if (block.type === "product") {
     return null;
   }
 

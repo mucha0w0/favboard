@@ -207,6 +207,11 @@ export function createTopLevelBlock(type: TopLevelBlockType): Block {
   return {
     id: crypto.randomUUID(),
     type,
-    data: type === "heading" ? { text: "" } : {},
+    data:
+      type === "heading"
+        ? { text: "" }
+        : type === "text"
+          ? { body: "" }
+          : {},
   };
 }

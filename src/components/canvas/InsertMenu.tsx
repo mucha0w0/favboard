@@ -1,7 +1,7 @@
 "use client";
 
 import { type TopLevelBlockType } from "@/lib/types";
-import { LayoutGrid, Minus, Plus, Type } from "lucide-react";
+import { AlignLeft, LayoutGrid, Minus, Plus, Type } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +17,7 @@ const ITEMS: {
 }[] = [
   { type: "bento", label: "Bento", icon: LayoutGrid },
   { type: "heading", label: "見出し", icon: Type },
+  { type: "text", label: "テキスト", icon: AlignLeft },
   { type: "divider", label: "区切り線", icon: Minus },
 ];
 
