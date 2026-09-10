@@ -86,7 +86,8 @@ function ChildBody({
       ) : (
         <BentoChildRenderer
           block={child}
-          editable={editable && focusBlockId === child.id}
+          editable={editable}
+          textEditing={editable && focusBlockId === child.id}
           autoFocus={focusBlockId === child.id}
           onUpdateBlockData={(_, data) => {
             commitBento(
@@ -165,6 +166,12 @@ export function BentoBlock({
     commitBento(removeBentoChild(block, childId));
     if (selectedId === childId) setSelectedId(null);
     onPersistBento?.(block.id);
+  }
+
+  function exitTextEditIfNeeded(child: Block) {
+    if (child.type === "text" && focusBlockId === child.id) {
+      onChildBlur?.(block.id, child.id);
+    }
   }
 
   return (
@@ -268,6 +275,7 @@ export function BentoBlock({
                 {editable && isSelected && !isDragging && (
                   <BentoChildChrome
                     onStartMove={(e) => {
+                      exitTextEditIfNeeded(child);
                       setSelectedId(child.id);
                       startDrag(
                         e,
@@ -276,6 +284,7 @@ export function BentoBlock({
                       );
                     }}
                     onStartResize={(e, edge) => {
+                      exitTextEditIfNeeded(child);
                       setSelectedId(child.id);
                       startDrag(
                         e,

@@ -8,6 +8,7 @@ import { TextBlock } from "../blocks/TextBlock";
 export function BentoChildRenderer({
   block,
   editable,
+  textEditing,
   autoFocus,
   cellSpan,
   onUpdateBlockData,
@@ -15,6 +16,7 @@ export function BentoChildRenderer({
 }: {
   block: Block;
   editable?: boolean;
+  textEditing?: boolean;
   autoFocus?: boolean;
   cellSpan?: { colSpan: number; rowSpan: number };
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
@@ -38,7 +40,7 @@ export function BentoChildRenderer({
       <TextBlock
         block={block}
         showPlaceholders={editable}
-        editable={editable}
+        editable={textEditing}
         autoFocus={autoFocus}
         onUpdate={(body) => onUpdateBlockData?.(block.id, { body })}
         onBlur={() => onBlockBlur?.(block.id)}
