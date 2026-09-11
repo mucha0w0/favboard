@@ -3,6 +3,7 @@
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import { type Canvas } from "@/lib/types";
 import { ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -84,16 +85,8 @@ export default function DashboardPage() {
   }
 
   async function handleSignOut() {
-    const modeRes = await fetch("/api/auth/mode");
-    const { mode } = await modeRes.json();
-
-    if (mode === "local") {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } else {
-      const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    }
+    const supabase = createClient();
+    await supabase.auth.signOut();
     router.push("/");
     router.refresh();
   }

@@ -9,7 +9,7 @@
 - **Framework**: Next.js 16 (App Router, TypeScript)
 - **Styling**: Tailwind CSS v4, shadcn/ui 風コンポーネント
 - **Layout**: 縦ドキュメント + Bento グリッド（商品 / テキストを配置）
-- **Backend / Database**: Supabase (PostgreSQL, Auth, RLS) またはローカル JSON
+- **Backend / Database**: Supabase (PostgreSQL, Auth, RLS)
 - **Deployment**: Vercel
 
 ## セットアップ
@@ -34,11 +34,9 @@ npm install
 npm run dev
 ```
 
-http://localhost:3000/login を開き「はじめる」をクリック
+http://localhost:3000/login を開き、アカウントを作成してログインしてください。リストの作成はログイン済みユーザーのみ利用できます。
 
-> **Supabase 未設定でも使えます。** プレースホルダーのままならローカル開発モードが有効になり、データは `.data/` フォルダに保存されます。
-
-### 4. 環境変数（Supabase 本番利用時）
+### 4. 環境変数
 
 `.env.example` を `.env.local` にコピーして値を設定:
 

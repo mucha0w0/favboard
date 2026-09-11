@@ -9,14 +9,12 @@ import { safeInternalPath } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checkingMode, setCheckingMode] = useState(true);
-  const [isLocalMode, setIsLocalMode] = useState(false);
   const [message, setMessage] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
@@ -27,28 +25,6 @@ export function LoginForm() {
       ? "認証に失敗しました。もう一度お試しください。"
       : "";
   const displayMessage = message || authErrorMessage;
-
-  useEffect(() => {
-    fetch("/api/auth/mode")
-      .then((r) => r.json())
-      .then((data) => setIsLocalMode(data.mode === "local"))
-      .finally(() => setCheckingMode(false));
-  }, [searchParams]);
-
-  async function handleLocalLogin() {
-    setLoading(true);
-    setMessage("");
-
-    const res = await fetch("/api/auth/local", { method: "POST" });
-
-    if (res.ok) {
-      router.push(redirectTo);
-      router.refresh();
-    } else {
-      setMessage("ログインに失敗しました");
-    }
-    setLoading(false);
-  }
 
   async function handleXLogin() {
     setLoading(true);
@@ -106,14 +82,6 @@ export function LoginForm() {
     setLoading(false);
   }
 
-  if (checkingMode) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-stone-50">
-        <Loader2 className="h-5 w-5 animate-spin text-stone-300" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-stone-50 px-5">
       <div className="w-full max-w-sm animate-fade-up">
@@ -125,11 +93,7 @@ export function LoginForm() {
             Favboard
           </Link>
           <p className="mt-3 text-sm text-stone-500">
-            {isLocalMode
-              ? "ローカルモード"
-              : isSignUp
-                ? "アカウントを作成"
-                : "ログイン"}
+            {isSignUp ? "アカウントを作成" : "ログイン"}
           </p>
         </div>
 
@@ -142,88 +106,71 @@ export function LoginForm() {
           </Alert>
         )}
 
-        {isLocalMode ? (
-          <div className="space-y-6">
-            <p className="text-center text-xs leading-relaxed text-stone-500">
-              データはこのPCの{" "}
-              <code className="text-stone-600">.data/</code> に保存されます。
-            </p>
-            <Button
-              className="w-full"
-              onClick={handleLocalLogin}
-              disabled={loading}
-            >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              はじめる
-            </Button>
+        <div className="space-y-6">
+          <Button
+            type="button"
+            className="w-full bg-black text-white hover:bg-neutral-800"
+            onClick={handleXLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <span className="text-base leading-none" aria-hidden>
+                𝕏
+              </span>
+            )}
+            Xでログイン
+          </Button>
+
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-stone-200" />
+            <span className="text-xs text-stone-400">または</span>
+            <div className="h-px flex-1 bg-stone-200" />
           </div>
-        ) : (
-          <div className="space-y-6">
-            <Button
-              type="button"
-              className="w-full bg-black text-white hover:bg-neutral-800"
-              onClick={handleXLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <span className="text-base leading-none" aria-hidden>
-                  𝕏
-                </span>
-              )}
-              Xでログイン
-            </Button>
 
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-stone-200" />
-              <span className="text-xs text-stone-400">または</span>
-              <div className="h-px flex-1 bg-stone-200" />
-            </div>
-
-            <form onSubmit={handleSupabaseLogin} className="space-y-6">
-              <div className="space-y-5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">メールアドレス</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password">パスワード</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                </div>
+          <form onSubmit={handleSupabaseLogin} className="space-y-6">
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">メールアドレス</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isSignUp ? "アカウント作成" : "ログイン"}
-              </Button>
-              <button
-                type="button"
-                className="w-full text-center text-xs text-stone-400 transition-colors hover:text-stone-700"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setMessage("");
-                }}
-              >
-                {isSignUp
-                  ? "すでにアカウントをお持ちの方はこちら"
-                  : "新規アカウントを作成"}
-              </button>
-            </form>
-          </div>
-        )}
+              <div className="space-y-1.5">
+                <Label htmlFor="password">パスワード</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isSignUp ? "アカウント作成" : "ログイン"}
+            </Button>
+            <button
+              type="button"
+              className="w-full text-center text-xs text-stone-400 transition-colors hover:text-stone-700"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setMessage("");
+              }}
+            >
+              {isSignUp
+                ? "すでにアカウントをお持ちの方はこちら"
+                : "新規アカウントを作成"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

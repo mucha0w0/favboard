@@ -1,4 +1,3 @@
-import { isSupabaseConfigured } from "@/lib/config";
 import { safeInternalPath } from "@/lib/utils";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
@@ -8,7 +7,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = safeInternalPath(searchParams.get("next"));
 
-  if (!isSupabaseConfigured() || !code) {
+  if (!code) {
     return NextResponse.redirect(`${origin}/login?error=auth`);
   }
 

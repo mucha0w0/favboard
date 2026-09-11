@@ -31,12 +31,11 @@ if (-not (Test-Path "supabase\config.toml")) {
 
 Write-Host ""
 Write-Host "=== Ready ===" -ForegroundColor Green
-Write-Host "Local dev mode: Supabase keys not set -> data saved to .data/"
+Write-Host "Edit .env.local with your Supabase project URL and anon key," -ForegroundColor Yellow
+Write-Host "then run migration in Supabase SQL Editor (supabase/migrations/001_canvases.sql)"
 Write-Host ""
 Write-Host "Start dev server:" -ForegroundColor Cyan
 Write-Host "  npm run dev"
 Write-Host ""
 Write-Host "Then open: http://localhost:3000/login" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "For Supabase cloud: edit .env.local with your project URL and anon key," -ForegroundColor Yellow
-Write-Host "then run migration in Supabase SQL Editor (supabase/migrations/001_canvases.sql)"
+Write-Host "List creation requires a logged-in account."

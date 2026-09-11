@@ -92,7 +92,7 @@ export default async function HomePage() {
             Favboard ではじめよう
           </h2>
           <p className="mx-auto mt-4 max-w-sm text-sm text-stone-500">
-            アカウント不要のローカルモードでも試せます。
+            アカウントを作成すると、リストの作成と公開ができます。
           </p>
           <Link href={startHref} className="mt-8 inline-block">
             <Button size="lg">

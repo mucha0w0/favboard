@@ -1,5 +1,3 @@
-import { isSupabaseConfigured } from "@/lib/config";
-import { LOCAL_AUTH_COOKIE } from "@/lib/local/session";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -19,23 +17,6 @@ export async function updateSession(request: NextRequest) {
   const isProtected =
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/edit");
-
-  if (!isSupabaseConfigured()) {
-    if (isProtected) {
-      const hasSession = request.cookies.get(LOCAL_AUTH_COOKIE)?.value === "1";
-      if (!hasSession) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        url.searchParams.set("redirect", request.nextUrl.pathname);
-        return NextResponse.redirect(url);
-      }
-    }
-    const response = NextResponse.next({ request });
-    if (request.cookies.get(LOCAL_AUTH_COOKIE)?.value === "1") {
-      response.headers.set("Cache-Control", NO_STORE);
-    }
-    return response;
-  }
 
   let supabaseResponse = NextResponse.next({ request });
 
