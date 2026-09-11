@@ -19,7 +19,7 @@ export function SiteHeader({
     <header className={cn("site-header sticky top-0 z-30", className)}>
       <div
         className={cn(
-          "grid items-center gap-3 px-5 py-4 sm:px-6",
+          "mx-auto grid w-full max-w-[960px] items-center gap-3 px-8 py-4 sm:px-12",
           center ? "grid-cols-[1fr_auto_1fr]" : "grid-cols-[1fr_auto]",
         )}
       >
