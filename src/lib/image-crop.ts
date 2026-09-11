@@ -10,19 +10,6 @@ export type Rect = {
 
 const MIN_CROP_FRACTION = 0.05;
 
-/** Bento 商品セルの画像表示部に近い縦横比（幅/高さ） */
-export function getProductImageCropAspect(
-  cellSpan?: { colSpan: number; rowSpan: number },
-): number {
-  if (!cellSpan) return 1;
-
-  const cellAspect = cellSpan.colSpan / Math.max(1, cellSpan.rowSpan);
-  if (cellAspect >= 2) return 1;
-
-  const imageHeightFraction = 1.4 / (1.4 + 1);
-  return cellAspect / imageHeightFraction;
-}
-
 export function defaultImageCrop(
   imageWidth: number,
   imageHeight: number,

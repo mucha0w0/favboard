@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { getClipboardImageFile, imageFileToDataUrl } from "@/lib/image-input";
 import type { ImageCrop } from "@/lib/types";
 import { ImageIcon, Link2, Loader2, Trash2, Upload } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ProductImageAspectProbe } from "./blocks/product/ProductImageAspectProbe";
 import { ProductImageCropEditor } from "./ProductImageCropEditor";
 
 interface ProductImageInputProps {
@@ -13,7 +14,7 @@ interface ProductImageInputProps {
   onChange: (url: string) => void;
   crop?: ImageCrop;
   onCropChange?: (crop: ImageCrop | undefined) => void;
-  cropAspect?: number;
+  cellSpan?: { colSpan: number; rowSpan: number };
 }
 
 function normalizePreviewUrl(url: string): string {
@@ -26,13 +27,28 @@ export function ProductImageInput({
   onChange,
   crop,
   onCropChange,
-  cropAspect = 1,
+  cellSpan,
 }: ProductImageInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlDraft, setUrlDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewError, setPreviewError] = useState(false);
   const [error, setError] = useState("");
+  const [displayAspect, setDisplayAspect] = useState<number | null>(
+    cellSpan ? null : 1,
+  );
+
+  const handleAspectChange = useCallback((aspect: number) => {
+    setDisplayAspect(aspect);
+  }, []);
+
+  useEffect(() => {
+    if (cellSpan) {
+      setDisplayAspect(null);
+    } else {
+      setDisplayAspect(1);
+    }
+  }, [cellSpan?.colSpan, cellSpan?.rowSpan, cellSpan]);
 
   const showPreview = Boolean(value.trim() && !previewError);
 
@@ -101,6 +117,12 @@ export function ProductImageInput({
 
   return (
     <div className="space-y-2">
+      {cellSpan && (
+        <ProductImageAspectProbe
+          cellSpan={cellSpan}
+          onAspectChange={handleAspectChange}
+        />
+      )}
       <Label>画像</Label>
 
       <div
@@ -113,14 +135,18 @@ export function ProductImageInput({
             <div className="flex h-full items-center justify-center text-stone-400">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
-          ) : showPreview ? (
+          ) : showPreview && displayAspect !== null ? (
             <ProductImageCropEditor
               imageUrl={normalizePreviewUrl(value.trim())}
               crop={crop}
-              cropAspect={cropAspect}
+              cropAspect={displayAspect}
               onCropChange={handleCropChange}
               onError={() => setPreviewError(true)}
             />
+          ) : showPreview ? (
+            <div className="flex h-full items-center justify-center text-stone-400">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-stone-400">
               <ImageIcon className="h-8 w-8" />

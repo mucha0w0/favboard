@@ -4,7 +4,6 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getProductImageCropAspect } from "@/lib/image-crop";
 import {
   DEFAULT_PRICE_CURRENCY,
   parseStoredPrice,
@@ -179,7 +178,7 @@ function ProductFormFields({
       <ProductImageInput
         value={imageUrl}
         crop={imageCrop}
-        cropAspect={getProductImageCropAspect(cropCellSpan)}
+        cellSpan={cropCellSpan}
         onChange={(v) => {
           setImageUrl(v);
           setImageCrop(undefined);

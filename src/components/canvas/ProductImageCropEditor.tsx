@@ -186,7 +186,7 @@ export function ProductImageCropEditor({
 
   useEffect(() => {
     initializedRef.current = false;
-  }, [imageUrl]);
+  }, [imageUrl, cropAspect]);
 
   useEffect(() => {
     if (!naturalSize || !imageBounds || crop || initializedRef.current) return;
