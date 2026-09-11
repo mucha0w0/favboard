@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getClipboardImageFile, imageFileToDataUrl } from "@/lib/image-input";
-import { ImageIcon, Link2, Loader2, Upload, X } from "lucide-react";
+import { ImageIcon, Link2, Loader2, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 
@@ -123,7 +123,7 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
             onClick={handleClear}
             aria-label="画像を削除"
           >
-            <X className="h-3.5 w-3.5" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
