@@ -43,6 +43,59 @@ export function clampImageCrop(crop: ImageCrop): ImageCrop {
   return { x, y, width, height };
 }
 
+/** 画像上の切り取り範囲の表示縦横比（幅/高さ） */
+export function cropDisplayAspect(
+  crop: ImageCrop,
+  imageWidth: number,
+  imageHeight: number,
+): number {
+  return (crop.width / crop.height) * (imageWidth / imageHeight);
+}
+
+export function cropMatchesAspect(
+  crop: ImageCrop,
+  imageWidth: number,
+  imageHeight: number,
+  aspectRatio: number,
+  epsilon = 0.005,
+): boolean {
+  return (
+    Math.abs(
+      cropDisplayAspect(crop, imageWidth, imageHeight) - aspectRatio,
+    ) < epsilon
+  );
+}
+
+/** 中心を保ちつけ、新しい表示縦横比に合わせて切り取り範囲を再計算 */
+export function adaptCropToAspect(
+  crop: ImageCrop,
+  imageWidth: number,
+  imageHeight: number,
+  aspectRatio: number,
+): ImageCrop {
+  const imageAspect = imageWidth / imageHeight;
+  const cx = crop.x + crop.width / 2;
+  const cy = crop.y + crop.height / 2;
+
+  let width: number;
+  let height: number;
+
+  if (imageAspect > aspectRatio) {
+    height = 1;
+    width = aspectRatio / imageAspect;
+  } else {
+    width = 1;
+    height = imageAspect / aspectRatio;
+  }
+
+  return clampImageCrop({
+    x: cx - width / 2,
+    y: cy - height / 2,
+    width,
+    height,
+  });
+}
+
 export function getContainedImageBounds(
   containerWidth: number,
   containerHeight: number,

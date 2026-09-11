@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  adaptCropToAspect,
+  cropMatchesAspect,
   cropToScreenRect,
   defaultImageCrop,
   getContainedImageBounds,
@@ -105,12 +107,13 @@ export function ProductImageCropEditor({
 }: ProductImageCropEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
-  const initializedRef = useRef(false);
+  const lastAppliedAspectRef = useRef<number | null>(null);
   const [naturalSize, setNaturalSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [isAspectSynced, setIsAspectSynced] = useState(false);
 
   useEffect(() => {
     const img = new window.Image();
@@ -150,15 +153,35 @@ export function ProductImageCropEditor({
       : null;
 
   useEffect(() => {
-    initializedRef.current = false;
+    lastAppliedAspectRef.current = null;
+    setIsAspectSynced(false);
   }, [imageUrl, cropAspect]);
 
   useEffect(() => {
-    if (!naturalSize || !imageBounds || crop || initializedRef.current) return;
-    initializedRef.current = true;
-    onCropChange(
-      defaultImageCrop(naturalSize.width, naturalSize.height, cropAspect),
-    );
+    if (!naturalSize || !imageBounds) return;
+    if (lastAppliedAspectRef.current === cropAspect) {
+      setIsAspectSynced(true);
+      return;
+    }
+
+    const { width: imageWidth, height: imageHeight } = naturalSize;
+
+    if (
+      crop &&
+      cropMatchesAspect(crop, imageWidth, imageHeight, cropAspect)
+    ) {
+      lastAppliedAspectRef.current = cropAspect;
+      setIsAspectSynced(true);
+      return;
+    }
+
+    const next = crop
+      ? adaptCropToAspect(crop, imageWidth, imageHeight, cropAspect)
+      : defaultImageCrop(imageWidth, imageHeight, cropAspect);
+
+    lastAppliedAspectRef.current = cropAspect;
+    onCropChange(next);
+    setIsAspectSynced(true);
   }, [naturalSize, imageBounds, crop, cropAspect, onCropChange]);
 
   const screenRect =
@@ -226,7 +249,7 @@ export function ProductImageCropEditor({
         onError={() => onError?.()}
       />
 
-      {screenRect && (
+      {isAspectSynced && screenRect && (
         <div className="absolute inset-0 touch-none">
           <div
             className="absolute ring-1 ring-stone-400"
