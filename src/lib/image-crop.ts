@@ -129,12 +129,54 @@ export function constrainScreenRect(
   return { x, y, width, height };
 }
 
-export function getCroppedImageStyle(crop: ImageCrop): CSSProperties {
+export type CroppedImageLayout = {
+  width: number;
+  height: number;
+  left: number;
+  top: number;
+};
+
+/** 切り取り範囲を歪めずにコンテナを覆う（object-fit: cover 相当） */
+export function computeCroppedImageLayout(
+  crop: ImageCrop,
+  containerWidth: number,
+  containerHeight: number,
+  imageWidth: number,
+  imageHeight: number,
+): CroppedImageLayout {
+  if (
+    containerWidth <= 0 ||
+    containerHeight <= 0 ||
+    imageWidth <= 0 ||
+    imageHeight <= 0
+  ) {
+    return { width: 0, height: 0, left: 0, top: 0 };
+  }
+
+  const cropPixelW = crop.width * imageWidth;
+  const cropPixelH = crop.height * imageHeight;
+  const scale = Math.max(
+    containerWidth / cropPixelW,
+    containerHeight / cropPixelH,
+  );
+
   return {
-    width: `${100 / crop.width}%`,
-    height: `${100 / crop.height}%`,
-    left: `${(-crop.x / crop.width) * 100}%`,
-    top: `${(-crop.y / crop.height) * 100}%`,
+    width: imageWidth * scale,
+    height: imageHeight * scale,
+    left: -crop.x * imageWidth * scale,
+    top: -crop.y * imageHeight * scale,
+  };
+}
+
+export function croppedImageLayoutToStyle(
+  layout: CroppedImageLayout,
+): CSSProperties {
+  return {
+    position: "absolute",
+    width: layout.width,
+    height: layout.height,
+    left: layout.left,
+    top: layout.top,
     maxWidth: "none",
   };
 }

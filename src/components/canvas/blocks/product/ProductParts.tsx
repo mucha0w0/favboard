@@ -1,9 +1,13 @@
 "use client";
 
-import { getCroppedImageStyle } from "@/lib/image-crop";
+import {
+  computeCroppedImageLayout,
+  croppedImageLayoutToStyle,
+} from "@/lib/image-crop";
 import type { ImageCrop } from "@/lib/types";
 import { ExternalLink, Package } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { normalizeImageUrl } from "./styles";
 
 function normalizeExternalUrl(url: string): string {
@@ -11,6 +15,71 @@ function normalizeExternalUrl(url: string): string {
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (trimmed.startsWith("//")) return `https:${trimmed}`;
   return `https://${trimmed}`;
+}
+
+function CroppedProductImage({
+  imageUrl,
+  imageCrop,
+  title,
+  onError,
+}: {
+  imageUrl: string;
+  imageCrop: ImageCrop;
+  title?: string;
+  onError: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [naturalSize, setNaturalSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setContainerSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const layout =
+    naturalSize && containerSize.width > 0
+      ? computeCroppedImageLayout(
+          imageCrop,
+          containerSize.width,
+          containerSize.height,
+          naturalSize.width,
+          naturalSize.height,
+        )
+      : null;
+
+  return (
+    <div ref={containerRef} className="absolute inset-0">
+      <Image
+        src={normalizeImageUrl(imageUrl)}
+        alt={title || "商品"}
+        width={naturalSize?.width ?? 1}
+        height={naturalSize?.height ?? 1}
+        className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+        style={layout ? croppedImageLayoutToStyle(layout) : { opacity: 0 }}
+        sizes="(max-width: 720px) 100vw, 720px"
+        unoptimized
+        onLoad={(e) => {
+          const img = e.currentTarget;
+          setNaturalSize({
+            width: img.naturalWidth,
+            height: img.naturalHeight,
+          });
+        }}
+        onError={onError}
+      />
+    </div>
+  );
 }
 
 export function ProductImage({
@@ -31,27 +100,29 @@ export function ProductImage({
   /** 上下構成で flex 伸縮させるときは false */
   shrink?: boolean;
 }) {
-  const cropStyle = imageCrop ? getCroppedImageStyle(imageCrop) : undefined;
-
   return (
     <div
       className={`relative overflow-hidden bg-stone-100 ${shrink ? "shrink-0" : "min-h-0"} ${className}`}
     >
       {showImage && imageUrl ? (
-        <Image
-          src={normalizeImageUrl(imageUrl)}
-          alt={title || "商品"}
-          fill
-          className={
-            cropStyle
-              ? "transition-transform duration-500 ease-out hover:scale-[1.03]"
-              : "object-cover transition-transform duration-500 ease-out hover:scale-[1.03]"
-          }
-          style={cropStyle}
-          sizes="(max-width: 720px) 100vw, 720px"
-          unoptimized
-          onError={onError}
-        />
+        imageCrop ? (
+          <CroppedProductImage
+            imageUrl={imageUrl}
+            imageCrop={imageCrop}
+            title={title}
+            onError={onError}
+          />
+        ) : (
+          <Image
+            src={normalizeImageUrl(imageUrl)}
+            alt={title || "商品"}
+            fill
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+            sizes="(max-width: 720px) 100vw, 720px"
+            unoptimized
+            onError={onError}
+          />
+        )
       ) : (
         <div className="flex h-full min-h-12 w-full items-center justify-center text-stone-300">
           <Package className="h-5 w-5" />
