@@ -34,53 +34,47 @@ function normalizePreviewUrl(url: string): string {
   return url;
 }
 
-/** BentoChildChrome と同じリサイズバー */
 function ResizeBar({ orientation }: { orientation: "horizontal" | "vertical" }) {
   return (
     <span
       className={
         orientation === "horizontal"
-          ? "h-0.5 w-8 rounded-full bg-stone-400/70"
-          : "h-8 w-0.5 rounded-full bg-stone-400/70"
+          ? "h-0.5 w-6 rounded-full bg-stone-500/80"
+          : "h-6 w-0.5 rounded-full bg-stone-500/80"
       }
     />
   );
 }
 
-const DIM_COLOR = "rgba(15, 23, 42, 0.45)";
-
-/** box-shadow の代わりにコンテナ内で切り取る暗幕 */
+/** トリミング外に半透明の白を重ねる */
 function CropDimOverlay({ crop }: { crop: Rect }) {
   return (
     <>
       <div
-        className="pointer-events-none absolute left-0 right-0 top-0"
-        style={{ height: crop.y, backgroundColor: DIM_COLOR }}
+        className="pointer-events-none absolute left-0 right-0 top-0 bg-white/60"
+        style={{ height: crop.y }}
       />
       <div
-        className="pointer-events-none absolute left-0 right-0"
+        className="pointer-events-none absolute left-0 right-0 bg-white/60"
         style={{
           top: crop.y + crop.height,
           bottom: 0,
-          backgroundColor: DIM_COLOR,
         }}
       />
       <div
-        className="pointer-events-none absolute left-0"
+        className="pointer-events-none absolute left-0 bg-white/60"
         style={{
           top: crop.y,
           width: crop.x,
           height: crop.height,
-          backgroundColor: DIM_COLOR,
         }}
       />
       <div
-        className="pointer-events-none absolute right-0"
+        className="pointer-events-none absolute right-0 bg-white/60"
         style={{
           top: crop.y,
           left: crop.x + crop.width,
           height: crop.height,
-          backgroundColor: DIM_COLOR,
         }}
       />
     </>
@@ -95,46 +89,46 @@ const EDGE_HANDLES: {
   {
     edge: "w",
     className:
-      "absolute inset-y-2 left-0 z-20 flex w-3 -translate-x-full cursor-w-resize touch-none items-center justify-center",
+      "absolute left-0 top-1/2 z-20 flex h-8 w-3 -translate-x-1/2 -translate-y-1/2 cursor-w-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="vertical" />,
   },
   {
     edge: "n",
     className:
-      "absolute inset-x-2 top-0 z-20 flex h-3 -translate-y-full cursor-n-resize touch-none items-start justify-center",
+      "absolute left-1/2 top-0 z-20 flex h-3 w-8 -translate-x-1/2 -translate-y-1/2 cursor-n-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="horizontal" />,
   },
   {
     edge: "e",
     className:
-      "absolute inset-y-2 right-0 z-20 flex w-3 translate-x-full cursor-e-resize touch-none items-center justify-end",
+      "absolute right-0 top-1/2 z-20 flex h-8 w-3 translate-x-1/2 -translate-y-1/2 cursor-e-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="vertical" />,
   },
   {
     edge: "s",
     className:
-      "absolute inset-x-2 bottom-0 z-20 flex h-3 translate-y-full cursor-s-resize touch-none items-end justify-center",
+      "absolute bottom-0 left-1/2 z-20 flex h-3 w-8 -translate-x-1/2 translate-y-1/2 cursor-s-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="horizontal" />,
   },
   {
     edge: "nw",
     className:
-      "absolute left-0 top-0 z-20 h-4 w-4 -translate-x-full -translate-y-full cursor-nw-resize touch-none",
+      "absolute left-0 top-0 z-20 h-3 w-3 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize touch-none",
   },
   {
     edge: "ne",
     className:
-      "absolute right-0 top-0 z-20 h-4 w-4 translate-x-full -translate-y-full cursor-ne-resize touch-none",
+      "absolute right-0 top-0 z-20 h-3 w-3 translate-x-1/2 -translate-y-1/2 cursor-ne-resize touch-none",
   },
   {
     edge: "sw",
     className:
-      "absolute bottom-0 left-0 z-20 h-4 w-4 -translate-x-full translate-y-full cursor-sw-resize touch-none",
+      "absolute bottom-0 left-0 z-20 h-3 w-3 -translate-x-1/2 translate-y-1/2 cursor-sw-resize touch-none",
   },
   {
     edge: "se",
     className:
-      "absolute bottom-0 right-0 z-20 h-4 w-4 translate-x-full translate-y-full cursor-se-resize touch-none",
+      "absolute bottom-0 right-0 z-20 h-3 w-3 translate-x-1/2 translate-y-1/2 cursor-se-resize touch-none",
   },
 ];
 
@@ -278,25 +272,42 @@ export function ProductImageCropEditor({
   }, [endDrag]);
 
   return (
-    <div ref={containerRef} className="relative h-full w-full overflow-hidden">
-      <Image
-        src={normalizePreviewUrl(imageUrl)}
-        alt="商品画像プレビュー"
-        fill
-        className="object-contain"
-        unoptimized
-        draggable={false}
-        onError={() => onError?.()}
-      />
+    <div ref={containerRef} className="relative h-full w-full">
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src={normalizePreviewUrl(imageUrl)}
+          alt="商品画像プレビュー"
+          fill
+          className="object-contain"
+          unoptimized
+          draggable={false}
+          onError={() => onError?.()}
+        />
+      </div>
 
-      {isAspectSynced && screenRect && (
-        <div className="absolute inset-0 touch-none">
-          <CropDimOverlay crop={screenRect} />
+      {isAspectSynced && screenRect && imageBounds && (
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: imageBounds.x,
+            top: imageBounds.y,
+            width: imageBounds.width,
+            height: imageBounds.height,
+          }}
+        >
+          <CropDimOverlay
+            crop={{
+              x: screenRect.x - imageBounds.x,
+              y: screenRect.y - imageBounds.y,
+              width: screenRect.width,
+              height: screenRect.height,
+            }}
+          />
           <div
-            className="absolute ring-1 ring-stone-400"
+            className="pointer-events-auto absolute touch-none ring-1 ring-stone-400"
             style={{
-              left: screenRect.x,
-              top: screenRect.y,
+              left: screenRect.x - imageBounds.x,
+              top: screenRect.y - imageBounds.y,
               width: screenRect.width,
               height: screenRect.height,
               cursor: "move",

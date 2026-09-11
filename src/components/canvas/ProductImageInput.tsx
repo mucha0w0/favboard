@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getClipboardImageFile, imageFileToDataUrl } from "@/lib/image-input";
 import type { Block, ImageCrop } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { ImageIcon, Link2, Loader2, Trash2, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductImageAspectProbe } from "./blocks/product/ProductImageAspectProbe";
@@ -133,9 +134,12 @@ export function ProductImageInput({
       <div
         tabIndex={0}
         onPaste={handlePaste}
-        className="relative overflow-hidden rounded-lg border border-dashed border-stone-200 bg-stone-50/80 outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
+        className={cn(
+          "relative rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2",
+          showPreview ? "overflow-visible" : "overflow-hidden",
+        )}
       >
-        <div className="relative aspect-[4/3] w-full overflow-hidden p-3">
+        <div className="relative aspect-4/3 w-full">
           {loading ? (
             <div className="flex h-full items-center justify-center text-stone-400">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -156,9 +160,11 @@ export function ProductImageInput({
             <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-stone-400">
               <ImageIcon className="h-8 w-8" />
               <p className="text-xs leading-relaxed">
-                デバイスから選ぶか、URLを入力して追加、
+                デバイスから選ぶ
                 <br />
-                または Ctrl+V / ⌘V で貼り付け
+                ・URLを入力して追加
+                <br />
+                ・ Ctrl+V / ⌘V で貼り付け
               </p>
             </div>
           )}
@@ -169,7 +175,7 @@ export function ProductImageInput({
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-2 top-2 z-10 h-7 w-7 text-stone-400"
+            className="absolute right-1 top-1 z-30 h-7 w-7 text-stone-400"
             onClick={handleClear}
             aria-label="画像を削除"
           >
@@ -177,12 +183,6 @@ export function ProductImageInput({
           </Button>
         )}
       </div>
-
-      {showPreview && (
-        <p className="text-xs text-stone-400">
-          枠をドラッグして表示位置を調整できます
-        </p>
-      )}
 
       <div className="flex flex-col gap-2">
         <input
