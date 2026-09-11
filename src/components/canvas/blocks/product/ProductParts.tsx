@@ -65,7 +65,6 @@ function CroppedProductImage({
         alt={title || "商品"}
         width={naturalSize?.width ?? 1}
         height={naturalSize?.height ?? 1}
-        className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         style={layout ? croppedImageLayoutToStyle(layout) : { opacity: 0 }}
         sizes="(max-width: 720px) 100vw, 720px"
         unoptimized
@@ -117,7 +116,7 @@ export function ProductImage({
             src={normalizeImageUrl(imageUrl)}
             alt={title || "商品"}
             fill
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+            className="object-cover"
             sizes="(max-width: 720px) 100vw, 720px"
             unoptimized
             onError={onError}
@@ -253,7 +252,7 @@ export function ProductHorizontal({
     showOfficialLink && officialUrl?.trim() ? officialUrl.trim() : undefined;
 
   return (
-    <div className={`group flex h-full min-h-0 items-center ${gapClass}`}>
+    <div className={`flex h-full min-h-0 items-center ${gapClass}`}>
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
@@ -321,7 +320,7 @@ export function ProductVertical({
     showOfficialLink && officialUrl?.trim() ? officialUrl.trim() : undefined;
 
   return (
-    <div className="group flex h-full min-h-0 flex-col gap-1.5">
+    <div className="flex h-full min-h-0 flex-col gap-1.5">
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
