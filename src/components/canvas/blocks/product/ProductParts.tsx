@@ -101,6 +101,7 @@ export function ProductImage({
 }) {
   return (
     <div
+      data-product-image
       className={`relative overflow-hidden bg-stone-100 ${shrink ? "shrink-0" : "min-h-0"} ${className}`}
     >
       {showImage && imageUrl ? (

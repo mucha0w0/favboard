@@ -181,6 +181,20 @@ function ProductFormFields({
       <ProductImageInput
         value={imageUrl}
         crop={imageCrop}
+        previewBlock={{
+          ...block,
+          data: {
+            ...block.data,
+            title,
+            brand,
+            price,
+            price_currency: priceCurrency,
+            image_url: imageUrl,
+            image_crop: imageCrop,
+            official_url: officialUrl,
+            comment,
+          },
+        }}
         cellSpan={cropCellSpan}
         open={open}
         onChange={(v) => {

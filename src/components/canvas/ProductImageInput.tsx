@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getClipboardImageFile, imageFileToDataUrl } from "@/lib/image-input";
-import type { ImageCrop } from "@/lib/types";
+import type { Block, ImageCrop } from "@/lib/types";
 import { ImageIcon, Link2, Loader2, Trash2, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductImageAspectProbe } from "./blocks/product/ProductImageAspectProbe";
@@ -14,6 +14,7 @@ interface ProductImageInputProps {
   onChange: (url: string) => void;
   crop?: ImageCrop;
   onCropChange?: (crop: ImageCrop | undefined) => void;
+  previewBlock?: Block;
   cellSpan?: { colSpan: number; rowSpan: number };
   open?: boolean;
 }
@@ -28,6 +29,7 @@ export function ProductImageInput({
   onChange,
   crop,
   onCropChange,
+  previewBlock,
   cellSpan,
   open = true,
 }: ProductImageInputProps) {
@@ -118,9 +120,10 @@ export function ProductImageInput({
 
   return (
     <div className="space-y-2">
-      {cellSpan && open && (
+      {cellSpan && previewBlock && open && (
         <ProductImageAspectProbe
           key={probeKey}
+          block={previewBlock}
           cellSpan={cellSpan}
           onAspectChange={handleAspectChange}
         />
