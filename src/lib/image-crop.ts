@@ -82,38 +82,275 @@ export function screenRectToCrop(screen: Rect, bounds: Rect): ImageCrop {
   });
 }
 
-export function constrainScreenRect(
-  rect: Rect,
+export type CropResizeHandle =
+  | "move"
+  | "nw"
+  | "ne"
+  | "sw"
+  | "se"
+  | "n"
+  | "s"
+  | "e"
+  | "w";
+
+/** 左上を固定して幅・高さを境界内に収める */
+function fitSizeAnchorNW(
+  anchorX: number,
+  anchorY: number,
+  width: number,
   bounds: Rect,
   aspect: number,
   minWidth: number,
 ): Rect {
-  let width = Math.max(minWidth, rect.width);
-  let height = width / aspect;
+  const maxW = bounds.x + bounds.width - anchorX;
+  const maxH = bounds.y + bounds.height - anchorY;
 
-  if (height > bounds.height) {
-    height = Math.max(minWidth / aspect, bounds.height);
-    width = height * aspect;
+  let w = Math.max(minWidth, width);
+  let h = w / aspect;
+
+  if (w > maxW) {
+    w = maxW;
+    h = w / aspect;
+  }
+  if (h > maxH) {
+    h = maxH;
+    w = h * aspect;
   }
 
-  if (width > bounds.width) {
-    width = bounds.width;
-    height = width / aspect;
+  w = Math.max(minWidth, Math.min(w, maxW));
+  h = w / aspect;
+  if (h > maxH) {
+    h = maxH;
+    w = Math.max(minWidth, h * aspect);
+    h = w / aspect;
   }
 
-  let x = rect.x;
-  let y = rect.y;
+  return { x: anchorX, y: anchorY, width: w, height: h };
+}
 
-  if (x < bounds.x) x = bounds.x;
-  if (y < bounds.y) y = bounds.y;
-  if (x + width > bounds.x + bounds.width) {
-    x = bounds.x + bounds.width - width;
+/** 右下を固定して幅・高さを境界内に収める */
+function fitSizeAnchorSE(
+  anchorRight: number,
+  anchorBottom: number,
+  width: number,
+  bounds: Rect,
+  aspect: number,
+  minWidth: number,
+): Rect {
+  const maxW = anchorRight - bounds.x;
+  const maxH = anchorBottom - bounds.y;
+
+  let w = Math.max(minWidth, width);
+  let h = w / aspect;
+
+  if (w > maxW) {
+    w = maxW;
+    h = w / aspect;
   }
-  if (y + height > bounds.y + bounds.height) {
-    y = bounds.y + bounds.height - height;
+  if (h > maxH) {
+    h = maxH;
+    w = h * aspect;
   }
 
-  return { x, y, width, height };
+  w = Math.max(minWidth, Math.min(w, maxW));
+  h = w / aspect;
+  if (h > maxH) {
+    h = maxH;
+    w = Math.max(minWidth, h * aspect);
+    h = w / aspect;
+  }
+
+  return {
+    x: anchorRight - w,
+    y: anchorBottom - h,
+    width: w,
+    height: h,
+  };
+}
+
+/** 右上を固定して幅・高さを境界内に収める */
+function fitSizeAnchorNE(
+  anchorRight: number,
+  anchorY: number,
+  width: number,
+  bounds: Rect,
+  aspect: number,
+  minWidth: number,
+): Rect {
+  const maxW = anchorRight - bounds.x;
+  const maxH = bounds.y + bounds.height - anchorY;
+
+  let w = Math.max(minWidth, width);
+  let h = w / aspect;
+
+  if (w > maxW) {
+    w = maxW;
+    h = w / aspect;
+  }
+  if (h > maxH) {
+    h = maxH;
+    w = h * aspect;
+  }
+
+  w = Math.max(minWidth, Math.min(w, maxW));
+  h = w / aspect;
+  if (h > maxH) {
+    h = maxH;
+    w = Math.max(minWidth, h * aspect);
+    h = w / aspect;
+  }
+
+  return { x: anchorRight - w, y: anchorY, width: w, height: h };
+}
+
+/** 左下を固定して幅・高さを境界内に収める */
+function fitSizeAnchorSW(
+  anchorX: number,
+  anchorBottom: number,
+  width: number,
+  bounds: Rect,
+  aspect: number,
+  minWidth: number,
+): Rect {
+  const maxW = bounds.x + bounds.width - anchorX;
+  const maxH = anchorBottom - bounds.y;
+
+  let w = Math.max(minWidth, width);
+  let h = w / aspect;
+
+  if (w > maxW) {
+    w = maxW;
+    h = w / aspect;
+  }
+  if (h > maxH) {
+    h = maxH;
+    w = h * aspect;
+  }
+
+  w = Math.max(minWidth, Math.min(w, maxW));
+  h = w / aspect;
+  if (h > maxH) {
+    h = maxH;
+    w = Math.max(minWidth, h * aspect);
+    h = w / aspect;
+  }
+
+  return { x: anchorX, y: anchorBottom - h, width: w, height: h };
+}
+
+function fitMove(rect: Rect, bounds: Rect): Rect {
+  const x = Math.max(
+    bounds.x,
+    Math.min(rect.x, bounds.x + bounds.width - rect.width),
+  );
+  const y = Math.max(
+    bounds.y,
+    Math.min(rect.y, bounds.y + bounds.height - rect.height),
+  );
+  return { x, y, width: rect.width, height: rect.height };
+}
+
+/** ハンドル操作に応じてトリミング枠を更新（反対側の辺・角を固定） */
+export function resizeScreenRect(
+  mode: CropResizeHandle,
+  startRect: Rect,
+  dx: number,
+  dy: number,
+  bounds: Rect,
+  aspect: number,
+  minWidth: number,
+): Rect {
+  const startRight = startRect.x + startRect.width;
+  const startBottom = startRect.y + startRect.height;
+
+  if (mode === "move") {
+    return fitMove(
+      {
+        x: startRect.x + dx,
+        y: startRect.y + dy,
+        width: startRect.width,
+        height: startRect.height,
+      },
+      bounds,
+    );
+  }
+
+  switch (mode) {
+    case "se":
+      return fitSizeAnchorNW(
+        startRect.x,
+        startRect.y,
+        startRect.width + dx,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    case "nw":
+      return fitSizeAnchorSE(
+        startRight,
+        startBottom,
+        startRect.width - dx,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    case "ne":
+      return fitSizeAnchorSW(
+        startRect.x,
+        startBottom,
+        startRect.width + dx,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    case "sw":
+      return fitSizeAnchorNE(
+        startRight,
+        startRect.y,
+        startRect.width - dx,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    case "e":
+      return fitSizeAnchorNW(
+        startRect.x,
+        startRect.y,
+        startRect.width + dx,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    case "w":
+      return fitSizeAnchorNE(
+        startRight,
+        startRect.y,
+        startRect.width - dx,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    case "s":
+      return fitSizeAnchorNW(
+        startRect.x,
+        startRect.y,
+        (startRect.height + dy) * aspect,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    case "n":
+      return fitSizeAnchorSW(
+        startRect.x,
+        startBottom,
+        (startRect.height - dy) * aspect,
+        bounds,
+        aspect,
+        minWidth,
+      );
+    default:
+      return startRect;
+  }
 }
 
 export type CroppedImageLayout = {

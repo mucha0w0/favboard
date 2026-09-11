@@ -1,30 +1,20 @@
 "use client";
 
 import {
-  constrainScreenRect,
   cropToScreenRect,
   defaultImageCrop,
   getContainedImageBounds,
+  resizeScreenRect,
   screenRectToCrop,
+  type CropResizeHandle,
   type Rect,
 } from "@/lib/image-crop";
 import type { ImageCrop } from "@/lib/types";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type ResizeHandle =
-  | "move"
-  | "nw"
-  | "ne"
-  | "sw"
-  | "se"
-  | "n"
-  | "s"
-  | "e"
-  | "w";
-
 type DragState = {
-  mode: ResizeHandle;
+  mode: CropResizeHandle;
   startPointer: { x: number; y: number };
   startRect: Rect;
 };
@@ -42,84 +32,7 @@ function normalizePreviewUrl(url: string): string {
   return url;
 }
 
-function resizeFromHandle(
-  mode: ResizeHandle,
-  startRect: Rect,
-  dx: number,
-  dy: number,
-  bounds: Rect,
-  aspect: number,
-  minWidth: number,
-): Rect {
-  if (mode === "move") {
-    return constrainScreenRect(
-      {
-        ...startRect,
-        x: startRect.x + dx,
-        y: startRect.y + dy,
-      },
-      bounds,
-      aspect,
-      minWidth,
-    );
-  }
-
-  const startRight = startRect.x + startRect.width;
-  const startBottom = startRect.y + startRect.height;
-  let x = startRect.x;
-  let y = startRect.y;
-  let width = startRect.width;
-  let height = startRect.height;
-
-  switch (mode) {
-    case "e":
-      width = startRect.width + dx;
-      height = width / aspect;
-      y = startRect.y + (startRect.height - height) / 2;
-      break;
-    case "w":
-      width = startRect.width - dx;
-      height = width / aspect;
-      x = startRight - width;
-      y = startRect.y + (startRect.height - height) / 2;
-      break;
-    case "s":
-      height = startRect.height + dy;
-      width = height * aspect;
-      x = startRect.x + (startRect.width - width) / 2;
-      break;
-    case "n":
-      height = startRect.height - dy;
-      width = height * aspect;
-      x = startRect.x + (startRect.width - width) / 2;
-      y = startBottom - height;
-      break;
-    case "se":
-      width = startRect.width + dx;
-      height = width / aspect;
-      break;
-    case "sw":
-      width = startRect.width - dx;
-      height = width / aspect;
-      x = startRight - width;
-      break;
-    case "ne":
-      width = startRect.width + dx;
-      height = width / aspect;
-      y = startBottom - height;
-      break;
-    case "nw":
-      width = startRect.width - dx;
-      height = width / aspect;
-      x = startRight - width;
-      y = startBottom - height;
-      break;
-  }
-
-  return constrainScreenRect({ x, y, width, height }, bounds, aspect, minWidth);
-}
-
-const HANDLE_CURSORS: Record<ResizeHandle, string> = {
+const HANDLE_CURSORS: Record<CropResizeHandle, string> = {
   move: "move",
   nw: "nwse-resize",
   ne: "nesw-resize",
@@ -207,7 +120,7 @@ export function ProductImageCropEditor({
   }, []);
 
   const handlePointerDown = useCallback(
-    (mode: ResizeHandle) => (e: React.PointerEvent) => {
+    (mode: CropResizeHandle) => (e: React.PointerEvent) => {
       if (!screenRect || !imageBounds) return;
       e.preventDefault();
       e.stopPropagation(); // 移動ハンドラへの伝播を防ぐ
@@ -231,7 +144,7 @@ export function ProductImageCropEditor({
 
       const dx = e.clientX - drag.startPointer.x;
       const dy = e.clientY - drag.startPointer.y;
-      const nextRect = resizeFromHandle(
+      const nextRect = resizeScreenRect(
         drag.mode,
         drag.startRect,
         dx,
@@ -278,7 +191,7 @@ export function ProductImageCropEditor({
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
           >
-            {(["nw", "ne", "sw", "se", "n", "s", "e", "w"] as ResizeHandle[]).map(
+            {(["nw", "ne", "sw", "se", "n", "s", "e", "w"] as CropResizeHandle[]).map(
               (handle) => {
                 const positionClass =
                   handle === "nw"
