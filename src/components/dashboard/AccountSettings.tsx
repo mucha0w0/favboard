@@ -201,9 +201,6 @@ export function AccountSettings({ profile, onSaved }: AccountSettingsProps) {
                   }}
                 />
               </div>
-              <p className="text-xs text-stone-400">
-                半角英数字とアンダースコア、3〜24文字
-              </p>
               {username && usernameError && (
                 <p className="text-xs text-red-600">{usernameError}</p>
               )}
