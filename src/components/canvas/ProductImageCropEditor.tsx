@@ -47,6 +47,46 @@ function ResizeBar({ orientation }: { orientation: "horizontal" | "vertical" }) 
   );
 }
 
+const DIM_COLOR = "rgba(15, 23, 42, 0.45)";
+
+/** box-shadow の代わりにコンテナ内で切り取る暗幕 */
+function CropDimOverlay({ crop }: { crop: Rect }) {
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute left-0 right-0 top-0"
+        style={{ height: crop.y, backgroundColor: DIM_COLOR }}
+      />
+      <div
+        className="pointer-events-none absolute left-0 right-0"
+        style={{
+          top: crop.y + crop.height,
+          bottom: 0,
+          backgroundColor: DIM_COLOR,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute left-0"
+        style={{
+          top: crop.y,
+          width: crop.x,
+          height: crop.height,
+          backgroundColor: DIM_COLOR,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute right-0"
+        style={{
+          top: crop.y,
+          left: crop.x + crop.width,
+          height: crop.height,
+          backgroundColor: DIM_COLOR,
+        }}
+      />
+    </>
+  );
+}
+
 const EDGE_HANDLES: {
   edge: CropResizeHandle;
   className: string;
@@ -238,7 +278,7 @@ export function ProductImageCropEditor({
   }, [endDrag]);
 
   return (
-    <div ref={containerRef} className="relative h-full w-full">
+    <div ref={containerRef} className="relative h-full w-full overflow-hidden">
       <Image
         src={normalizePreviewUrl(imageUrl)}
         alt="商品画像プレビュー"
@@ -251,6 +291,7 @@ export function ProductImageCropEditor({
 
       {isAspectSynced && screenRect && (
         <div className="absolute inset-0 touch-none">
+          <CropDimOverlay crop={screenRect} />
           <div
             className="absolute ring-1 ring-stone-400"
             style={{
@@ -258,7 +299,6 @@ export function ProductImageCropEditor({
               top: screenRect.y,
               width: screenRect.width,
               height: screenRect.height,
-              boxShadow: "0 0 0 9999px rgba(15, 23, 42, 0.45)",
               cursor: "move",
             }}
             onPointerDown={handlePointerDown("move")}
