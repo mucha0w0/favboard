@@ -53,7 +53,6 @@ function ProductCardContent({
     image_url,
     image_crop,
     official_url,
-    comment,
   } = block.data;
   const [imageError, setImageError] = useState(false);
   const showImage = Boolean(image_url && !imageError);
@@ -83,7 +82,6 @@ function ProductCardContent({
     priceText,
     brand,
     price: priceAmount,
-    comment,
     officialUrl: official_url,
     showOfficialLink,
   };
@@ -108,14 +106,12 @@ function ProductCardContent({
   const titleClass =
     layout === "grid" ? gridStyles.titleClass : inlineStyles.titleClass;
   const gapClass = layout === "grid" ? gridStyles.gapClass : undefined;
-  const showExtras = layout === "grid" ? gridStyles.showExtras : true;
   const lineClamp = layout === "grid" ? gridStyles.lineClamp : undefined;
 
   const layoutProps = {
     ...shared,
     imageClassName: imageClass,
     titleClass,
-    showExtras,
     lineClamp,
   };
 

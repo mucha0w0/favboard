@@ -201,15 +201,6 @@ export function ProductOfficialLink({ url }: { url: string }) {
   );
 }
 
-export function ProductExtras({ comment }: { comment?: string }) {
-  if (!comment?.trim()) return null;
-  return (
-    <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-stone-500">
-      {comment}
-    </p>
-  );
-}
-
 export function ProductHorizontal({
   showImage,
   imageUrl,
@@ -223,10 +214,8 @@ export function ProductHorizontal({
   brand,
   price,
   titleClass,
-  comment,
   officialUrl,
   gapClass = "gap-4 sm:gap-5",
-  showExtras = true,
   showOfficialLink = false,
   lineClamp,
 }: {
@@ -242,10 +231,8 @@ export function ProductHorizontal({
   brand?: string;
   price?: string;
   titleClass?: string;
-  comment?: string;
   officialUrl?: string;
   gapClass?: string;
-  showExtras?: boolean;
   showOfficialLink?: boolean;
   lineClamp?: number;
 }) {
@@ -273,7 +260,6 @@ export function ProductHorizontal({
           titleClass={titleClass}
           lineClamp={lineClamp}
         />
-        {showExtras && <ProductExtras comment={comment} />}
         {linkUrl && <ProductOfficialLink url={linkUrl} />}
       </div>
     </div>
@@ -293,9 +279,7 @@ export function ProductVertical({
   brand,
   price,
   titleClass,
-  comment,
   officialUrl,
-  showExtras = true,
   showOfficialLink = false,
   lineClamp,
 }: {
@@ -311,9 +295,7 @@ export function ProductVertical({
   brand?: string;
   price?: string;
   titleClass?: string;
-  comment?: string;
   officialUrl?: string;
-  showExtras?: boolean;
   showOfficialLink?: boolean;
   lineClamp?: number;
 }) {
@@ -343,7 +325,6 @@ export function ProductVertical({
           vertical
           lineClamp={lineClamp}
         />
-        {showExtras && <ProductExtras comment={comment} />}
         {linkUrl && <ProductOfficialLink url={linkUrl} />}
       </div>
     </div>

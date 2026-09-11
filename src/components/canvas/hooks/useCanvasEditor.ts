@@ -2,8 +2,8 @@
 
 import {
   createTopLevelBlock,
+  getBentoChildren,
   migrateCanvasBlocks,
-  updateBentoChildData,
 } from "@/lib/bento";
 import {
   type Block,
@@ -15,6 +15,13 @@ import {
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+type LegacyBlockData = BlockData & { comment?: string };
+
+function stripLegacyComment(data: BlockData): BlockData {
+  const { comment: _removed, ...rest } = data as LegacyBlockData;
+  return rest;
+}
 
 export function useCanvasEditor(initialCanvas: Canvas) {
   const router = useRouter();
@@ -247,13 +254,24 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   }
 
   function handleProductDataChange(blockId: string, data: BlockData) {
+    const updates = stripLegacyComment(data);
     const bentoId = editingBentoId;
     const nextBlocks = blocksRef.current.map((b) => {
       if (bentoId && b.id === bentoId) {
-        return updateBentoChildData(b, blockId, data);
+        return {
+          ...b,
+          data: {
+            ...b.data,
+            children: getBentoChildren(b).map((c) =>
+              c.id === blockId
+                ? { ...c, data: { ...stripLegacyComment(c.data), ...updates } }
+                : c,
+            ),
+          },
+        };
       }
       if (b.id === blockId) {
-        return { ...b, data: { ...b.data, ...data } };
+        return { ...b, data: { ...stripLegacyComment(b.data), ...updates } };
       }
       return b;
     });

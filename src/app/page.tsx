@@ -77,7 +77,7 @@ export default async function HomePage() {
             <Feature
               number="02"
               title="こだわりを残す"
-              description="ブランド・価格・画像・コメントで、欲しい理由ごと記録。手入力で自分らしい一冊に。"
+              description="ブランド・価格・画像で、欲しいものを記録。手入力で自分らしい一冊に。"
             />
             <Feature
               number="03"

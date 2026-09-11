@@ -86,7 +86,6 @@ export interface BlockData {
   image_crop?: ImageCrop;
   /** 公式サイト URL */
   official_url?: string;
-  comment?: string;
   product_size?: ProductSize | "banner";
   /** Bento コンテナ */
   bento_rows?: number;

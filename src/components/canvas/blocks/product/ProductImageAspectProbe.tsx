@@ -49,7 +49,6 @@ export function ProductImageAspectProbe({
     block.id,
     block.data.title,
     block.data.brand,
-    block.data.comment,
     block.data.image_url,
     cellSpan.colSpan,
     cellSpan.rowSpan,

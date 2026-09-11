@@ -41,7 +41,6 @@ export const GRID_SIZE_STYLES: Record<
     emphasizedHorizontalImageClass: string;
     titleClass: string;
     gapClass?: string;
-    showExtras?: boolean;
     lineClamp?: number;
   }
 > = {
@@ -53,7 +52,6 @@ export const GRID_SIZE_STYLES: Record<
       "h-full max-h-full aspect-square w-auto max-w-[64%]",
     titleClass: "text-[10px] leading-tight",
     gapClass: "gap-1.5",
-    showExtras: false,
     lineClamp: 3,
   },
   standard: {
@@ -64,7 +62,6 @@ export const GRID_SIZE_STYLES: Record<
       "h-full max-h-full aspect-square w-auto max-w-[64%]",
     titleClass: "text-xs leading-snug",
     gapClass: "gap-2",
-    showExtras: false,
     lineClamp: 3,
   },
   large: {
@@ -76,7 +73,6 @@ export const GRID_SIZE_STYLES: Record<
       "h-full max-h-full aspect-square w-auto max-w-[66%]",
     titleClass: "text-xs leading-snug",
     gapClass: "gap-2.5",
-    showExtras: true,
     lineClamp: 2,
   },
   xl: {
@@ -88,7 +84,6 @@ export const GRID_SIZE_STYLES: Record<
       "h-full max-h-full aspect-square w-auto max-w-[68%]",
     titleClass: "text-sm leading-snug",
     gapClass: "gap-3",
-    showExtras: true,
     lineClamp: 3,
   },
 };
