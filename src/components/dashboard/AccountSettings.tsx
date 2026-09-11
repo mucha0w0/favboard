@@ -1,6 +1,5 @@
 "use client";
 
-import { PasswordSettings } from "@/components/dashboard/PasswordSettings";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -233,7 +232,6 @@ export function AccountSettings({ profile, onSaved }: AccountSettingsProps) {
           )}
         </div>
       </form>
-      <PasswordSettings />
     </section>
   );
 }
