@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountSettings } from "@/components/dashboard/AccountSettings";
+import { PasswordSettings } from "@/components/dashboard/PasswordSettings";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -145,6 +146,7 @@ export default function DashboardPage() {
             <Alert variant="error">
               {profileError || "プロフィールを読み込めませんでした"}
             </Alert>
+            <PasswordSettings />
           </section>
         )}
 
