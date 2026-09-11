@@ -92,42 +92,21 @@ body {
   );
 }
 
-/* 編集時ガイド: コンテンツ領域に合わせた交点ドット（右端・下端は 100% 基準） */
+/* 編集時ガイド: セル左上を原点に step 間隔で交点ドット（右端・下端も同じ間隔） */
 .bento-grid-guides {
   position: absolute;
-  inset: var(--bento-pad);
+  top: var(--bento-pad);
+  left: var(--bento-pad);
+  width: calc(var(--bento-cols) * var(--bento-step) + var(--bento-dot-size));
+  height: calc(var(--bento-rows) * var(--bento-step) + var(--bento-dot-size));
   pointer-events: none;
-  width: calc(var(--bento-cols) * var(--bento-step) - var(--bento-gap));
-  height: calc(var(--bento-rows) * var(--bento-step) - var(--bento-gap));
-  overflow: hidden;
-  background-image:
-    radial-gradient(
-      circle var(--bento-dot-size) at 0 0,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 100% 0,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 0 100%,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 100% 100%,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    );
+  background-image: radial-gradient(
+    circle var(--bento-dot-size) at 0 0,
+    var(--bento-dot-color) 100%,
+    transparent 100%
+  );
   background-size: var(--bento-step) var(--bento-step);
-  background-repeat: repeat, repeat-y, repeat-x, no-repeat;
-  background-position:
-    0 0,
-    100% 0,
-    0 100%,
-    100% 100%;
+  background-repeat: repeat;
 }
 
 .document-body .block-bento .block-product,
