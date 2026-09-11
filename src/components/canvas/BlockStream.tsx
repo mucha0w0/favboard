@@ -19,7 +19,11 @@ interface BlockStreamProps {
   editable?: boolean;
   onEditBlock?: (
     block: Block,
-    context?: { bentoId: string; isNew?: boolean },
+    context?: {
+      bentoId: string;
+      isNew?: boolean;
+      cellSpan?: { colSpan: number; rowSpan: number };
+    },
   ) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<Block["data"]>) => void;
   onBlockBlur?: (blockId: string) => void;

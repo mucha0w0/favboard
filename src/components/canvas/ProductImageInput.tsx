@@ -3,13 +3,17 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getClipboardImageFile, imageFileToDataUrl } from "@/lib/image-input";
+import type { ImageCrop } from "@/lib/types";
 import { ImageIcon, Link2, Loader2, Trash2, Upload } from "lucide-react";
-import Image from "next/image";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { ProductImageCropEditor } from "./ProductImageCropEditor";
 
 interface ProductImageInputProps {
   value: string;
   onChange: (url: string) => void;
+  crop?: ImageCrop;
+  onCropChange?: (crop: ImageCrop | undefined) => void;
+  cropAspect?: number;
 }
 
 function normalizePreviewUrl(url: string): string {
@@ -17,7 +21,13 @@ function normalizePreviewUrl(url: string): string {
   return url;
 }
 
-export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
+export function ProductImageInput({
+  value,
+  onChange,
+  crop,
+  onCropChange,
+  cropAspect = 1,
+}: ProductImageInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlDraft, setUrlDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,12 +36,20 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
 
   const showPreview = Boolean(value.trim() && !previewError);
 
+  const handleCropChange = useCallback(
+    (next: ImageCrop) => {
+      onCropChange?.(next);
+    },
+    [onCropChange],
+  );
+
   async function applyImageFile(file: File | Blob | null) {
     if (!file) return;
     setLoading(true);
     setError("");
     try {
       const dataUrl = await imageFileToDataUrl(file);
+      onCropChange?.(undefined);
       onChange(dataUrl);
       setUrlDraft("");
       setPreviewError(false);
@@ -62,6 +80,7 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
     if (!url) return;
     setError("");
     setPreviewError(false);
+    onCropChange?.(undefined);
     onChange(url);
     setUrlDraft("");
   }
@@ -75,6 +94,7 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
 
   function handleClear() {
     onChange("");
+    onCropChange?.(undefined);
     setPreviewError(false);
     setError("");
   }
@@ -94,12 +114,11 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : showPreview ? (
-            <Image
-              src={normalizePreviewUrl(value.trim())}
-              alt="商品画像プレビュー"
-              fill
-              className="object-contain"
-              unoptimized
+            <ProductImageCropEditor
+              imageUrl={normalizePreviewUrl(value.trim())}
+              crop={crop}
+              cropAspect={cropAspect}
+              onCropChange={handleCropChange}
               onError={() => setPreviewError(true)}
             />
           ) : (
@@ -119,7 +138,7 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-2 top-2 h-7 w-7 text-stone-400"
+            className="absolute right-2 top-2 z-10 h-7 w-7 text-stone-400"
             onClick={handleClear}
             aria-label="画像を削除"
           >
@@ -127,6 +146,12 @@ export function ProductImageInput({ value, onChange }: ProductImageInputProps) {
           </Button>
         )}
       </div>
+
+      {showPreview && (
+        <p className="text-xs text-stone-400">
+          枠をドラッグして表示位置を調整できます
+        </p>
+      )}
 
       <div className="flex flex-col gap-2">
         <input

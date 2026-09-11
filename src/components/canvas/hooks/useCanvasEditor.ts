@@ -35,6 +35,9 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   const [error, setError] = useState("");
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [editingBentoId, setEditingBentoId] = useState<string | null>(null);
+  const [editingCellSpan, setEditingCellSpan] = useState<
+    { colSpan: number; rowSpan: number } | undefined
+  >(undefined);
   const [isNewBlock, setIsNewBlock] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
@@ -168,11 +171,16 @@ export function useCanvasEditor(initialCanvas: Canvas) {
 
   function handleEditBlock(
     block: Block,
-    context?: { bentoId: string; isNew?: boolean },
+    context?: {
+      bentoId: string;
+      isNew?: boolean;
+      cellSpan?: { colSpan: number; rowSpan: number };
+    },
   ) {
     if (block.type === "product") {
       setEditingBlock(block);
       setEditingBentoId(context?.bentoId ?? null);
+      setEditingCellSpan(context?.cellSpan);
       setIsNewBlock(Boolean(context?.isNew));
       setDialogOpen(true);
       return;
@@ -271,6 +279,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     setIsNewBlock(false);
     setEditingBlock(null);
     setEditingBentoId(null);
+    setEditingCellSpan(undefined);
     setDialogOpen(false);
   }
 
@@ -312,6 +321,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     savedFlash,
     error,
     editingBlock,
+    editingCellSpan,
     isNewBlock,
     dialogOpen,
     setDialogOpen,

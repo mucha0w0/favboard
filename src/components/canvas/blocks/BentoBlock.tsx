@@ -28,7 +28,10 @@ interface BentoBlockProps {
   onEditChild?: (
     bentoId: string,
     child: Block,
-    opts?: { isNew?: boolean },
+    opts?: {
+      isNew?: boolean;
+      cellSpan?: { colSpan: number; rowSpan: number };
+    },
   ) => void;
   onChildBlur?: (bentoId: string, childId: string) => void;
   onPersistBento?: (bentoId: string) => void;
@@ -150,9 +153,18 @@ export function BentoBlock({
     onPersistBento?.(block.id);
   }
 
-  function handleChildClick(child: Block, isSelected: boolean) {
+  function handleChildClick(
+    child: Block,
+    isSelected: boolean,
+    placement: { colSpan: number; rowSpan: number },
+  ) {
     if (isSelected) {
-      onEditChild?.(block.id, child);
+      onEditChild?.(block.id, child, {
+        cellSpan: {
+          colSpan: placement.colSpan,
+          rowSpan: placement.rowSpan,
+        },
+      });
       return;
     }
     if (focusBlockId) {
@@ -269,7 +281,7 @@ export function BentoBlock({
                 style={style}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (editable) handleChildClick(child, isSelected);
+                  if (editable) handleChildClick(child, isSelected, placement);
                 }}
               >
                 {editable && isSelected && !isDragging && (

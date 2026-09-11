@@ -62,6 +62,13 @@ export interface BentoCellPlacement {
   sizeRowSpan?: number;
 }
 
+export interface ImageCrop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface BlockData {
   /** 見出し */
   text?: string;
@@ -75,6 +82,8 @@ export interface BlockData {
   /** 価格の通貨記号。未設定時は ¥ */
   price_currency?: PriceCurrency;
   image_url?: string;
+  /** 画像の切り取り範囲（元画像に対する 0–1 の比率） */
+  image_crop?: ImageCrop;
   /** 公式サイト URL */
   official_url?: string;
   comment?: string;

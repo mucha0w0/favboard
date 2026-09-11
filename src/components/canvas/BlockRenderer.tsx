@@ -17,7 +17,10 @@ interface BlockRendererProps {
   onEditBentoChild?: (
     bentoId: string,
     child: Block,
-    opts?: { isNew?: boolean },
+    opts?: {
+      isNew?: boolean;
+      cellSpan?: { colSpan: number; rowSpan: number };
+    },
   ) => void;
   onBentoChildBlur?: (bentoId: string, childId: string) => void;
   onPersistBento?: (bentoId: string) => void;

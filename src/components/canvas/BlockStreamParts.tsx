@@ -17,7 +17,11 @@ export interface BlockStreamShellProps {
   blocks: Block[];
   onEditBlock?: (
     block: Block,
-    context?: { bentoId: string; isNew?: boolean },
+    context?: {
+      bentoId: string;
+      isNew?: boolean;
+      cellSpan?: { colSpan: number; rowSpan: number };
+    },
   ) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -66,7 +70,11 @@ interface BlockShellCommonProps {
   editable?: boolean;
   onEditBlock?: (
     block: Block,
-    context?: { bentoId: string; isNew?: boolean },
+    context?: {
+      bentoId: string;
+      isNew?: boolean;
+      cellSpan?: { colSpan: number; rowSpan: number };
+    },
   ) => void;
   onUpdateBlockData?: (blockId: string, data: Partial<BlockData>) => void;
   onBlockBlur?: (blockId: string) => void;
@@ -234,7 +242,11 @@ function BlockItem({
       onBlockBlur={onBlockBlur}
       onUpdateBento={onUpdateBento}
       onEditBentoChild={(bentoId, child, opts) =>
-        onEditBlock?.(child, { bentoId, isNew: opts?.isNew })
+        onEditBlock?.(child, {
+          bentoId,
+          isNew: opts?.isNew,
+          cellSpan: opts?.cellSpan,
+        })
       }
       onBentoChildBlur={onBentoChildBlur}
       onPersistBento={onPersistBento}

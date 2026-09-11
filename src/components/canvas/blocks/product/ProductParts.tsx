@@ -1,5 +1,7 @@
 "use client";
 
+import { getCroppedImageStyle } from "@/lib/image-crop";
+import type { ImageCrop } from "@/lib/types";
 import { ExternalLink, Package } from "lucide-react";
 import Image from "next/image";
 import { normalizeImageUrl } from "./styles";
@@ -14,6 +16,7 @@ function normalizeExternalUrl(url: string): string {
 export function ProductImage({
   showImage,
   imageUrl,
+  imageCrop,
   title,
   onError,
   className,
@@ -21,12 +24,15 @@ export function ProductImage({
 }: {
   showImage: boolean;
   imageUrl?: string;
+  imageCrop?: ImageCrop;
   title?: string;
   onError: () => void;
   className: string;
   /** 上下構成で flex 伸縮させるときは false */
   shrink?: boolean;
 }) {
+  const cropStyle = imageCrop ? getCroppedImageStyle(imageCrop) : undefined;
+
   return (
     <div
       className={`relative overflow-hidden bg-stone-100 ${shrink ? "shrink-0" : "min-h-0"} ${className}`}
@@ -36,7 +42,12 @@ export function ProductImage({
           src={normalizeImageUrl(imageUrl)}
           alt={title || "商品"}
           fill
-          className="object-cover transition-transform duration-500 ease-out hover:scale-[1.03]"
+          className={
+            cropStyle
+              ? "transition-transform duration-500 ease-out hover:scale-[1.03]"
+              : "object-cover transition-transform duration-500 ease-out hover:scale-[1.03]"
+          }
+          style={cropStyle}
           sizes="(max-width: 720px) 100vw, 720px"
           unoptimized
           onError={onError}
@@ -131,6 +142,7 @@ export function ProductExtras({ comment }: { comment?: string }) {
 export function ProductHorizontal({
   showImage,
   imageUrl,
+  imageCrop,
   title,
   onImageError,
   imageClassName,
@@ -149,6 +161,7 @@ export function ProductHorizontal({
 }: {
   showImage: boolean;
   imageUrl?: string;
+  imageCrop?: ImageCrop;
   title?: string;
   onImageError: () => void;
   imageClassName: string;
@@ -173,6 +186,7 @@ export function ProductHorizontal({
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
+        imageCrop={imageCrop}
         title={title}
         onError={onImageError}
         className={imageClassName}
@@ -198,6 +212,7 @@ export function ProductHorizontal({
 export function ProductVertical({
   showImage,
   imageUrl,
+  imageCrop,
   title,
   onImageError,
   imageClassName,
@@ -215,6 +230,7 @@ export function ProductVertical({
 }: {
   showImage: boolean;
   imageUrl?: string;
+  imageCrop?: ImageCrop;
   title?: string;
   onImageError: () => void;
   imageClassName: string;
@@ -238,6 +254,7 @@ export function ProductVertical({
       <ProductImage
         showImage={showImage}
         imageUrl={imageUrl}
+        imageCrop={imageCrop}
         title={title}
         onError={onImageError}
         className={imageClassName}

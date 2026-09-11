@@ -45,8 +45,16 @@ function ProductCardContent({
   emphasizeImage?: boolean;
   showOfficialLink?: boolean;
 }) {
-  const { title, brand, price, price_currency, image_url, official_url, comment } =
-    block.data;
+  const {
+    title,
+    brand,
+    price,
+    price_currency,
+    image_url,
+    image_crop,
+    official_url,
+    comment,
+  } = block.data;
   const [imageError, setImageError] = useState(false);
   const showImage = Boolean(image_url && !imageError);
 
@@ -67,6 +75,7 @@ function ProductCardContent({
   const shared = {
     showImage,
     imageUrl: image_url,
+    imageCrop: image_crop,
     title,
     onImageError,
     brandText,

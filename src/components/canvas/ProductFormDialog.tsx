@@ -4,12 +4,14 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { getProductImageCropAspect } from "@/lib/image-crop";
 import {
   DEFAULT_PRICE_CURRENCY,
   parseStoredPrice,
   sanitizePriceInput,
   type Block,
   type BlockData,
+  type ImageCrop,
   type PriceCurrency,
 } from "@/lib/types";
 import { useState } from "react";
@@ -19,6 +21,7 @@ interface ProductFormDialogProps {
   block: Block | null;
   open: boolean;
   isNew?: boolean;
+  cropCellSpan?: { colSpan: number; rowSpan: number };
   onOpenChange: (open: boolean) => void;
   onChange: (blockId: string, data: BlockData) => void;
 }
@@ -27,6 +30,7 @@ export function ProductFormDialog({
   block,
   open,
   isNew = false,
+  cropCellSpan,
   onOpenChange,
   onChange,
 }: ProductFormDialogProps) {
@@ -42,6 +46,7 @@ export function ProductFormDialog({
         <ProductFormFields
           key={block.id}
           block={block}
+          cropCellSpan={cropCellSpan}
           onChange={onChange}
         />
       )}
@@ -51,9 +56,11 @@ export function ProductFormDialog({
 
 function ProductFormFields({
   block,
+  cropCellSpan,
   onChange,
 }: {
   block: Block;
+  cropCellSpan?: { colSpan: number; rowSpan: number };
   onChange: (blockId: string, data: BlockData) => void;
 }) {
   const initialPrice = parseStoredPrice(
@@ -67,6 +74,9 @@ function ProductFormFields({
     initialPrice.currency,
   );
   const [imageUrl, setImageUrl] = useState(block.data.image_url || "");
+  const [imageCrop, setImageCrop] = useState<ImageCrop | undefined>(
+    block.data.image_crop,
+  );
   const [officialUrl, setOfficialUrl] = useState(
     block.data.official_url || "",
   );
@@ -78,6 +88,7 @@ function ProductFormFields({
     price?: string;
     price_currency?: PriceCurrency;
     image_url?: string;
+    image_crop?: ImageCrop | undefined;
     official_url?: string;
     comment?: string;
   }) {
@@ -87,6 +98,7 @@ function ProductFormFields({
       price: next.price ?? price,
       price_currency: next.price_currency ?? priceCurrency,
       image_url: next.image_url ?? imageUrl,
+      image_crop: next.image_crop !== undefined ? next.image_crop : imageCrop,
       official_url: next.official_url ?? officialUrl,
       comment: next.comment ?? comment,
     };
@@ -96,6 +108,7 @@ function ProductFormFields({
       price: sanitizePriceInput(merged.price).trim(),
       price_currency: merged.price_currency || DEFAULT_PRICE_CURRENCY,
       image_url: merged.image_url.trim(),
+      image_crop: merged.image_crop,
       official_url: merged.official_url.trim(),
       comment: merged.comment.trim(),
     });
@@ -165,9 +178,16 @@ function ProductFormFields({
       </div>
       <ProductImageInput
         value={imageUrl}
+        crop={imageCrop}
+        cropAspect={getProductImageCropAspect(cropCellSpan)}
         onChange={(v) => {
           setImageUrl(v);
-          commit({ image_url: v });
+          setImageCrop(undefined);
+          commit({ image_url: v, image_crop: undefined });
+        }}
+        onCropChange={(crop) => {
+          setImageCrop(crop);
+          commit({ image_crop: crop });
         }}
       />
       <div className="space-y-2">

@@ -130,6 +130,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
           block={editor.editingBlock}
           open={editor.dialogOpen}
           isNew={editor.isNewBlock}
+          cropCellSpan={editor.editingCellSpan}
           onOpenChange={(open) => {
             if (open) editor.setDialogOpen(true);
             else editor.handleDialogClose();
