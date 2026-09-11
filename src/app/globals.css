@@ -92,73 +92,31 @@ body {
   );
 }
 
-/* 編集時ガイド: 各交点にドット1つ（セル左上 + 右端・下端） */
-.bento-grid-guide-cell {
-  position: relative;
-}
-
-.bento-grid-guide-cell::before {
-  content: "";
+/* 編集時ガイド: コンテンツ領域に合わせた交点ドット（右端・下端は 100% 基準） */
+.bento-grid-guides {
   position: absolute;
-  inset: 0;
+  inset: var(--bento-pad);
   pointer-events: none;
-  background-image: radial-gradient(
+  width: calc(var(--bento-cols) * var(--bento-step) - var(--bento-gap));
+  height: calc(var(--bento-rows) * var(--bento-step) - var(--bento-gap));
+  overflow: hidden;
+  --bento-dot-gradient: radial-gradient(
     circle var(--bento-dot-size) at 0 0,
     var(--bento-dot-color) 100%,
     transparent 100%
   );
-}
-
-.bento-grid-guide-cell.is-last-col::before {
   background-image:
-    radial-gradient(
-      circle var(--bento-dot-size) at 0 0,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 100% 0,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    );
-}
-
-.bento-grid-guide-cell.is-last-row::before {
-  background-image:
-    radial-gradient(
-      circle var(--bento-dot-size) at 0 0,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 0 100%,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    );
-}
-
-.bento-grid-guide-cell.is-last-col.is-last-row::before {
-  background-image:
-    radial-gradient(
-      circle var(--bento-dot-size) at 0 0,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 100% 0,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 0 100%,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle var(--bento-dot-size) at 100% 100%,
-      var(--bento-dot-color) 100%,
-      transparent 100%
-    );
+    var(--bento-dot-gradient),
+    var(--bento-dot-gradient),
+    var(--bento-dot-gradient),
+    var(--bento-dot-gradient);
+  background-size: var(--bento-step) var(--bento-step);
+  background-repeat: repeat, repeat-y, repeat-x, no-repeat;
+  background-position:
+    0 0,
+    100% 0,
+    0 100%,
+    100% 100%;
 }
 
 .document-body .block-bento .block-product,

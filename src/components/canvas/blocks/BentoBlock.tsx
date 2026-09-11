@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BENTO_COLS,
   addBentoChild,
   bentoGridStyle,
   createBentoChild,
@@ -221,7 +220,12 @@ export function BentoBlock({
           className={`bento-grid relative grid gap-1 rounded-sm p-1.5 ${
             editable ? "bg-stone-100/30" : ""
           }`}
-          style={bentoGridStyle(rowCount)}
+          style={{
+            ...bentoGridStyle(rowCount),
+            ...(editable
+              ? ({ "--bento-rows": rowCount } as React.CSSProperties)
+              : {}),
+          }}
           onClick={() => {
             if (!editable) return;
             if (focusBlockId) {
@@ -231,28 +235,7 @@ export function BentoBlock({
           }}
         >
           {editable && (
-            <div
-              className="bento-grid-guides pointer-events-none absolute inset-0 grid gap-1 p-1.5"
-              style={bentoGridStyle(rowCount)}
-              aria-hidden="true"
-            >
-              {Array.from({ length: rowCount * BENTO_COLS }).map((_, i) => {
-                const col = i % BENTO_COLS;
-                const row = Math.floor(i / BENTO_COLS);
-                return (
-                  <div
-                    key={i}
-                    className={[
-                      "bento-grid-guide-cell",
-                      col === BENTO_COLS - 1 ? "is-last-col" : "",
-                      row === rowCount - 1 ? "is-last-row" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  />
-                );
-              })}
-            </div>
+            <div className="bento-grid-guides" aria-hidden="true" />
           )}
 
           {children.map((child) => {
