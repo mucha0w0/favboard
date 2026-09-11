@@ -224,7 +224,7 @@ export function bentoGridStyle(rowCount: number): {
   gridTemplateRows: string;
 } {
   return {
-    gridTemplateColumns: `repeat(${BENTO_COLS}, minmax(0, 1fr))`,
+    gridTemplateColumns: `repeat(${BENTO_COLS}, var(--bento-cell-size))`,
     gridTemplateRows: `repeat(${rowCount}, var(--bento-cell-size))`,
   };
 }
