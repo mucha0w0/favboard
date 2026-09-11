@@ -1,14 +1,28 @@
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { Button } from "@/components/ui/button";
-import { getAuthUserId } from "@/lib/canvas-service";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { getOrCreateProfile } from "@/lib/profile-service";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   let userId: string | null = null;
+  let displayName = "ユーザー";
   try {
-    userId = await getAuthUserId();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
+    if (user) {
+      try {
+        const profile = await getOrCreateProfile(user);
+        displayName = profile.display_name.trim() || profile.username;
+      } catch {
+        displayName = "ユーザー";
+      }
+    }
   } catch {
     userId = null;
   }
@@ -19,20 +33,16 @@ export default async function HomePage() {
       <SiteHeader
         actions={
           userId ? (
-            <Link href="/dashboard">
-              <Button size="sm">マイリスト</Button>
+            <Link
+              href="/dashboard"
+              className="text-sm text-stone-900 transition-opacity hover:opacity-70"
+            >
+              {displayName}のダッシュボード
             </Link>
           ) : (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  ログイン
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button size="sm">はじめる</Button>
-              </Link>
-            </>
+            <Link href="/login" className={buttonVariants({ size: "sm" })}>
+              はじめる
+            </Link>
           )
         }
       />

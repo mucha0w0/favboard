@@ -35,7 +35,6 @@ export function PublicCanvasView({
   return (
     <div className="min-h-screen bg-stone-50">
       <SiteHeader
-        maxWidth="wide"
         actions={
           isDraftPreview ? (
             <span className="text-xs text-stone-400">下書きプレビュー</span>

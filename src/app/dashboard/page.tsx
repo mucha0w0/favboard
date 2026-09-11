@@ -1,7 +1,7 @@
 "use client";
 
 import { AccountSettings } from "@/components/dashboard/AccountSettings";
-import { AppHeader } from "@/components/layout/AppHeader";
+import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -117,20 +117,15 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <AppHeader
-        maxWidth="4xl"
-        title={
-          <Link
-            href="/"
-            className="text-sm font-medium tracking-tight text-stone-900"
-          >
-            Favboard
-          </Link>
-        }
+      <SiteHeader
         actions={
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="text-sm text-stone-900 transition-colors hover:text-red-600"
+          >
             ログアウト
-          </Button>
+          </button>
         }
       />
 

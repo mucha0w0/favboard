@@ -8,7 +8,7 @@ import {
   type ViewMode,
 } from "@/components/canvas/ViewModeToggle";
 import { useCanvasEditor } from "@/components/canvas/hooks/useCanvasEditor";
-import { AppHeader } from "@/components/layout/AppHeader";
+import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { type Canvas } from "@/lib/types";
@@ -37,44 +37,32 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <AppHeader
-        backHref="/dashboard"
-        backLabel="一覧"
-        onBackClick={editor.handleBackClick}
-        maxWidth="4xl"
-        title={
-          <div className="hidden items-center gap-2 text-xs text-stone-400 sm:flex">
-            {editor.isDirty && <span className="text-stone-600">未保存</span>}
-            {!editor.isDirty && editor.savedFlash && <span>保存済</span>}
-            {!editor.isDirty && !editor.savedFlash && (
-              <span>{editor.canvas.is_published ? "公開中" : "下書き"}</span>
-            )}
-          </div>
+      <SiteHeader
+        onBrandClick={editor.handleBackClick}
+        center={
+          <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
         }
         actions={
-          <>
-            <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
-            <Button
-              size="sm"
-              variant={editor.canvas.is_published ? "outline" : "default"}
-              onClick={editor.handleTogglePublish}
-              disabled={editor.publishing || editor.saving}
-            >
-              {editor.publishing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : editor.canvas.is_published ? (
-                <>
-                  <EyeOff className="h-4 w-4" />
-                  非公開
-                </>
-              ) : (
-                <>
-                  <Globe className="h-4 w-4" />
-                  公開
-                </>
-              )}
-            </Button>
-          </>
+          <Button
+            size="sm"
+            variant={editor.canvas.is_published ? "outline" : "default"}
+            onClick={editor.handleTogglePublish}
+            disabled={editor.publishing || editor.saving}
+          >
+            {editor.publishing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : editor.canvas.is_published ? (
+              <>
+                <EyeOff className="h-4 w-4" />
+                非公開
+              </>
+            ) : (
+              <>
+                <Globe className="h-4 w-4" />
+                公開中
+              </>
+            )}
+          </Button>
         }
       />
 
