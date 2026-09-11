@@ -217,7 +217,7 @@ export function BentoBlock({
       <div className="bento-grid-host relative">
         <div
           ref={gridRef}
-          className={`bento-grid relative grid gap-1 rounded-sm p-1.5 ${
+          className={`bento-grid relative grid rounded-sm ${
             editable ? "bg-stone-100/30" : ""
           }`}
           style={{

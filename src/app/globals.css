@@ -82,23 +82,24 @@ body {
 .bento-grid {
   --bento-cols: 24;
   --bento-gap: 0.25rem;
-  --bento-pad: 0.375rem;
+  /* 外側余白はセル間ギャップと同じ。上下左右で揃える */
+  --bento-inset: var(--bento-gap);
   --bento-step: calc(var(--bento-cell-size) + var(--bento-gap));
   --bento-dot-color: rgb(168 162 158 / 0.7);
   --bento-dot-size: 2px;
-  /* 格子は cols*step 幅。グリッド実寸は trailing gap がないので gap/2 ずつずらして左右・上下の外側余白を揃える */
-  --bento-guide-inset: calc(var(--bento-pad) - var(--bento-gap) / 2);
   --bento-cell-size: calc(
-    (100cqi - 2 * var(--bento-pad) - (var(--bento-cols) - 1) * var(--bento-gap)) /
+    (100cqi - 2 * var(--bento-inset) - (var(--bento-cols) - 1) * var(--bento-gap)) /
       var(--bento-cols)
   );
+  padding: var(--bento-inset);
+  gap: var(--bento-gap);
 }
 
-/* 編集時ガイド: step 等間隔の交点ドット。外側余白は左右・上下とも --bento-guide-inset */
+/* 編集時ガイド: アイテムと同じ inset / step の交点ドット */
 .bento-grid-guides {
   position: absolute;
-  top: var(--bento-guide-inset);
-  left: var(--bento-guide-inset);
+  top: var(--bento-inset);
+  left: var(--bento-inset);
   width: calc(var(--bento-cols) * var(--bento-step) + var(--bento-dot-size));
   height: calc(var(--bento-rows) * var(--bento-step) + var(--bento-dot-size));
   pointer-events: none;
