@@ -100,16 +100,27 @@ body {
   width: calc(var(--bento-cols) * var(--bento-step) - var(--bento-gap));
   height: calc(var(--bento-rows) * var(--bento-step) - var(--bento-gap));
   overflow: hidden;
-  --bento-dot-gradient: radial-gradient(
-    circle var(--bento-dot-size) at 0 0,
-    var(--bento-dot-color) 100%,
-    transparent 100%
-  );
   background-image:
-    var(--bento-dot-gradient),
-    var(--bento-dot-gradient),
-    var(--bento-dot-gradient),
-    var(--bento-dot-gradient);
+    radial-gradient(
+      circle var(--bento-dot-size) at 0 0,
+      var(--bento-dot-color) 100%,
+      transparent 100%
+    ),
+    radial-gradient(
+      circle var(--bento-dot-size) at 100% 0,
+      var(--bento-dot-color) 100%,
+      transparent 100%
+    ),
+    radial-gradient(
+      circle var(--bento-dot-size) at 0 100%,
+      var(--bento-dot-color) 100%,
+      transparent 100%
+    ),
+    radial-gradient(
+      circle var(--bento-dot-size) at 100% 100%,
+      var(--bento-dot-color) 100%,
+      transparent 100%
+    );
   background-size: var(--bento-step) var(--bento-step);
   background-repeat: repeat, repeat-y, repeat-x, no-repeat;
   background-position:
