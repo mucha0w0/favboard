@@ -15,7 +15,7 @@ import {
   validateUsername,
 } from "@/lib/profile";
 import { type Profile } from "@/lib/types";
-import { Camera, Loader2, Trash2 } from "lucide-react";
+import { Loader2, Save, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 interface AccountSettingsProps {
@@ -103,7 +103,7 @@ export function AccountSettings({ profile, onSaved }: AccountSettingsProps) {
   return (
     <section className="mb-12 border-b border-stone-200/80 pb-10 sm:mb-14">
       <h2 className="mb-6 text-lg font-semibold text-stone-900">
-        アカウント設定
+        プロフィール
       </h2>
       <form
         className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8"
@@ -143,9 +143,6 @@ export function AccountSettings({ profile, onSaved }: AccountSettingsProps) {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </span>
               )}
-            </span>
-            <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-stone-900 text-white ring-2 ring-stone-50">
-              <Camera className="h-3 w-3" />
             </span>
           </button>
           {avatarUrl && (
@@ -213,16 +210,20 @@ export function AccountSettings({ profile, onSaved }: AccountSettingsProps) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button size="sm" type="submit" disabled={!canSave}>
-              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              保存
-            </Button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
             {success && (
               <Alert variant="success" className="mb-0">
                 {success}
               </Alert>
             )}
+            <Button size="sm" type="submit" disabled={!canSave}>
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              保存
+            </Button>
           </div>
           {error && (
             <Alert variant="error" className="mb-0">

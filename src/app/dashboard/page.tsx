@@ -140,7 +140,7 @@ export default function DashboardPage() {
         ) : (
           <section className="mb-12 border-b border-stone-200/80 pb-10 sm:mb-14">
             <h2 className="mb-3 text-lg font-semibold text-stone-900">
-              アカウント設定
+              プロフィール
             </h2>
             <Alert variant="error">
               {profileError || "プロフィールを読み込めませんでした"}
