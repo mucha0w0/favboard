@@ -32,17 +32,69 @@ function normalizePreviewUrl(url: string): string {
   return url;
 }
 
-const HANDLE_CURSORS: Record<CropResizeHandle, string> = {
-  move: "move",
-  nw: "nwse-resize",
-  ne: "nesw-resize",
-  sw: "nesw-resize",
-  se: "nwse-resize",
-  n: "ns-resize",
-  s: "ns-resize",
-  e: "ew-resize",
-  w: "ew-resize",
-};
+/** BentoChildChrome と同じリサイズバー */
+function ResizeBar({ orientation }: { orientation: "horizontal" | "vertical" }) {
+  return (
+    <span
+      className={
+        orientation === "horizontal"
+          ? "h-0.5 w-8 rounded-full bg-stone-400/70"
+          : "h-8 w-0.5 rounded-full bg-stone-400/70"
+      }
+    />
+  );
+}
+
+const EDGE_HANDLES: {
+  edge: CropResizeHandle;
+  className: string;
+  children?: React.ReactNode;
+}[] = [
+  {
+    edge: "w",
+    className:
+      "absolute inset-y-2 left-0 z-20 flex w-3 -translate-x-full cursor-w-resize touch-none items-center justify-center",
+    children: <ResizeBar orientation="vertical" />,
+  },
+  {
+    edge: "n",
+    className:
+      "absolute inset-x-2 top-0 z-20 flex h-3 -translate-y-full cursor-n-resize touch-none items-start justify-center",
+    children: <ResizeBar orientation="horizontal" />,
+  },
+  {
+    edge: "e",
+    className:
+      "absolute inset-y-2 right-0 z-20 flex w-3 translate-x-full cursor-e-resize touch-none items-center justify-end",
+    children: <ResizeBar orientation="vertical" />,
+  },
+  {
+    edge: "s",
+    className:
+      "absolute inset-x-2 bottom-0 z-20 flex h-3 translate-y-full cursor-s-resize touch-none items-end justify-center",
+    children: <ResizeBar orientation="horizontal" />,
+  },
+  {
+    edge: "nw",
+    className:
+      "absolute left-0 top-0 z-20 h-4 w-4 -translate-x-full -translate-y-full cursor-nw-resize touch-none",
+  },
+  {
+    edge: "ne",
+    className:
+      "absolute right-0 top-0 z-20 h-4 w-4 translate-x-full -translate-y-full cursor-ne-resize touch-none",
+  },
+  {
+    edge: "sw",
+    className:
+      "absolute bottom-0 left-0 z-20 h-4 w-4 -translate-x-full translate-y-full cursor-sw-resize touch-none",
+  },
+  {
+    edge: "se",
+    className:
+      "absolute bottom-0 right-0 z-20 h-4 w-4 translate-x-full translate-y-full cursor-se-resize touch-none",
+  },
+];
 
 export function ProductImageCropEditor({
   imageUrl,
@@ -177,52 +229,32 @@ export function ProductImageCropEditor({
       {screenRect && (
         <div className="absolute inset-0 touch-none">
           <div
-            className="absolute border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.35)]"
+            className="absolute ring-1 ring-stone-400"
             style={{
               left: screenRect.x,
               top: screenRect.y,
               width: screenRect.width,
               height: screenRect.height,
               boxShadow: "0 0 0 9999px rgba(15, 23, 42, 0.45)",
-              cursor: HANDLE_CURSORS.move,
+              cursor: "move",
             }}
             onPointerDown={handlePointerDown("move")}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
           >
-            {(["nw", "ne", "sw", "se", "n", "s", "e", "w"] as CropResizeHandle[]).map(
-              (handle) => {
-                const positionClass =
-                  handle === "nw"
-                    ? "left-0 top-0 -translate-x-1/2 -translate-y-1/2"
-                    : handle === "ne"
-                      ? "right-0 top-0 translate-x-1/2 -translate-y-1/2"
-                      : handle === "sw"
-                        ? "bottom-0 left-0 -translate-x-1/2 translate-y-1/2"
-                        : handle === "se"
-                          ? "bottom-0 right-0 translate-x-1/2 translate-y-1/2"
-                          : handle === "n"
-                            ? "left-1/2 top-0 -translate-x-1/2 -translate-y-1/2"
-                            : handle === "s"
-                              ? "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2"
-                              : handle === "e"
-                                ? "right-0 top-1/2 translate-x-1/2 -translate-y-1/2"
-                                : "left-0 top-1/2 -translate-x-1/2 -translate-y-1/2";
-
-                return (
-                  <div
-                    key={handle}
-                    className={`absolute h-3 w-3 rounded-full border border-white bg-stone-700 shadow ${positionClass}`}
-                    style={{ cursor: HANDLE_CURSORS[handle] }}
-                    onPointerDown={handlePointerDown(handle)}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerUp}
-                  />
-                );
-              },
-            )}
+            {EDGE_HANDLES.map(({ edge, className, children }) => (
+              <div
+                key={edge}
+                className={className}
+                onPointerDown={handlePointerDown(edge)}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+              >
+                {children}
+              </div>
+            ))}
           </div>
         </div>
       )}

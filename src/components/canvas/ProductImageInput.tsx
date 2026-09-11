@@ -130,9 +130,9 @@ export function ProductImageInput({
       <div
         tabIndex={0}
         onPaste={handlePaste}
-        className="relative overflow-hidden rounded-lg border border-dashed border-stone-200 bg-stone-50/80 outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
+        className="relative overflow-visible rounded-lg border border-dashed border-stone-200 bg-stone-50/80 outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
       >
-        <div className="relative aspect-[4/3] w-full">
+        <div className="relative aspect-[4/3] w-full overflow-visible">
           {loading ? (
             <div className="flex h-full items-center justify-center text-stone-400">
               <Loader2 className="h-6 w-6 animate-spin" />
