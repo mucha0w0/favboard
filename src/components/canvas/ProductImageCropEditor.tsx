@@ -89,46 +89,46 @@ const EDGE_HANDLES: {
   {
     edge: "w",
     className:
-      "absolute left-0 top-1/2 z-20 flex h-8 w-3 -translate-x-1/2 -translate-y-1/2 cursor-w-resize touch-none items-center justify-center",
+      "absolute left-0 top-1/2 z-20 flex h-8 w-3 -translate-x-full -translate-y-1/2 cursor-w-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="vertical" />,
   },
   {
     edge: "n",
     className:
-      "absolute left-1/2 top-0 z-20 flex h-3 w-8 -translate-x-1/2 -translate-y-1/2 cursor-n-resize touch-none items-center justify-center",
+      "absolute left-1/2 top-0 z-20 flex h-3 w-8 -translate-x-1/2 -translate-y-full cursor-n-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="horizontal" />,
   },
   {
     edge: "e",
     className:
-      "absolute right-0 top-1/2 z-20 flex h-8 w-3 translate-x-1/2 -translate-y-1/2 cursor-e-resize touch-none items-center justify-center",
+      "absolute right-0 top-1/2 z-20 flex h-8 w-3 translate-x-full -translate-y-1/2 cursor-e-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="vertical" />,
   },
   {
     edge: "s",
     className:
-      "absolute bottom-0 left-1/2 z-20 flex h-3 w-8 -translate-x-1/2 translate-y-1/2 cursor-s-resize touch-none items-center justify-center",
+      "absolute bottom-0 left-1/2 z-20 flex h-3 w-8 -translate-x-1/2 translate-y-full cursor-s-resize touch-none items-center justify-center",
     children: <ResizeBar orientation="horizontal" />,
   },
   {
     edge: "nw",
     className:
-      "absolute left-0 top-0 z-20 h-3 w-3 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize touch-none",
+      "absolute left-0 top-0 z-20 h-3 w-3 -translate-x-full -translate-y-full cursor-nw-resize touch-none",
   },
   {
     edge: "ne",
     className:
-      "absolute right-0 top-0 z-20 h-3 w-3 translate-x-1/2 -translate-y-1/2 cursor-ne-resize touch-none",
+      "absolute right-0 top-0 z-20 h-3 w-3 translate-x-full -translate-y-full cursor-ne-resize touch-none",
   },
   {
     edge: "sw",
     className:
-      "absolute bottom-0 left-0 z-20 h-3 w-3 -translate-x-1/2 translate-y-1/2 cursor-sw-resize touch-none",
+      "absolute bottom-0 left-0 z-20 h-3 w-3 -translate-x-full translate-y-full cursor-sw-resize touch-none",
   },
   {
     edge: "se",
     className:
-      "absolute bottom-0 right-0 z-20 h-3 w-3 translate-x-1/2 translate-y-1/2 cursor-se-resize touch-none",
+      "absolute bottom-0 right-0 z-20 h-3 w-3 translate-x-full translate-y-full cursor-se-resize touch-none",
   },
 ];
 
@@ -272,7 +272,7 @@ export function ProductImageCropEditor({
   }, [endDrag]);
 
   return (
-    <div ref={containerRef} className="relative h-full w-full">
+    <div ref={containerRef} className="relative h-full w-full bg-stone-100">
       <div className="absolute inset-0 overflow-hidden">
         <Image
           src={normalizePreviewUrl(imageUrl)}

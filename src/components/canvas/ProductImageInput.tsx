@@ -162,9 +162,9 @@ export function ProductImageInput({
               <p className="text-xs leading-relaxed">
                 デバイスから選ぶ
                 <br />
-                ・URLを入力して追加
+                URLを入力して追加
                 <br />
-                ・ Ctrl+V / ⌘V で貼り付け
+                Ctrl+V / ⌘V で貼り付け
               </p>
             </div>
           )}
