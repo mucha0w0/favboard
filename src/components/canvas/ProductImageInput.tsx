@@ -15,6 +15,7 @@ interface ProductImageInputProps {
   crop?: ImageCrop;
   onCropChange?: (crop: ImageCrop | undefined) => void;
   cellSpan?: { colSpan: number; rowSpan: number };
+  open?: boolean;
 }
 
 function normalizePreviewUrl(url: string): string {
@@ -28,6 +29,7 @@ export function ProductImageInput({
   crop,
   onCropChange,
   cellSpan,
+  open = true,
 }: ProductImageInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlDraft, setUrlDraft] = useState("");
@@ -37,18 +39,17 @@ export function ProductImageInput({
   const [displayAspect, setDisplayAspect] = useState<number | null>(
     cellSpan ? null : 1,
   );
+  const [probeKey, setProbeKey] = useState(0);
 
   const handleAspectChange = useCallback((aspect: number) => {
     setDisplayAspect(aspect);
   }, []);
 
   useEffect(() => {
-    if (cellSpan) {
-      setDisplayAspect(null);
-    } else {
-      setDisplayAspect(1);
-    }
-  }, [cellSpan?.colSpan, cellSpan?.rowSpan, cellSpan]);
+    if (!open) return;
+    setDisplayAspect(cellSpan ? null : 1);
+    setProbeKey((key) => key + 1);
+  }, [open, cellSpan?.colSpan, cellSpan?.rowSpan]);
 
   const showPreview = Boolean(value.trim() && !previewError);
 
@@ -117,8 +118,9 @@ export function ProductImageInput({
 
   return (
     <div className="space-y-2">
-      {cellSpan && (
+      {cellSpan && open && (
         <ProductImageAspectProbe
+          key={probeKey}
           cellSpan={cellSpan}
           onAspectChange={handleAspectChange}
         />

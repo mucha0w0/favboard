@@ -46,6 +46,7 @@ export function ProductFormDialog({
           key={block.id}
           block={block}
           cropCellSpan={cropCellSpan}
+          open={open}
           onChange={onChange}
         />
       )}
@@ -56,10 +57,12 @@ export function ProductFormDialog({
 function ProductFormFields({
   block,
   cropCellSpan,
+  open,
   onChange,
 }: {
   block: Block;
   cropCellSpan?: { colSpan: number; rowSpan: number };
+  open: boolean;
   onChange: (blockId: string, data: BlockData) => void;
 }) {
   const initialPrice = parseStoredPrice(
@@ -179,6 +182,7 @@ function ProductFormFields({
         value={imageUrl}
         crop={imageCrop}
         cellSpan={cropCellSpan}
+        open={open}
         onChange={(v) => {
           setImageUrl(v);
           setImageCrop(undefined);
