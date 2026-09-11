@@ -1,10 +1,11 @@
 "use client";
 
+import { AccountSettings } from "@/components/dashboard/AccountSettings";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { type Canvas } from "@/lib/types";
+import { type Canvas, type Profile } from "@/lib/types";
 import { ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,25 +13,40 @@ import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
   const [canvases, setCanvases] = useState<Canvas[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const [profileError, setProfileError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/canvases");
-        if (res.status === 401) {
+        const [canvasRes, profileRes] = await Promise.all([
+          fetch("/api/canvases"),
+          fetch("/api/profile"),
+        ]);
+        if (canvasRes.status === 401 || profileRes.status === 401) {
           router.push("/login");
           return;
         }
-        const data = await res.json();
-        if (!res.ok || !Array.isArray(data)) {
-          setError(data.error || "一覧の取得に失敗しました");
-          return;
+
+        const canvasData = await canvasRes.json();
+        if (!canvasRes.ok || !Array.isArray(canvasData)) {
+          setError(canvasData.error || "一覧の取得に失敗しました");
+        } else {
+          setCanvases(canvasData);
         }
-        setCanvases(data);
+
+        const profileData = await profileRes.json();
+        if (!profileRes.ok) {
+          setProfileError(
+            profileData.error || "プロフィールの取得に失敗しました",
+          );
+        } else {
+          setProfile(profileData);
+        }
       } catch {
         setError("一覧の取得に失敗しました");
       } finally {
@@ -119,6 +135,19 @@ export default function DashboardPage() {
       />
 
       <main className="mx-auto max-w-4xl px-5 py-10 sm:px-6 sm:py-14">
+        {profile ? (
+          <AccountSettings profile={profile} onSaved={setProfile} />
+        ) : (
+          <section className="mb-12 border-b border-stone-200/80 pb-10 sm:mb-14">
+            <h2 className="mb-3 text-lg font-semibold text-stone-900">
+              アカウント設定
+            </h2>
+            <Alert variant="error">
+              {profileError || "プロフィールを読み込めませんでした"}
+            </Alert>
+          </section>
+        )}
+
         <div className="mb-10 flex items-end justify-between gap-4 sm:mb-12">
           <div>
             <h1 className="text-lg font-semibold text-stone-900">マイリスト</h1>

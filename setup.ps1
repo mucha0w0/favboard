@@ -32,7 +32,9 @@ if (-not (Test-Path "supabase\config.toml")) {
 Write-Host ""
 Write-Host "=== Ready ===" -ForegroundColor Green
 Write-Host "Edit .env.local with your Supabase project URL and anon key," -ForegroundColor Yellow
-Write-Host "then run migration in Supabase SQL Editor (supabase/migrations/001_canvases.sql)"
+Write-Host "then run migrations in Supabase SQL Editor:"
+Write-Host "  supabase/migrations/001_canvases.sql"
+Write-Host "  supabase/migrations/002_profiles.sql"
 Write-Host ""
 Write-Host "Start dev server:" -ForegroundColor Cyan
 Write-Host "  npm run dev"

@@ -114,6 +114,16 @@ export interface Canvas {
   updated_at: string;
 }
 
+/** ユーザープロフィール。username はユーザーが決めるユーザーID */
+export interface Profile {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export function isTopLevelBlockType(type: BlockType): type is TopLevelBlockType {
   return (
     type === "heading" ||

@@ -23,7 +23,7 @@ npm install
 ### 2. Supabase プロジェクトの作成
 
 1. [Supabase](https://supabase.com) で新規プロジェクトを作成
-2. SQL Editor で `supabase/migrations/001_canvases.sql` を実行
+2. SQL Editor で `supabase/migrations/001_canvases.sql` と `supabase/migrations/002_profiles.sql` を実行
 3. Authentication → Providers で Email を有効化
 4. （任意）X / Twitter ログインを使う場合は下記「X（Twitter）ログイン」を設定
 
@@ -82,17 +82,27 @@ http://localhost:3000 を開く
 |------|------|
 | `/` | ランディングページ |
 | `/login` | ログイン / 新規登録 |
-| `/dashboard` | マイキャンバス一覧 |
+| `/dashboard` | アカウント設定 / マイキャンバス一覧 |
 | `/edit/[id]` | キャンバス編集 |
 | `/c/[slug]` | 公開閲覧ページ |
 | `/api/canvases` | キャンバス CRUD API |
+| `/api/profile` | プロフィール取得・更新 |
 
 ## コア機能
 
 - **編集画面**: Bento・見出し・区切り線を縦に追加
 - **Bento**: グリッド上に商品・テキストを配置・リサイズ
 - **公開 & シェア**: 固有 slug URL、Twitter OGP 対応
+- **アカウント**: ユーザーID・ディスプレイネーム・プロフィール画像
 - **決済なし**: 好きとこだわりのポートフォリオに特化
+
+各アカウントはダッシュボード上部で編集できます。
+
+| 項目 | 内容 |
+|------|------|
+| ユーザーID | 半角英数字と `_`、3〜24文字。全体で一意。新規時は自動発行 |
+| ディスプレイネーム | 表示名。40文字以内 |
+| プロフィール画像 | 正方形にトリミングして保存 |
 
 ## ソース構成（概要）
 

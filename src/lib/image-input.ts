@@ -19,6 +19,9 @@ async function canvasToDataUrl(
   return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
 }
 
+const AVATAR_SIZE = 320;
+const MAX_AVATAR_FILE_BYTES = 8 * 1024 * 1024;
+
 export async function imageFileToDataUrl(file: File | Blob): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("画像ファイルを選択してください");
@@ -37,6 +40,36 @@ export async function imageFileToDataUrl(file: File | Blob): Promise<string> {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("画像の処理に失敗しました");
     ctx.drawImage(img, 0, 0, width, height);
+
+    return canvasToDataUrl(canvas);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+export async function imageFileToAvatarDataUrl(
+  file: File | Blob,
+): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("画像ファイルを選択してください");
+  }
+  if ("size" in file && file.size > MAX_AVATAR_FILE_BYTES) {
+    throw new Error("画像が大きすぎます（8MBまで）");
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await loadImageElement(objectUrl);
+    const side = Math.min(img.width, img.height);
+    const sx = (img.width - side) / 2;
+    const sy = (img.height - side) / 2;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = AVATAR_SIZE;
+    canvas.height = AVATAR_SIZE;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("画像の処理に失敗しました");
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
 
     return canvasToDataUrl(canvas);
   } finally {
