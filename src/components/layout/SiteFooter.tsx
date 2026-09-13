@@ -7,7 +7,7 @@ interface SiteFooterProps {
 
 export function SiteFooter({ className }: SiteFooterProps) {
   return (
-    <footer className={cn("site-footer mt-auto", className)}>
+    <footer className={cn("site-footer mt-auto bg-white/85 backdrop-blur-md", className)}>
       <div className="mx-auto flex w-full max-w-[960px] flex-col gap-8 px-8 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-12 sm:py-12">
         <div>
           <Link

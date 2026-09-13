@@ -165,7 +165,8 @@ body {
 
 /* ── Header ── */
 
-.site-header {
+.site-header,
+.site-footer {
   @apply bg-white/85 backdrop-blur-md;
 }
 
