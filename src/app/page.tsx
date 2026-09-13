@@ -62,18 +62,13 @@ export default async function HomePage() {
             見出し・テキスト・区切り線と、商品を並べる Bento グリッドで、好きなものを集めて公開。
           </p>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-stone-500">
-            あなたの好きを、そのまま見せる場所です。
+            あなたの好きを、そのまま見せる場所。
           </p>
-          <div className="mt-14 flex flex-wrap items-center gap-x-4 gap-y-3">
-            <Link href={startHref}>
-              <Button size="lg">
-                {userId ? "マイリストを開く" : "無料ではじめる"}
-              </Button>
-            </Link>
-            <span className="text-xs tracking-wide text-stone-400">
-              すぐに公開できます
-            </span>
-          </div>
+          <Link href={startHref} className="mt-14 inline-block">
+            <Button size="lg">
+              {userId ? "マイリストを開く" : "無料ではじめる"}
+            </Button>
+          </Link>
         </section>
 
         <section className="mx-auto max-w-3xl px-8 py-28 sm:px-12 sm:py-40">
@@ -94,7 +89,7 @@ export default async function HomePage() {
             <Feature
               number="03"
               title="公開してシェア"
-              description="固有URLで公開。Xへのシェアと、SNS用のOGPも自動で設定されます。"
+              description="固有URLで公開。Xへのシェアボタンで、自分の好きを気軽に共有。"
             />
           </dl>
         </section>
