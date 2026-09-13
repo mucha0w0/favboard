@@ -46,21 +46,27 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         actions={
           <Button
             size="sm"
-            variant={editor.canvas.is_published ? "outline" : "default"}
+            variant={editor.canvas.is_published ? "default" : "outline"}
             onClick={editor.handleTogglePublish}
             disabled={editor.publishing || editor.saving}
+            aria-pressed={editor.canvas.is_published}
+            title={
+              editor.canvas.is_published
+                ? "クリックで非公開にする"
+                : "クリックで公開する"
+            }
           >
             {editor.publishing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : editor.canvas.is_published ? (
               <>
-                <EyeOff className="h-4 w-4" />
-                非公開
+                <Globe className="h-4 w-4" />
+                公開中
               </>
             ) : (
               <>
-                <Globe className="h-4 w-4" />
-                公開中
+                <EyeOff className="h-4 w-4" />
+                非公開
               </>
             )}
           </Button>
