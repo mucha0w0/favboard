@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Favboard（ファブボード）— 好きを集めるビジュアルボード",
   description:
-    "代払い機能なし。欲しいものやこだわりを、ボードに綴って共有。",
+    "見出し・テキスト・Bentoグリッドで、好きなものを集めて公開するビジュアルボード。公式リンクのみ、代払い機能なし。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

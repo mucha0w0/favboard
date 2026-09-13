@@ -59,8 +59,8 @@ export default async function HomePage() {
             好きを、ひとつのボードに。
           </p>
           <p className="animate-fade-up stagger-3 mt-5 max-w-md text-[15px] leading-relaxed text-stone-500">
-            欲しいもの・こだわり・美学を、文章のように綴って共有。
-            クリエイターのポートフォリオのように、あなたの「好き」を世界に届けます。
+            見出し・テキスト・区切り線と、商品を並べる Bento グリッドで、好きなものを集めて公開。
+            公式サイトへのリンクだけ。決済もギフトもありません。
           </p>
           <div className="animate-fade-up stagger-4 mt-10 flex flex-wrap items-center gap-3">
             <Link href={startHref}>
@@ -69,7 +69,7 @@ export default async function HomePage() {
               </Button>
             </Link>
             <span className="text-xs text-stone-400">
-              代払い機能なし · 純粋な共有
+              公式リンクのみ · 代払い機能なし
             </span>
           </div>
         </section>
@@ -81,18 +81,18 @@ export default async function HomePage() {
           <dl className="mt-12 grid gap-12 sm:grid-cols-3 sm:gap-8">
             <Feature
               number="01"
-              title="縦に綴る"
-              description="見出し・商品・テキストを、エディトリアルな流れで配置。枠のない一体感のあるレイアウト。"
+              title="縦に組む"
+              description="見出し・テキスト・区切り線・Bento を上から順に配置。ドキュメントのようにボードを組み立てます。"
             />
             <Feature
               number="02"
-              title="こだわりを残す"
-              description="ブランド・価格・画像で、欲しいものを記録。手入力で自分らしい一冊に。"
+              title="Bento で見せる"
+              description="グリッドに商品とテキストを置き、大きさを変えられます。画像・ブランド・価格・公式サイトを残せます。"
             />
             <Feature
               number="03"
               title="公開してシェア"
-              description="固有URLで公開。SNSシェア用のOGPも自動設定。"
+              description="固有URLで公開。Xへのシェアと、SNS用のOGPも自動で設定されます。"
             />
           </dl>
         </section>
@@ -102,7 +102,7 @@ export default async function HomePage() {
             Favboard ではじめよう
           </h2>
           <p className="mx-auto mt-4 max-w-sm text-sm text-stone-500">
-            アカウントを作成すると、リストの作成と公開ができます。
+            Xアカウントでログインすると、リストの作成と公開ができます。
           </p>
           <Link href={startHref} className="mt-8 inline-block">
             <Button size="lg">
