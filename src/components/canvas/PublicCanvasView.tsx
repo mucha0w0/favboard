@@ -80,12 +80,6 @@ export function PublicCanvasView({
           )}
         </article>
       </main>
-
-      <footer className="content-column px-5 py-8 sm:px-0">
-        <p className="text-center text-[11px] tracking-wide text-stone-400">
-          Favboard
-        </p>
-      </footer>
     </div>
   );
 }

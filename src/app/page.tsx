@@ -1,4 +1,3 @@
-import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { getOrCreateProfile } from "@/lib/profile-service";
@@ -114,8 +113,6 @@ export default async function HomePage() {
           </Link>
         </section>
       </main>
-
-      <SiteFooter />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { AccountSettings } from "@/components/dashboard/AccountSettings";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -250,8 +249,6 @@ export default function DashboardPage() {
           </ul>
         )}
       </main>
-
-      <SiteFooter />
     </div>
   );
 }

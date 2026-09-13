@@ -9,7 +9,6 @@ import {
   type ViewMode,
 } from "@/components/canvas/ViewModeToggle";
 import { useCanvasEditor } from "@/components/canvas/hooks/useCanvasEditor";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -134,8 +133,6 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
           )}
         </div>
       </main>
-
-      <SiteFooter />
 
       {isEditing && editor.editingBlock?.type === "product" && (
         <ProductFormDialog

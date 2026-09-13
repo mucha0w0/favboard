@@ -165,13 +165,8 @@ body {
 
 /* ── Header ── */
 
-.site-header,
-.site-footer {
+.site-header {
   @apply bg-white/85 backdrop-blur-md;
-}
-
-.site-footer {
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ── Animations ── */
