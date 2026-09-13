@@ -16,7 +16,7 @@ export function SiteHeader({
   onBrandClick,
 }: SiteHeaderProps) {
   return (
-    <header className={cn("site-header sticky top-0 z-30 bg-white", className)}>
+    <header className={cn("site-header sticky top-0 z-30 bg-white/85 backdrop-blur-md", className)}>
       <div
         className={cn(
           "mx-auto grid w-full max-w-[960px] items-center gap-3 px-8 py-4 sm:px-12",
