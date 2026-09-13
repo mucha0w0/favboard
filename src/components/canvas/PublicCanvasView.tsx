@@ -44,7 +44,7 @@ export function PublicCanvasView({
         }
       />
 
-      <main className="px-5 pb-20 pt-10 sm:px-6 sm:pb-28 sm:pt-16">
+      <main className="px-5 pb-40 pt-10 sm:px-6 sm:pb-56 sm:pt-16">
         <article className="content-column animate-fade-in">
           <header className="mb-12 sm:mb-14">
             {isDraftPreview && (
