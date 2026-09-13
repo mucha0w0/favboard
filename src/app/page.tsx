@@ -59,14 +59,14 @@ export default async function HomePage() {
             好きを、ひとつのボードに。
           </p>
           <p className="ja-copy mt-8 max-w-xl text-[15px] text-stone-500">
-            見出し・テキスト・区切り線と、商品を並べる Bento グリッドで、好きなものを集めて公開。
+            見出し・テキスト・区切り線と商品で、好きなものを集めて公開。
           </p>
           <p className="ja-copy mt-4 max-w-xl text-[15px] text-stone-500">
             あなたの好きを、そのまま見せる場所。
           </p>
           <Link href={startHref} className="mt-14 inline-block">
             <Button size="lg">
-              {userId ? "マイリストを開く" : "無料ではじめる"}
+              {userId ? "マイリストを開く" : "はじめる"}
             </Button>
           </Link>
         </section>
