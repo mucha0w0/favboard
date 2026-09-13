@@ -4,7 +4,7 @@ import {
   getCanvasBySlugForView,
   getPublishedCanvasBySlug,
 } from "@/lib/canvas-service";
-import { findFirstProductImage } from "@/lib/canvas-utils";
+import { canvasShareUrl, findFirstProductImage } from "@/lib/canvas-utils";
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -19,8 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canvas = await getPublishedCanvasBySlug(slug);
   if (!canvas) return { title: "Not Found" };
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const shareUrl = `${appUrl}/c/${slug}`;
+  const shareUrl = canvasShareUrl(slug);
   const ogImage = findFirstProductImage(canvas.blocks);
 
   return {
@@ -49,8 +48,7 @@ export default async function PublicCanvasPage({ params }: PageProps) {
 
   if (!canvas) notFound();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const shareUrl = `${appUrl}/c/${slug}`;
+  const shareUrl = canvasShareUrl(slug);
 
   return (
     <PublicCanvasView

@@ -3,6 +3,7 @@
 import { BlockStream } from "@/components/canvas/BlockStream";
 import { InsertMenu } from "@/components/canvas/InsertMenu";
 import { ProductFormDialog } from "@/components/canvas/ProductFormDialog";
+import { PublishSuccessDialog } from "@/components/canvas/PublishSuccessDialog";
 import {
   ViewModeToggle,
   type ViewMode,
@@ -149,6 +150,13 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
           onChange={editor.handleProductDataChange}
         />
       )}
+
+      <PublishSuccessDialog
+        open={editor.publishSuccessOpen}
+        onOpenChange={editor.setPublishSuccessOpen}
+        slug={editor.canvas.slug}
+        title={editor.title || editor.canvas.title}
+      />
     </div>
   );
 }

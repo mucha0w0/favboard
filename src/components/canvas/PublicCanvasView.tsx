@@ -3,7 +3,7 @@
 import { BlockStream } from "@/components/canvas/BlockStream";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { countProducts } from "@/lib/canvas-utils";
+import { canvasTweetIntentUrl, countProducts } from "@/lib/canvas-utils";
 import { type Canvas } from "@/lib/types";
 import { Share2 } from "lucide-react";
 
@@ -19,9 +19,11 @@ export function PublicCanvasView({
   isDraftPreview = false,
 }: PublicCanvasViewProps) {
   function handleShare() {
-    const text = `${canvas.title} — Favboard`;
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
-    window.open(twitterUrl, "_blank", "noopener,noreferrer");
+    window.open(
+      canvasTweetIntentUrl(canvas.title, shareUrl),
+      "_blank",
+      "noopener,noreferrer",
+    );
   }
 
   const updatedDate = new Date(canvas.updated_at).toLocaleDateString("ja-JP", {

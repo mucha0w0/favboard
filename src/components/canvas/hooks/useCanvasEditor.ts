@@ -47,6 +47,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   >(undefined);
   const [isNewBlock, setIsNewBlock] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [publishSuccessOpen, setPublishSuccessOpen] = useState(false);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const productPersistTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -318,6 +319,8 @@ export function useCanvasEditor(initialCanvas: Canvas) {
       setError(
         nextPublished ? "公開に失敗しました" : "非公開に失敗しました",
       );
+    } else if (nextPublished) {
+      setPublishSuccessOpen(true);
     }
     setPublishing(false);
   }
@@ -343,6 +346,8 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     isNewBlock,
     dialogOpen,
     setDialogOpen,
+    publishSuccessOpen,
+    setPublishSuccessOpen,
     focusBlockId,
     isDirty,
     persist,

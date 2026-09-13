@@ -36,3 +36,22 @@ export function normalizeCanvas(canvas: Canvas): Canvas {
     blocks: migrateCanvasBlocks(canvas.blocks),
   };
 }
+
+export function canvasPublicPath(slug: string): string {
+  return `/c/${slug}`;
+}
+
+export function canvasShareUrl(slug: string, origin?: string): string {
+  const base = (
+    origin ??
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000")
+  ).replace(/\/$/, "");
+  return `${base}${canvasPublicPath(slug)}`;
+}
+
+export function canvasTweetIntentUrl(title: string, shareUrl: string): string {
+  const text = `${title} — Favboard`;
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+}

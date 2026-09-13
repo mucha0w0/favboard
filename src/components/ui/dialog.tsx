@@ -9,6 +9,7 @@ interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  titleClassName?: string;
   children: ReactNode;
   className?: string;
 }
@@ -17,6 +18,7 @@ export function Dialog({
   open,
   onOpenChange,
   title,
+  titleClassName,
   children,
   className,
 }: DialogProps) {
@@ -51,8 +53,11 @@ export function Dialog({
         aria-modal
         aria-labelledby="dialog-title"
       >
-        <div className="flex shrink-0 items-center justify-between px-5 py-4">
-          <h2 id="dialog-title" className="text-base font-medium text-stone-900">
+        <div className="flex shrink-0 items-start justify-between gap-3 px-5 py-4">
+          <h2
+            id="dialog-title"
+            className={cn("text-base font-medium text-stone-900", titleClassName)}
+          >
             {title}
           </h2>
           <Button
