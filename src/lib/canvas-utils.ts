@@ -16,18 +16,28 @@ export function countProducts(blocks: Block[]): number {
   }, 0);
 }
 
+/** ネストした Bento 子を含めて商品画像 URL を集める */
+export function collectProductImages(blocks: Block[], limit = 1): string[] {
+  const images: string[] = [];
+
+  const visit = (items: Block[]) => {
+    for (const block of items) {
+      if (images.length >= limit) return;
+      if (block.type === "product" && block.data.image_url) {
+        images.push(block.data.image_url);
+      } else if (block.type === "bento") {
+        visit(block.data.children ?? []);
+      }
+    }
+  };
+
+  visit(blocks);
+  return images;
+}
+
 /** ネストした Bento 子を含めて最初の商品画像を探す */
 export function findFirstProductImage(blocks: Block[]): string | undefined {
-  for (const block of blocks) {
-    if (block.type === "product" && block.data.image_url) {
-      return block.data.image_url;
-    }
-    if (block.type === "bento") {
-      const nested = findFirstProductImage(block.data.children ?? []);
-      if (nested) return nested;
-    }
-  }
-  return undefined;
+  return collectProductImages(blocks, 1)[0];
 }
 
 export function normalizeCanvas(canvas: Canvas): Canvas {

@@ -4,7 +4,7 @@ import {
   getCanvasBySlugForView,
   getPublishedCanvasBySlug,
 } from "@/lib/canvas-service";
-import { canvasShareUrl, findFirstProductImage } from "@/lib/canvas-utils";
+import { canvasShareUrl } from "@/lib/canvas-utils";
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -20,7 +20,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!canvas) return { title: "Not Found" };
 
   const shareUrl = canvasShareUrl(slug);
-  const ogImage = findFirstProductImage(canvas.blocks);
 
   return {
     title: canvas.title,
@@ -29,14 +28,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: canvas.title,
       description: "Favboard — 好きを集めるビジュアルボード",
       url: shareUrl,
+      siteName: "Favboard",
+      locale: "ja_JP",
       type: "website",
-      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
     twitter: {
-      card: ogImage ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: canvas.title,
       description: "Favboard（ファブボード）",
-      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }

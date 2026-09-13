@@ -25,9 +25,7 @@ export function SiteFooter({ className }: SiteFooterProps) {
         </div>
         <div className="space-y-2 sm:text-right">
           <p className="text-xs leading-relaxed text-stone-400">
-            公式ページへのリンクのみ。
-            <br />
-            ねだり・代払い要素はありません。
+            好きなものを、美しく並べて公開。
           </p>
           <p className="text-[11px] text-stone-400">
             © {new Date().getFullYear()} Favboard
