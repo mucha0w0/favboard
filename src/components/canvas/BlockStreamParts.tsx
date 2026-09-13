@@ -1,16 +1,10 @@
 "use client";
 
 import { type Block, type BlockData, type TopLevelBlockType } from "@/lib/types";
-import {
-  ArrowDown,
-  ArrowUp,
-  GripVertical,
-  MoreHorizontal,
-  Trash2,
-} from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { BlockRenderer } from "./BlockRenderer";
 
 export interface BlockStreamShellProps {
@@ -66,7 +60,7 @@ export function BlockPreview({ block }: { block: Block }) {
 interface BlockShellCommonProps {
   block: Block;
   className?: string;
-  /** When false, hide grips, menus, and pass read-only to BlockRenderer. */
+  /** When false, hide grips, delete controls, and pass read-only to BlockRenderer. */
   editable?: boolean;
   onEditBlock?: (
     block: Block,
@@ -83,10 +77,6 @@ interface BlockShellCommonProps {
   onUpdateBento?: (bentoId: string, data: Partial<BlockData>) => void;
   onBentoChildBlur?: (bentoId: string, childId: string) => void;
   onPersistBento?: (bentoId: string) => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
 }
 
 function GripSlot({
@@ -213,13 +203,7 @@ function BlockItem({
   onUpdateBento,
   onBentoChildBlur,
   onPersistBento,
-  onMoveUp,
-  onMoveDown,
-  canMoveUp,
-  canMoveDown,
 }: BlockShellCommonProps & { fullWidth?: boolean }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   if (block.type === "product") {
     return null;
   }
@@ -229,7 +213,6 @@ function BlockItem({
     const label = TYPE_LABELS[block.type as TopLevelBlockType] ?? "ブロック";
     if (!confirm(`この${label}を削除しますか？`)) return;
     onDeleteBlock(block.id);
-    setMenuOpen(false);
   }
 
   const content = (
@@ -257,67 +240,21 @@ function BlockItem({
     <>
       <div className={fullWidth ? "w-full" : "min-w-0 w-full"}>{content}</div>
 
-      {editable && (
+      {editable && onDeleteBlock && (
         <div
           className={`absolute z-10 ${fullWidth ? "right-0 top-1/2 -translate-y-1/2" : "right-0 top-1"}`}
         >
           <button
             type="button"
-            className="p-1.5 text-stone-300 opacity-0 transition-opacity hover:text-stone-600 group-hover/block:opacity-100 data-[open=true]:opacity-100"
-            data-open={menuOpen}
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="操作メニュー"
+            className="p-1.5 text-stone-300 opacity-0 transition-opacity hover:text-red-500 group-hover/block:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
+            aria-label="削除"
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
-          {menuOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setMenuOpen(false)}
-              />
-              <div
-                className={`menu-float absolute right-0 z-20 min-w-[140px] py-1 ${
-                  fullWidth ? "top-full mt-1" : "top-8"
-                }`}
-              >
-                <button
-                  type="button"
-                  disabled={!canMoveUp}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-600 transition-colors hover:text-stone-900 disabled:opacity-40"
-                  onClick={() => {
-                    onMoveUp();
-                    setMenuOpen(false);
-                  }}
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                  上に移動
-                </button>
-                <button
-                  type="button"
-                  disabled={!canMoveDown}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-600 transition-colors hover:text-stone-900 disabled:opacity-40"
-                  onClick={() => {
-                    onMoveDown();
-                    setMenuOpen(false);
-                  }}
-                >
-                  <ArrowDown className="h-3.5 w-3.5" />
-                  下に移動
-                </button>
-                {onDeleteBlock && (
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:text-red-700"
-                    onClick={handleDelete}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    削除
-                  </button>
-                )}
-              </div>
-            </>
-          )}
         </div>
       )}
     </>

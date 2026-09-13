@@ -136,20 +136,6 @@ export function BlockStreamEditor({
     }
   }, []);
 
-  const moveBlock = useCallback(
-    (blockId: string, direction: "up" | "down") => {
-      const reorder = onReorderRef.current;
-      if (!reorder) return;
-      const current = activeId ? orderedBlocksRef.current : blocksRef.current;
-      const index = current.findIndex((b) => b.id === blockId);
-      if (index === -1) return;
-      const newIndex = direction === "up" ? index - 1 : index + 1;
-      if (newIndex < 0 || newIndex >= current.length) return;
-      reorder(arrayMove(current, index, newIndex));
-    },
-    [activeId],
-  );
-
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const id = event.active.id as string;
     orderedBlocksRef.current = blocksRef.current;
@@ -216,7 +202,7 @@ export function BlockStreamEditor({
 
         <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div ref={listContainerRef} className="flex flex-col">
-            {displayBlocks.map((block, index) => (
+            {displayBlocks.map((block) => (
               <SortableBlockShell
                 key={block.id}
                 block={block}
@@ -228,10 +214,6 @@ export function BlockStreamEditor({
                 onUpdateBento={onUpdateBento}
                 onBentoChildBlur={onBentoChildBlur}
                 onPersistBento={onPersistBento}
-                onMoveUp={() => moveBlock(block.id, "up")}
-                onMoveDown={() => moveBlock(block.id, "down")}
-                canMoveUp={index > 0}
-                canMoveDown={index < displayBlocks.length - 1}
               />
             ))}
             {dragSpacerHeight > 0 ? (

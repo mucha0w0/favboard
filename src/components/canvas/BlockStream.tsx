@@ -66,7 +66,7 @@ function BlockStreamView({
       )}
 
       <div className="flex flex-col">
-        {blocks.map((block, index) => (
+        {blocks.map((block) => (
           <StaticBlockShell
             key={block.id}
             block={block}
@@ -79,10 +79,6 @@ function BlockStreamView({
             onUpdateBento={onUpdateBento}
             onBentoChildBlur={onBentoChildBlur}
             onPersistBento={onPersistBento}
-            onMoveUp={() => {}}
-            onMoveDown={() => {}}
-            canMoveUp={index > 0}
-            canMoveDown={index < blocks.length - 1}
           />
         ))}
       </div>
