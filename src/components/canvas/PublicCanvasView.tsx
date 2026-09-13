@@ -2,11 +2,12 @@
 
 import { BlockStream } from "@/components/canvas/BlockStream";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { canvasTweetIntentUrl } from "@/lib/canvas-utils";
 import { profileInitials } from "@/lib/profile";
 import { type Canvas, type Profile } from "@/lib/types";
 import { Share2 } from "lucide-react";
+import Link from "next/link";
 
 interface PublicCanvasViewProps {
   canvas: Canvas;
@@ -35,7 +36,11 @@ export function PublicCanvasView({
         actions={
           isDraftPreview ? (
             <span className="text-xs text-stone-400">下書きプレビュー</span>
-          ) : undefined
+          ) : (
+            <Link href="/login" className={buttonVariants({ size: "sm" })}>
+              はじめる
+            </Link>
+          )
         }
       />
 
@@ -47,21 +52,23 @@ export function PublicCanvasView({
                 Draft Preview
               </p>
             )}
-            <h1 className="ja-heading text-[1.75rem] font-bold leading-[1.35] text-stone-900 sm:text-[2.25rem]">
-              {canvas.title}
-            </h1>
+            <div className="flex items-start gap-3">
+              <h1 className="ja-heading min-w-0 text-[1.75rem] font-bold leading-[1.35] text-stone-900 sm:text-[2.25rem]">
+                {canvas.title}
+              </h1>
+              {!isDraftPreview && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleShare}
+                  className="mt-1 shrink-0 text-stone-600"
+                >
+                  <Share2 className="h-4 w-4" />
+                  シェア
+                </Button>
+              )}
+            </div>
             {creator && <CreatorByline profile={creator} />}
-            {!isDraftPreview && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleShare}
-                className="mt-4 text-stone-600"
-              >
-                <Share2 className="h-4 w-4" />
-                シェア
-              </Button>
-            )}
           </header>
 
           {canvas.blocks.length === 0 ? (
