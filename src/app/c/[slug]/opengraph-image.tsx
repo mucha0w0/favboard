@@ -6,7 +6,7 @@ export const alt = "Favboard";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 export const runtime = "nodejs";
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function Image({
   params,

@@ -51,6 +51,12 @@ export function canvasPublicPath(slug: string): string {
   return `/c/${slug}`;
 }
 
+export function canvasOgImagePath(slug: string, cacheKey?: string): string {
+  const path = `${canvasPublicPath(slug)}/opengraph-image`;
+  if (!cacheKey) return path;
+  return `${path}?v=${encodeURIComponent(cacheKey)}`;
+}
+
 export function canvasShareUrl(slug: string, origin?: string): string {
   const base = (
     origin ??

@@ -156,6 +156,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         onOpenChange={editor.setPublishSuccessOpen}
         slug={editor.canvas.slug}
         title={editor.title || editor.canvas.title}
+        updatedAt={editor.canvas.updated_at}
       />
     </div>
   );

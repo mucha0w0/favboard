@@ -3,6 +3,7 @@
 import { Dialog } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
+  canvasOgImagePath,
   canvasPublicPath,
   canvasShareUrl,
   canvasTweetIntentUrl,
@@ -17,6 +18,7 @@ interface PublishSuccessDialogProps {
   onOpenChange: (open: boolean) => void;
   slug: string;
   title: string;
+  updatedAt?: string;
 }
 
 function XLogo({ className }: { className?: string }) {
@@ -37,20 +39,26 @@ export function PublishSuccessDialog({
   onOpenChange,
   slug,
   title,
+  updatedAt,
 }: PublishSuccessDialogProps) {
   const publicPath = canvasPublicPath(slug);
+  const ogSrc = canvasOgImagePath(slug, updatedAt);
   const [shareUrl, setShareUrl] = useState(publicPath);
   const [copied, setCopied] = useState(false);
+  const [previewState, setPreviewState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setShareUrl(canvasShareUrl(slug));
     setCopied(false);
+    setPreviewState("loading");
     return () => {
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
     };
-  }, [open, slug]);
+  }, [open, slug, updatedAt]);
 
   async function handleCopy() {
     try {
@@ -77,11 +85,41 @@ export function PublishSuccessDialog({
       onOpenChange={onOpenChange}
       title="リストを公開しました！"
       titleClassName="text-lg font-semibold tracking-tight"
-      className="max-w-md"
     >
       <p className="text-pretty text-sm leading-relaxed text-stone-500">
         誰でもこのURLから見られるようになりました。
       </p>
+
+      {previewState !== "error" && (
+        <Link
+          href={publicPath}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative mt-5 block overflow-hidden bg-stone-100"
+        >
+          {previewState === "loading" && (
+            <div
+              className="absolute inset-0 animate-pulse bg-stone-100"
+              aria-hidden
+            />
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            key={ogSrc}
+            src={ogSrc}
+            alt={`${title} のシェア画像`}
+            width={1200}
+            height={630}
+            decoding="async"
+            onLoad={() => setPreviewState("ready")}
+            onError={() => setPreviewState("error")}
+            className={cn(
+              "aspect-1200/630 w-full object-cover transition-opacity duration-200",
+              previewState === "ready" ? "opacity-100" : "opacity-0",
+            )}
+          />
+        </Link>
+      )}
 
       <div className="mt-5 flex items-center gap-2 border-b border-stone-200 pb-2">
         <Link
