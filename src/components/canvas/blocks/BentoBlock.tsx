@@ -13,7 +13,7 @@ import {
 } from "@/lib/bento";
 import type { Block, BlockData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { AlignLeft, Package, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BentoChildChrome } from "../bento/BentoChildChrome";
 import { BentoChildRenderer } from "../bento/BentoChildRenderer";
@@ -188,27 +188,23 @@ export function BentoBlock({
   return (
     <div>
       {editable && (
-        <div className="mb-2 flex flex-wrap items-center gap-4">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="h-auto gap-1 rounded-none border-b border-stone-300 px-0 pb-0.5 text-stone-400 hover:bg-transparent hover:border-stone-500 hover:text-stone-600"
             onClick={() => handleAddChild("product")}
           >
-            <Plus className="h-3 w-3" />
-            <Package className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
             商品
           </Button>
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="h-auto gap-1 rounded-none border-b border-stone-300 px-0 pb-0.5 text-stone-400 hover:bg-transparent hover:border-stone-500 hover:text-stone-600"
             onClick={() => handleAddChild("text")}
           >
-            <Plus className="h-3 w-3" />
-            <AlignLeft className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
             テキスト
           </Button>
         </div>
