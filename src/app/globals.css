@@ -16,14 +16,18 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), var(--font-noto-sans-jp), sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  overflow-wrap: anywhere;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -53,15 +57,32 @@ body {
   text-wrap: balance;
 }
 
+.ja-copy {
+  letter-spacing: 0.02em;
+  line-height: 1.85;
+}
+
+.ja-heading {
+  letter-spacing: 0.04em;
+  line-height: 1.45;
+}
+
 .document-body {
   font-size: 1rem;
   line-height: 1.9;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
   color: #44403c;
 }
 
 .document-body .block-heading {
   margin-top: 2.5rem;
   margin-bottom: 0.75rem;
+}
+
+.document-body .block-heading :is(h1, h2, h3, input) {
+  letter-spacing: 0.04em;
+  line-height: 1.45;
 }
 
 .document-body .block-heading:first-child {

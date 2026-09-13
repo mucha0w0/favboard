@@ -63,7 +63,7 @@ export function PublicCanvasView({
             <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
               {isDraftPreview ? "Draft Preview" : "Favboard"}
             </p>
-            <h1 className="mt-3 text-[1.75rem] font-bold leading-tight tracking-tight text-stone-900 sm:text-[2.25rem]">
+            <h1 className="ja-heading mt-3 text-[1.75rem] font-bold leading-[1.35] text-stone-900 sm:text-[2.25rem]">
               {canvas.title}
             </h1>
             {creator && <CreatorByline profile={creator} />}
@@ -74,7 +74,7 @@ export function PublicCanvasView({
           </header>
 
           {canvas.blocks.length === 0 ? (
-            <p className="py-16 text-center text-[15px] text-stone-400">
+            <p className="ja-copy py-16 text-center text-[15px] text-stone-400">
               コンテンツはまだありません
             </p>
           ) : (

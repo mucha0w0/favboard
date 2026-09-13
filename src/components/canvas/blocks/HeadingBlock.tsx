@@ -35,13 +35,13 @@ export function HeadingBlock({
         onChange={(e) => onUpdate?.(e.target.value)}
         onBlur={onBlur}
         placeholder="見出し"
-        className="m-0 w-full border-none bg-transparent p-0 text-[1.375rem] font-bold leading-snug tracking-tight text-stone-900 placeholder:text-stone-300 outline-none sm:text-[1.5rem]"
+        className="ja-heading m-0 w-full border-none bg-transparent p-0 text-[1.375rem] font-bold text-stone-900 placeholder:text-stone-300 outline-none sm:text-[1.5rem]"
       />
     );
   }
 
   return (
-    <h2 className="m-0 text-[1.375rem] font-bold leading-snug tracking-tight text-stone-900 sm:text-[1.5rem]">
+    <h2 className="ja-heading m-0 text-[1.375rem] font-bold text-stone-900 sm:text-[1.5rem]">
       {block.data.text || "見出し"}
     </h2>
   );

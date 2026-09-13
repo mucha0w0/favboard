@@ -55,13 +55,13 @@ export default async function HomePage() {
           <p className="mt-3 text-sm tracking-wide text-stone-400">
             ファブボード
           </p>
-          <p className="mt-10 text-balance text-xl font-medium leading-snug tracking-tight text-stone-800 sm:text-2xl">
+          <p className="ja-heading mt-10 text-balance text-xl font-medium text-stone-800 sm:text-2xl">
             好きを、ひとつのボードに。
           </p>
-          <p className="mt-8 max-w-xl text-[15px] leading-relaxed text-stone-500">
+          <p className="ja-copy mt-8 max-w-xl text-[15px] text-stone-500">
             見出し・テキスト・区切り線と、商品を並べる Bento グリッドで、好きなものを集めて公開。
           </p>
-          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-stone-500">
+          <p className="ja-copy mt-4 max-w-xl text-[15px] text-stone-500">
             あなたの好きを、そのまま見せる場所。
           </p>
           <Link href={startHref} className="mt-14 inline-block">
@@ -72,7 +72,7 @@ export default async function HomePage() {
         </section>
 
         <section className="mx-auto max-w-3xl px-8 py-28 sm:px-12 sm:py-40">
-          <h2 className="text-lg font-semibold tracking-tight text-stone-900">
+          <h2 className="ja-heading text-lg font-semibold text-stone-900">
             シンプルに、美しく
           </h2>
           <dl className="mt-16 grid gap-16 sm:grid-cols-3 sm:gap-12">
@@ -95,10 +95,10 @@ export default async function HomePage() {
         </section>
 
         <section className="mx-auto max-w-3xl px-8 py-28 text-center sm:px-12 sm:py-40">
-          <h2 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
+          <h2 className="ja-heading text-2xl font-semibold text-stone-900 sm:text-3xl">
             Favboard ではじめよう
           </h2>
-          <p className="mx-auto mt-6 max-w-sm text-sm leading-relaxed text-stone-500">
+          <p className="ja-copy mx-auto mt-6 max-w-sm text-sm text-stone-500">
             Xアカウントでログインすると、リストの作成と公開ができます。
           </p>
           <Link href={startHref} className="mt-12 inline-block">
@@ -127,8 +127,8 @@ function Feature({
         {number}
       </dt>
       <dd className="mt-4">
-        <h3 className="font-medium text-stone-900">{title}</h3>
-        <p className="mt-3 text-sm leading-relaxed text-stone-500">
+        <h3 className="ja-heading font-medium text-stone-900">{title}</h3>
+        <p className="ja-copy mt-3 text-sm text-stone-500">
           {description}
         </p>
       </dd>

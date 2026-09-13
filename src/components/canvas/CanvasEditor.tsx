@@ -23,7 +23,7 @@ interface CanvasEditorProps {
 }
 
 const TITLE_CLASS =
-  "mb-10 w-full border-none bg-transparent text-[1.75rem] font-bold leading-tight tracking-tight text-stone-900 outline-none sm:text-[2rem]";
+  "ja-heading mb-10 w-full border-none bg-transparent text-[1.75rem] font-bold leading-[1.35] text-stone-900 outline-none sm:text-[2rem]";
 
 export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   const editor = useCanvasEditor(initialCanvas);
