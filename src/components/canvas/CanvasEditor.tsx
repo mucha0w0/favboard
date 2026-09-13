@@ -8,6 +8,7 @@ import {
   type ViewMode,
 } from "@/components/canvas/ViewModeToggle";
 import { useCanvasEditor } from "@/components/canvas/hooks/useCanvasEditor";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="flex min-h-screen flex-col bg-stone-50">
       <SiteHeader
         onBrandClick={editor.handleBackClick}
         center={
@@ -66,7 +67,7 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
         }
       />
 
-      <main className="px-4 py-8 sm:px-6">
+      <main className="flex-1 px-4 py-8 sm:px-6">
         <div className="content-column min-h-[60vh] py-6 sm:py-10">
           {editor.error && (
             <Alert variant="error" className="mb-8">
@@ -112,6 +113,8 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
           )}
         </div>
       </main>
+
+      <SiteFooter />
 
       {isEditing && editor.editingBlock?.type === "product" && (
         <ProductFormDialog

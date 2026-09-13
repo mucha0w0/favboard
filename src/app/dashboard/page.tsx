@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountSettings } from "@/components/dashboard/AccountSettings";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="flex min-h-screen flex-col bg-stone-50">
       <SiteHeader
         actions={
           <button
@@ -129,7 +130,7 @@ export default function DashboardPage() {
         }
       />
 
-      <main className="mx-auto max-w-4xl px-5 py-10 sm:px-6 sm:py-14">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10 sm:px-6 sm:py-14">
         {profile ? (
           <AccountSettings profile={profile} onSaved={setProfile} />
         ) : (
@@ -228,6 +229,8 @@ export default function DashboardPage() {
           </ul>
         )}
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

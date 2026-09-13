@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { getOrCreateProfile } from "@/lib/profile-service";
@@ -29,7 +30,7 @@ export default async function HomePage() {
   const startHref = userId ? "/dashboard" : "/login";
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="flex min-h-screen flex-col bg-stone-50">
       <SiteHeader
         actions={
           userId ? (
@@ -47,7 +48,7 @@ export default async function HomePage() {
         }
       />
 
-      <main>
+      <main className="flex-1">
         <section className="mx-auto max-w-3xl px-5 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
           <h1 className="animate-fade-up text-balance text-4xl font-semibold leading-[1.15] tracking-tight text-stone-900 sm:text-5xl">
             Favboard
@@ -110,13 +111,9 @@ export default async function HomePage() {
             </Button>
           </Link>
         </section>
-
-        <footer className="mx-auto max-w-3xl px-5 py-8 sm:px-6">
-          <p className="text-xs text-stone-400">
-            Favboard · 公式ページへのリンクのみ。ねだり・代払い要素はありません。
-          </p>
-        </footer>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
