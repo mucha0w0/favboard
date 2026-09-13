@@ -14,7 +14,8 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { type Canvas } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { EyeOff, Globe, Loader2 } from "lucide-react";
+import { ExternalLink, EyeOff, Globe, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 interface CanvasEditorProps {
@@ -44,32 +45,45 @@ export function CanvasEditor({ canvas: initialCanvas }: CanvasEditorProps) {
           <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
         }
         actions={
-          <Button
-            size="sm"
-            variant={editor.canvas.is_published ? "default" : "outline"}
-            onClick={editor.handleTogglePublish}
-            disabled={editor.publishing || editor.saving}
-            aria-pressed={editor.canvas.is_published}
-            title={
-              editor.canvas.is_published
-                ? "クリックで非公開にする"
-                : "クリックで公開する"
-            }
-          >
-            {editor.publishing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : editor.canvas.is_published ? (
-              <>
-                <Globe className="h-4 w-4" />
-                公開中
-              </>
-            ) : (
-              <>
-                <EyeOff className="h-4 w-4" />
-                非公開
-              </>
+          <>
+            {editor.canvas.is_published && (
+              <Link
+                href={`/c/${editor.canvas.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center justify-center gap-2 rounded-full px-3 text-xs font-medium text-stone-600 transition-all duration-200 hover:bg-stone-100/80 hover:text-stone-900"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only">公開ページ</span>
+              </Link>
             )}
-          </Button>
+            <Button
+              size="sm"
+              variant={editor.canvas.is_published ? "default" : "outline"}
+              onClick={editor.handleTogglePublish}
+              disabled={editor.publishing || editor.saving}
+              aria-pressed={editor.canvas.is_published}
+              title={
+                editor.canvas.is_published
+                  ? "クリックで非公開にする"
+                  : "クリックで公開する"
+              }
+            >
+              {editor.publishing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : editor.canvas.is_published ? (
+                <>
+                  <Globe className="h-4 w-4" />
+                  公開中
+                </>
+              ) : (
+                <>
+                  <EyeOff className="h-4 w-4" />
+                  非公開
+                </>
+              )}
+            </Button>
+          </>
         }
       />
 
