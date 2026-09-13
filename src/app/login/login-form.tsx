@@ -74,6 +74,24 @@ export function LoginForm() {
           )}
           Xでログイン
         </Button>
+        <p className="mt-6 text-center text-[11px] leading-relaxed text-stone-400">
+          ログインした時点で
+          <br />
+          <Link
+            href="/terms"
+            className="underline decoration-stone-300 underline-offset-2 transition-colors hover:text-stone-600"
+          >
+            利用規約
+          </Link>
+          と
+          <Link
+            href="/privacy"
+            className="underline decoration-stone-300 underline-offset-2 transition-colors hover:text-stone-600"
+          >
+            プライバシーポリシー
+          </Link>
+          に同意したものとみなされます。
+        </p>
       </div>
     </div>
   );

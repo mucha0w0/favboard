@@ -16,6 +16,7 @@ import {
 } from "@/lib/profile";
 import { type Profile } from "@/lib/types";
 import { Loader2, Save, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState } from "react";
 
 interface AccountSettingsProps {
@@ -102,9 +103,19 @@ export function AccountSettings({ profile, onSaved }: AccountSettingsProps) {
 
   return (
     <section className="mb-12 border-b border-stone-200/80 pb-10 sm:mb-14">
-      <h2 className="mb-6 text-lg font-semibold text-stone-900">
+      <h2 className="mb-2 text-lg font-semibold text-stone-900">
         プロフィール
       </h2>
+      <p className="mb-6 text-xs leading-relaxed text-stone-400">
+        表示名、ID、プロフィール画像は公開ボードに表示されます。詳しくは
+        <Link
+          href="/privacy"
+          className="underline decoration-stone-300 underline-offset-2 transition-colors hover:text-stone-600"
+        >
+          プライバシーポリシー
+        </Link>
+        。
+      </p>
       <form
         className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8"
         onSubmit={(e) => {
