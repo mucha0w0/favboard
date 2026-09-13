@@ -27,16 +27,22 @@ function isCanvasLimitError(error: { code?: string; message?: string }): boolean
   );
 }
 
-export async function getAuthUserId(): Promise<string | null> {
+/** One client per request so getUser() refresh is visible to subsequent RLS queries. */
+async function getServerClient() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user?.id ?? null;
+  return { supabase, userId: user?.id ?? null };
+}
+
+export async function getAuthUserId(): Promise<string | null> {
+  const { userId } = await getServerClient();
+  return userId;
 }
 
 export async function listCanvases(userId: string): Promise<Canvas[]> {
-  const supabase = await createClient();
+  const { supabase } = await getServerClient();
   const { data, error } = await supabase
     .from("canvases")
     .select("*")
@@ -51,7 +57,7 @@ export async function createCanvas(
   userId: string,
   title: string,
 ): Promise<Canvas> {
-  const supabase = await createClient();
+  const { supabase } = await getServerClient();
   const { count, error: countError } = await supabase
     .from("canvases")
     .select("id", { count: "exact", head: true })
@@ -87,30 +93,54 @@ export async function getCanvasForView(
   id: string,
   userId: string | null,
 ): Promise<Canvas | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const { supabase, userId: sessionUserId } = await getServerClient();
+  const viewerId = sessionUserId ?? userId;
+  const { data, error } = await supabase
     .from("canvases")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
+  if (error) throw new Error(error.message);
   if (!data) return null;
   const canvas = data as Canvas;
-  if (!canvas.is_published && canvas.user_id !== userId) return null;
+  if (!canvas.is_published && canvas.user_id !== viewerId) return null;
   return normalizeCanvas(canvas);
+}
+
+export async function getCanvasForEdit(id: string): Promise<{
+  userId: string | null;
+  canvas: Canvas | null;
+}> {
+  const { supabase, userId } = await getServerClient();
+  if (!userId) return { userId: null, canvas: null };
+
+  const { data, error } = await supabase
+    .from("canvases")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return { userId, canvas: null };
+
+  const canvas = data as Canvas;
+  if (canvas.user_id !== userId) return { userId, canvas: null };
+  return { userId, canvas: normalizeCanvas(canvas) };
 }
 
 export async function getPublishedCanvasBySlug(
   slug: string,
 ): Promise<Canvas | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const { supabase } = await getServerClient();
+  const { data, error } = await supabase
     .from("canvases")
     .select("*")
     .eq("slug", slug)
     .eq("is_published", true)
-    .single();
+    .maybeSingle();
 
+  if (error) throw new Error(error.message);
   return data ? normalizeCanvas(data as Canvas) : null;
 }
 
@@ -118,22 +148,23 @@ export async function getCanvasBySlugForView(
   slug: string,
   userId: string | null,
 ): Promise<Canvas | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const { supabase, userId: sessionUserId } = await getServerClient();
+  const viewerId = sessionUserId ?? userId;
+  const { data, error } = await supabase
     .from("canvases")
     .select("*")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
 
+  if (error) throw new Error(error.message);
   if (!data) return null;
   const canvas = data as Canvas;
-  if (!canvas.is_published && canvas.user_id !== userId) return null;
+  if (!canvas.is_published && canvas.user_id !== viewerId) return null;
   return normalizeCanvas(canvas);
 }
 
 export async function updateCanvas(
   id: string,
-  userId: string,
   updates: Partial<Pick<Canvas, "title" | "blocks" | "is_published">>,
 ): Promise<Canvas | null> {
   const normalizedUpdates = {
@@ -143,24 +174,25 @@ export async function updateCanvas(
       : {}),
   };
 
-  const supabase = await createClient();
+  const { supabase, userId } = await getServerClient();
+  if (!userId) throw new CanvasError("Unauthorized", 401);
+
   const { data, error } = await supabase
     .from("canvases")
     .update(normalizedUpdates)
     .eq("id", id)
     .eq("user_id", userId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
   return data ? normalizeCanvas(data as Canvas) : null;
 }
 
-export async function deleteCanvas(
-  id: string,
-  userId: string,
-): Promise<boolean> {
-  const supabase = await createClient();
+export async function deleteCanvas(id: string): Promise<boolean> {
+  const { supabase, userId } = await getServerClient();
+  if (!userId) throw new CanvasError("Unauthorized", 401);
+
   const { error } = await supabase
     .from("canvases")
     .delete()

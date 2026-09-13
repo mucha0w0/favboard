@@ -1,6 +1,5 @@
 import { PublicCanvasView } from "@/components/canvas/PublicCanvasView";
 import {
-  getAuthUserId,
   getCanvasBySlugForView,
   getPublishedCanvasBySlug,
 } from "@/lib/canvas-service";
@@ -18,34 +17,42 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const canvas = await getPublishedCanvasBySlug(slug);
-  if (!canvas) return { title: "Not Found" };
+  try {
+    const canvas = await getPublishedCanvasBySlug(slug);
+    if (!canvas) return { title: "Not Found" };
 
-  const shareUrl = canvasShareUrl(slug);
+    const shareUrl = canvasShareUrl(slug);
 
-  return {
-    title: canvas.title,
-    description: `${canvas.title} — Favboard（ファブボード）`,
-    openGraph: {
+    return {
       title: canvas.title,
-      description: "Favboard — 好きを集めるビジュアルボード",
-      url: shareUrl,
-      siteName: "Favboard",
-      locale: "ja_JP",
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: canvas.title,
-      description: "Favboard（ファブボード）",
-    },
-  };
+      description: `${canvas.title} — Favboard（ファブボード）`,
+      openGraph: {
+        title: canvas.title,
+        description: "Favboard — 好きを集めるビジュアルボード",
+        url: shareUrl,
+        siteName: "Favboard",
+        locale: "ja_JP",
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: canvas.title,
+        description: "Favboard（ファブボード）",
+      },
+    };
+  } catch {
+    return { title: "Not Found" };
+  }
 }
 
 export default async function PublicCanvasPage({ params }: PageProps) {
   const { slug } = await params;
-  const userId = await getAuthUserId();
-  const canvas = await getCanvasBySlugForView(slug, userId);
+  let canvas = null;
+  try {
+    canvas = await getCanvasBySlugForView(slug, null);
+  } catch {
+    notFound();
+  }
 
   if (!canvas) notFound();
 

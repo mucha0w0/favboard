@@ -1,6 +1,6 @@
 import {
+  CanvasError,
   deleteCanvas,
-  getAuthUserId,
   getCanvasForView,
   updateCanvas,
 } from "@/lib/canvas-service";
@@ -13,23 +13,22 @@ interface RouteParams {
 
 export async function GET(_request: Request, { params }: RouteParams) {
   const { id } = await params;
-  const userId = await getAuthUserId();
-  const canvas = await getCanvasForView(id, userId);
-
-  if (!canvas) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const canvas = await getCanvasForView(id, null);
+    if (!canvas) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json(canvas);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Server error" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json(canvas);
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   const { id } = await params;
-  const userId = await getAuthUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   let body: unknown;
   try {
@@ -50,12 +49,18 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   }
 
   try {
-    const data = await updateCanvas(id, userId, updates);
+    const data = await updateCanvas(id, updates);
     if (!data) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     return NextResponse.json(data);
   } catch (error) {
+    if (error instanceof CanvasError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Server error" },
       { status: 500 },
@@ -65,16 +70,23 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
   const { id } = await params;
-  const userId = await getAuthUserId();
 
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const ok = await deleteCanvas(id);
+    if (!ok) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof CanvasError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Server error" },
+      { status: 500 },
+    );
   }
-
-  const ok = await deleteCanvas(id, userId);
-  if (!ok) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({ success: true });
 }

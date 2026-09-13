@@ -13,7 +13,6 @@ import {
   blockDataEqual,
   blocksEqual,
 } from "@/lib/types";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type LegacyBlockData = BlockData & { comment?: string };
@@ -24,7 +23,6 @@ function stripLegacyComment(data: BlockData): BlockData {
 }
 
 export function useCanvasEditor(initialCanvas: Canvas) {
-  const router = useRouter();
   const [canvas, setCanvas] = useState(initialCanvas);
   const migratedInitial = useMemo(
     () => migrateCanvasBlocks(initialCanvas.blocks),
@@ -36,6 +34,12 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   const titleRef = useRef(title);
   const canvasRef = useRef(canvas);
   const persistSeq = useRef(0);
+  const persistQueued = useRef<{
+    nextBlocks: Block[];
+    nextTitle: string;
+    updates: Partial<Canvas>;
+  } | null>(null);
+  const persistChain = useRef(Promise.resolve(true));
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -87,7 +91,7 @@ export function useCanvasEditor(initialCanvas: Canvas) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
-  const persist = useCallback(
+  const persistNow = useCallback(
     async (
       nextBlocks: Block[],
       nextTitle: string,
@@ -109,7 +113,11 @@ export function useCanvasEditor(initialCanvas: Canvas) {
         });
 
         if (res.status === 401) {
-          router.push("/login");
+          if (seq === persistSeq.current) {
+            setError(
+              "ログインの有効期限が切れた可能性があります。ページを再読み込みしてください",
+            );
+          }
           return false;
         }
 
@@ -153,7 +161,39 @@ export function useCanvasEditor(initialCanvas: Canvas) {
         }
       }
     },
-    [canvas.id, router],
+    [canvas.id],
+  );
+
+  const persist = useCallback(
+    async (
+      nextBlocks: Block[],
+      nextTitle: string,
+      updates: Partial<Canvas> = {},
+    ): Promise<boolean> => {
+      persistQueued.current = {
+        nextBlocks,
+        nextTitle,
+        updates: { ...persistQueued.current?.updates, ...updates },
+      };
+
+      persistChain.current = persistChain.current.then(
+        async (prevOk) => {
+          const job = persistQueued.current;
+          if (!job) return prevOk;
+          persistQueued.current = null;
+          return persistNow(job.nextBlocks, job.nextTitle, job.updates);
+        },
+        async () => {
+          const job = persistQueued.current;
+          if (!job) return false;
+          persistQueued.current = null;
+          return persistNow(job.nextBlocks, job.nextTitle, job.updates);
+        },
+      );
+
+      return persistChain.current;
+    },
+    [persistNow],
   );
 
   function handleAddBlock(type: TopLevelBlockType) {
