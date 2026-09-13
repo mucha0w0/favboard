@@ -1,4 +1,5 @@
 import {
+  CanvasError,
   createCanvas,
   getAuthUserId,
   listCanvases,
@@ -35,6 +36,12 @@ export async function POST(request: Request) {
     const data = await createCanvas(userId, title);
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
+    if (error instanceof CanvasError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Server error" },
       { status: 500 },

@@ -35,6 +35,7 @@ Write-Host "Edit .env.local with your Supabase project URL and anon key," -Foreg
 Write-Host "then run migrations in Supabase SQL Editor:"
 Write-Host "  supabase/migrations/001_canvases.sql"
 Write-Host "  supabase/migrations/002_profiles.sql"
+Write-Host "  supabase/migrations/003_canvas_limit.sql"
 Write-Host ""
 Write-Host "Start dev server:" -ForegroundColor Cyan
 Write-Host "  npm run dev"

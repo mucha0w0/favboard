@@ -1,6 +1,10 @@
 import type { Block, Canvas } from "@/lib/types";
 import { migrateCanvasBlocks } from "@/lib/bento";
 
+export const MAX_CANVASES_PER_USER = 3;
+
+export const CANVAS_LIMIT_MESSAGE = `リストは1人あたり${MAX_CANVASES_PER_USER}つまでです`;
+
 /** ネストした Bento 子を含めて商品数を数える */
 export function countProducts(blocks: Block[]): number {
   return blocks.reduce((count, block) => {

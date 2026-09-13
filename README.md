@@ -23,7 +23,7 @@ npm install
 ### 2. Supabase プロジェクトの作成
 
 1. [Supabase](https://supabase.com) で新規プロジェクトを作成
-2. SQL Editor で `supabase/migrations/001_canvases.sql` と `supabase/migrations/002_profiles.sql` を実行
+2. SQL Editor で `supabase/migrations/001_canvases.sql`、`002_profiles.sql`、`003_canvas_limit.sql` を実行
 3. Authentication → Providers で Email を有効化
 4. （任意）X / Twitter ログインを使う場合は下記「X（Twitter）ログイン」を設定
 

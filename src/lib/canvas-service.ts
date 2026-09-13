@@ -1,8 +1,31 @@
 import { migrateCanvasBlocks } from "@/lib/bento";
-import { normalizeCanvas } from "@/lib/canvas-utils";
+import {
+  CANVAS_LIMIT_MESSAGE,
+  MAX_CANVASES_PER_USER,
+  normalizeCanvas,
+} from "@/lib/canvas-utils";
 import { createClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/slug";
 import { type Block, type Canvas } from "@/lib/types";
+
+export class CanvasError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "CanvasError";
+  }
+}
+
+function isCanvasLimitError(error: { code?: string; message?: string }): boolean {
+  const message = error.message ?? "";
+  return (
+    error.code === "P0001" ||
+    message.includes(CANVAS_LIMIT_MESSAGE) ||
+    /canvas.?limit/i.test(message)
+  );
+}
 
 export async function getAuthUserId(): Promise<string | null> {
   const supabase = await createClient();
@@ -29,6 +52,16 @@ export async function createCanvas(
   title: string,
 ): Promise<Canvas> {
   const supabase = await createClient();
+  const { count, error: countError } = await supabase
+    .from("canvases")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (countError) throw new Error(countError.message);
+  if ((count ?? 0) >= MAX_CANVASES_PER_USER) {
+    throw new CanvasError(CANVAS_LIMIT_MESSAGE, 403);
+  }
+
   const { data, error } = await supabase
     .from("canvases")
     .insert({
@@ -41,7 +74,12 @@ export async function createCanvas(
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isCanvasLimitError(error)) {
+      throw new CanvasError(CANVAS_LIMIT_MESSAGE, 403);
+    }
+    throw new Error(error.message);
+  }
   return normalizeCanvas(data as Canvas);
 }
 

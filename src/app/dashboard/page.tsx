@@ -5,6 +5,10 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  CANVAS_LIMIT_MESSAGE,
+  MAX_CANVASES_PER_USER,
+} from "@/lib/canvas-utils";
 import { createClient } from "@/lib/supabase/client";
 import { type Canvas, type Profile } from "@/lib/types";
 import { ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
@@ -57,7 +61,13 @@ export default function DashboardPage() {
     load();
   }, [router]);
 
+  const atLimit = canvases.length >= MAX_CANVASES_PER_USER;
+
   async function handleCreate() {
+    if (atLimit) {
+      setError(CANVAS_LIMIT_MESSAGE);
+      return;
+    }
     setCreating(true);
     setError("");
     try {
@@ -148,17 +158,28 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-lg font-semibold text-stone-900">マイリスト</h1>
             <p className="mt-1.5 text-sm text-stone-500">
-              {canvases.length} 件のリスト
+              {canvases.length} / {MAX_CANVASES_PER_USER} 件のリスト
             </p>
-          </div>
-          <Button onClick={handleCreate} disabled={creating} size="sm">
-            {creating ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Plus className="h-3.5 w-3.5" />
+            {atLimit && (
+              <p className="mt-1 text-xs text-stone-400">
+                {CANVAS_LIMIT_MESSAGE}
+              </p>
             )}
-            新規作成
-          </Button>
+          </div>
+          <span title={atLimit ? CANVAS_LIMIT_MESSAGE : undefined}>
+            <Button
+              onClick={handleCreate}
+              disabled={creating || atLimit}
+              size="sm"
+            >
+              {creating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
+              新規作成
+            </Button>
+          </span>
         </div>
 
         {error && (
