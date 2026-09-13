@@ -9,7 +9,7 @@ import {
   canvasTweetIntentUrl,
 } from "@/lib/canvas-utils";
 import { cn } from "@/lib/utils";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -83,19 +83,18 @@ export function PublishSuccessDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title="リストを公開しました！"
+      title="リストを公開しました"
       titleClassName="text-lg font-semibold tracking-tight"
+      className="max-w-xl"
+      headerClassName="items-center px-7 pt-6 pb-0 sm:px-8 sm:pt-7"
+      contentClassName="px-7 pb-7 sm:px-8 sm:pb-8"
     >
-      <p className="text-pretty text-sm leading-relaxed text-stone-500">
-        誰でもこのURLから見られるようになりました。
-      </p>
-
       {previewState !== "error" && (
         <Link
           href={publicPath}
           target="_blank"
           rel="noopener noreferrer"
-          className="relative mt-5 block overflow-hidden bg-stone-100"
+          className="relative mt-4 block overflow-hidden bg-stone-100"
         >
           {previewState === "loading" && (
             <div
@@ -121,12 +120,12 @@ export function PublishSuccessDialog({
         </Link>
       )}
 
-      <div className="mt-5 flex items-center gap-2 border-b border-stone-200 pb-2">
+      <div className="mt-5 flex items-center gap-3">
         <Link
           href={publicPath}
           target="_blank"
           rel="noopener noreferrer"
-          className="min-w-0 flex-1 truncate text-sm text-stone-700 underline-offset-4 hover:text-stone-900 hover:underline"
+          className="min-w-0 flex-1 truncate text-sm text-stone-500 hover:text-stone-800"
         >
           {shareUrl}
         </Link>
@@ -135,23 +134,13 @@ export function PublishSuccessDialog({
           variant="ghost"
           size="sm"
           onClick={handleCopy}
-          className="h-7 shrink-0 px-2 text-xs text-stone-500"
+          className="h-auto shrink-0 px-0 text-xs font-medium text-stone-400 hover:bg-transparent hover:text-stone-700"
         >
-          {copied ? (
-            <>
-              <Check className="h-3.5 w-3.5" />
-              コピー済み
-            </>
-          ) : (
-            <>
-              <Copy className="h-3.5 w-3.5" />
-              コピー
-            </>
-          )}
+          {copied ? "コピー済み" : "コピー"}
         </Button>
       </div>
 
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-8 flex flex-col gap-2.5 sm:flex-row sm:gap-3">
         <Link
           href={publicPath}
           target="_blank"

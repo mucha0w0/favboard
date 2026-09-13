@@ -10,6 +10,8 @@ interface DialogProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   titleClassName?: string;
+  headerClassName?: string;
+  contentClassName?: string;
   children: ReactNode;
   className?: string;
 }
@@ -19,6 +21,8 @@ export function Dialog({
   onOpenChange,
   title,
   titleClassName,
+  headerClassName,
+  contentClassName,
   children,
   className,
 }: DialogProps) {
@@ -53,7 +57,12 @@ export function Dialog({
         aria-modal
         aria-labelledby="dialog-title"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 px-5 py-4">
+        <div
+          className={cn(
+            "flex shrink-0 items-start justify-between gap-3 px-5 py-4",
+            headerClassName,
+          )}
+        >
           <h2
             id="dialog-title"
             className={cn("text-base font-medium text-stone-900", titleClassName)}
@@ -70,7 +79,9 @@ export function Dialog({
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="overflow-y-auto px-5 pb-5">{children}</div>
+        <div className={cn("overflow-y-auto px-5 pb-5", contentClassName)}>
+          {children}
+        </div>
       </div>
     </div>
   );
