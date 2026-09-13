@@ -4,17 +4,20 @@ import { BlockStream } from "@/components/canvas/BlockStream";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { canvasTweetIntentUrl, countProducts } from "@/lib/canvas-utils";
-import { type Canvas } from "@/lib/types";
+import { profileInitials } from "@/lib/profile";
+import { type Canvas, type Profile } from "@/lib/types";
 import { Share2 } from "lucide-react";
 
 interface PublicCanvasViewProps {
   canvas: Canvas;
+  creator?: Profile | null;
   shareUrl: string;
   isDraftPreview?: boolean;
 }
 
 export function PublicCanvasView({
   canvas,
+  creator = null,
   shareUrl,
   isDraftPreview = false,
 }: PublicCanvasViewProps) {
@@ -63,6 +66,7 @@ export function PublicCanvasView({
             <h1 className="mt-3 text-[1.75rem] font-bold leading-tight tracking-tight text-stone-900 sm:text-[2.25rem]">
               {canvas.title}
             </h1>
+            {creator && <CreatorByline profile={creator} />}
             <p className="mt-4 text-xs text-stone-400">
               {productCount} items
               {!isDraftPreview && <> · Updated {updatedDate}</>}
@@ -80,6 +84,34 @@ export function PublicCanvasView({
           )}
         </article>
       </main>
+    </div>
+  );
+}
+
+function CreatorByline({ profile }: { profile: Profile }) {
+  const displayName = profile.display_name.trim() || profile.username;
+  const initials = profileInitials(profile.display_name, profile.username);
+
+  return (
+    <div className="mt-5 flex items-center gap-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-stone-200 text-xs font-medium text-stone-600 ring-1 ring-stone-200/80">
+        {profile.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={profile.avatar_url}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          initials
+        )}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-stone-800">
+          {displayName}
+        </p>
+        <p className="truncate text-xs text-stone-400">@{profile.username}</p>
+      </div>
     </div>
   );
 }

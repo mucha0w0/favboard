@@ -63,6 +63,19 @@ function defaultAvatarUrl(user: User): string | null {
   return url;
 }
 
+export async function getProfileById(userId: string): Promise<Profile | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapProfile(data as ProfileRow);
+}
+
 export async function getOrCreateProfile(user: User): Promise<Profile> {
   const supabase = await createClient();
   const { data: existing, error: selectError } = await supabase

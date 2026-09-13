@@ -5,6 +5,8 @@ import {
   getPublishedCanvasBySlug,
 } from "@/lib/canvas-service";
 import { canvasShareUrl } from "@/lib/canvas-utils";
+import { getProfileById } from "@/lib/profile-service";
+import { type Profile } from "@/lib/types";
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -48,10 +50,17 @@ export default async function PublicCanvasPage({ params }: PageProps) {
   if (!canvas) notFound();
 
   const shareUrl = canvasShareUrl(slug);
+  let creator: Profile | null = null;
+  try {
+    creator = await getProfileById(canvas.user_id);
+  } catch {
+    creator = null;
+  }
 
   return (
     <PublicCanvasView
       canvas={canvas}
+      creator={creator}
       shareUrl={shareUrl}
       isDraftPreview={!canvas.is_published}
     />
