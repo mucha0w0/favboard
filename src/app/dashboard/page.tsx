@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountSettings } from "@/components/dashboard/AccountSettings";
+import { DeleteAccount } from "@/components/dashboard/DeleteAccount";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -248,6 +249,8 @@ export default function DashboardPage() {
             ))}
           </ul>
         )}
+
+        <DeleteAccount />
       </main>
     </div>
   );

@@ -53,8 +53,11 @@ cp .env.example .env.local
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+`SUPABASE_SERVICE_ROLE_KEY` はサーバー専用です（アカウント削除 API で使用）。クライアントや Git に含めないでください。
 
 ### 5. X（Twitter）ログイン（任意）
 
