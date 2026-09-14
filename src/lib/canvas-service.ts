@@ -4,6 +4,10 @@ import {
   MAX_CANVASES_PER_USER,
   normalizeCanvas,
 } from "@/lib/canvas-utils";
+import {
+  cloneExampleBlocks,
+  getExampleCanvasSnapshot,
+} from "@/lib/example-canvas";
 import { createClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/slug";
 import { type Block, type Canvas } from "@/lib/types";
@@ -50,7 +54,100 @@ export async function listCanvases(userId: string): Promise<Canvas[]> {
     .order("updated_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return (data as Canvas[]).map(normalizeCanvas);
+
+  let rows = (data as Canvas[]) ?? [];
+  if (rows.length === 0) {
+    // Seeds only for accounts that have never been granted the example.
+    await ensureExampleCanvas(userId);
+    const { data: again, error: againError } = await supabase
+      .from("canvases")
+      .select("*")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+    if (againError) throw new Error(againError.message);
+    rows = (again as Canvas[]) ?? [];
+  }
+
+  return rows.map(normalizeCanvas);
+}
+
+/** Grant the starter example once per account — never again after delete. */
+async function ensureExampleCanvas(userId: string): Promise<void> {
+  const snapshot = getExampleCanvasSnapshot();
+  if (!snapshot) return;
+
+  const { supabase } = await getServerClient();
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("example_canvas_granted")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profileError) throw new Error(profileError.message);
+  // Profile may still be creating on first parallel dashboard load.
+  if (!profile || profile.example_canvas_granted) return;
+
+  const { count, error: countError } = await supabase
+    .from("canvases")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (countError) throw new Error(countError.message);
+  if ((count ?? 0) > 0) {
+    await markExampleCanvasGranted(userId);
+    return;
+  }
+
+  // Claim the grant first so a parallel list request cannot insert twice,
+  // and so a later empty list (after delete) never re-seeds.
+  const claimed = await claimExampleCanvasGrant(userId);
+  if (!claimed) return;
+
+  const { error } = await supabase.from("canvases").insert({
+    user_id: userId,
+    title: snapshot.title,
+    slug: createSlug(),
+    blocks: cloneExampleBlocks(snapshot.blocks),
+    is_published: false,
+  });
+
+  if (error) {
+    // Roll back claim so a transient failure can retry for true new users.
+    await supabase
+      .from("profiles")
+      .update({ example_canvas_granted: false })
+      .eq("id", userId)
+      .eq("example_canvas_granted", true);
+
+    if (isCanvasLimitError(error) || error.code === "23505") return;
+    throw new Error(error.message);
+  }
+}
+
+async function claimExampleCanvasGrant(userId: string): Promise<boolean> {
+  const { supabase } = await getServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ example_canvas_granted: true })
+    .eq("id", userId)
+    .eq("example_canvas_granted", false)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
+async function markExampleCanvasGranted(userId: string): Promise<void> {
+  const { supabase } = await getServerClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ example_canvas_granted: true })
+    .eq("id", userId)
+    .eq("example_canvas_granted", false);
+
+  if (error) throw new Error(error.message);
 }
 
 export async function createCanvas(

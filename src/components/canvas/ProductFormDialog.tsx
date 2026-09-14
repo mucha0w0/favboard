@@ -160,7 +160,8 @@ function ProductFormFields({
             </select>
             <Input
               id="price"
-              inputMode="decimal"
+              inputMode="numeric"
+              pattern="[0-9,]*"
               value={price}
               onChange={(e) => {
                 const v = sanitizePriceInput(e.target.value);

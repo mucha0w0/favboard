@@ -12,9 +12,11 @@ export type PriceCurrency = "¥" | "$";
 
 export const DEFAULT_PRICE_CURRENCY: PriceCurrency = "¥";
 
-/** 価格入力から通貨記号などを除き、数値・カンマ・小数点のみ残す */
+/** 価格入力から数字以外を除き、3桁ごとにカンマを付ける */
 export function sanitizePriceInput(value: string): string {
-  return value.replace(/[^\d.,]/g, "");
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 /** 保存済み価格を金額と通貨に分解（旧データ互換） */
@@ -77,7 +79,7 @@ export interface BlockData {
   /** 商品 */
   title?: string;
   brand?: string;
-  /** 金額（数値・カンマ・小数点のみ）。通貨は price_currency */
+  /** 金額（数字のみ・表示は3桁カンマ区切り）。通貨は price_currency */
   price?: string;
   /** 価格の通貨記号。未設定時は ¥ */
   price_currency?: PriceCurrency;
