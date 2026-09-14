@@ -19,10 +19,48 @@ async function canvasToDataUrl(
   return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
 }
 
+function canvasToProductBlob(
+  canvas: HTMLCanvasElement,
+): Promise<{ blob: Blob; contentType: string; extension: string }> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (webpBlob) => {
+        if (webpBlob && webpBlob.type === "image/webp") {
+          resolve({
+            blob: webpBlob,
+            contentType: "image/webp",
+            extension: "webp",
+          });
+          return;
+        }
+        canvas.toBlob(
+          (jpegBlob) => {
+            if (!jpegBlob) {
+              reject(new Error("画像の処理に失敗しました"));
+              return;
+            }
+            resolve({
+              blob: jpegBlob,
+              contentType: "image/jpeg",
+              extension: "jpg",
+            });
+          },
+          "image/jpeg",
+          JPEG_QUALITY,
+        );
+      },
+      "image/webp",
+      WEBP_QUALITY,
+    );
+  });
+}
+
 const AVATAR_SIZE = 320;
 const MAX_AVATAR_FILE_BYTES = 8 * 1024 * 1024;
 
-export async function imageFileToDataUrl(file: File | Blob): Promise<string> {
+async function resizeImageToCanvas(
+  file: File | Blob,
+): Promise<HTMLCanvasElement> {
   if (!file.type.startsWith("image/")) {
     throw new Error("画像ファイルを選択してください");
   }
@@ -40,11 +78,22 @@ export async function imageFileToDataUrl(file: File | Blob): Promise<string> {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("画像の処理に失敗しました");
     ctx.drawImage(img, 0, 0, width, height);
-
-    return canvasToDataUrl(canvas);
+    return canvas;
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
+}
+
+export async function imageFileToDataUrl(file: File | Blob): Promise<string> {
+  const canvas = await resizeImageToCanvas(file);
+  return canvasToDataUrl(canvas);
+}
+
+export async function imageFileToProductBlob(
+  file: File | Blob,
+): Promise<{ blob: Blob; contentType: string; extension: string }> {
+  const canvas = await resizeImageToCanvas(file);
+  return canvasToProductBlob(canvas);
 }
 
 export async function imageFileToAvatarDataUrl(

@@ -9,7 +9,7 @@
 - **Framework**: Next.js 16 (App Router, TypeScript)
 - **Styling**: Tailwind CSS v4, shadcn/ui 風コンポーネント
 - **Layout**: 縦ドキュメント + Bento グリッド（商品 / テキストを配置）
-- **Backend / Database**: Supabase (PostgreSQL, Auth, RLS)
+- **Backend / Database**: Supabase (PostgreSQL, Auth, Storage, RLS)
 - **Deployment**: Vercel
 
 ## セットアップ
@@ -23,7 +23,7 @@ npm install
 ### 2. Supabase プロジェクトの作成
 
 1. [Supabase](https://supabase.com) で新規プロジェクトを作成
-2. SQL Editor で `supabase/migrations/001_canvases.sql`、`002_profiles.sql`、`003_canvas_limit.sql` を実行
+2. SQL Editor で `supabase/migrations/001_canvases.sql`、`002_profiles.sql`、`003_canvas_limit.sql`、`005_product_images_storage.sql` を実行（必要なら `004_example_canvas_granted.sql` も）
 3. Authentication → Providers で Email を有効化
 4. （任意）X / Twitter ログインを使う場合は下記「X（Twitter）ログイン」を設定
 

@@ -8,6 +8,12 @@ import {
   cloneExampleBlocks,
   getExampleCanvasSnapshot,
 } from "@/lib/example-canvas";
+import {
+  collectAllProductImageUrls,
+  deleteProductStorageUrls,
+  isDataImageUrl,
+  migrateProductDataUrlsInBlocks,
+} from "@/lib/product-images";
 import { createClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/slug";
 import { type Block, type Canvas } from "@/lib/types";
@@ -264,15 +270,40 @@ export async function updateCanvas(
   id: string,
   updates: Partial<Pick<Canvas, "title" | "blocks" | "is_published">>,
 ): Promise<Canvas | null> {
-  const normalizedUpdates = {
-    ...updates,
-    ...(updates.blocks
-      ? { blocks: migrateCanvasBlocks(updates.blocks) }
-      : {}),
-  };
-
   const { supabase, userId } = await getServerClient();
   if (!userId) throw new CanvasError("Unauthorized", 401);
+
+  let previousBlocks: Block[] | null = null;
+  let nextBlocks = updates.blocks
+    ? migrateCanvasBlocks(updates.blocks)
+    : undefined;
+
+  if (nextBlocks) {
+    const { data: existing, error: existingError } = await supabase
+      .from("canvases")
+      .select("blocks")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingError) throw new Error(existingError.message);
+    if (!existing) return null;
+
+    previousBlocks = migrateCanvasBlocks((existing as Canvas).blocks);
+
+    if (nextBlocks.some((block) => blockHasDataImage(block))) {
+      nextBlocks = await migrateProductDataUrlsInBlocks(
+        supabase,
+        userId,
+        nextBlocks,
+      );
+    }
+  }
+
+  const normalizedUpdates = {
+    ...updates,
+    ...(nextBlocks ? { blocks: nextBlocks } : {}),
+  };
 
   const { data, error } = await supabase
     .from("canvases")
@@ -283,12 +314,45 @@ export async function updateCanvas(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data ? normalizeCanvas(data as Canvas) : null;
+  if (!data) return null;
+
+  if (previousBlocks && nextBlocks) {
+    const previousUrls = collectAllProductImageUrls(previousBlocks);
+    const nextUrlSet = new Set(collectAllProductImageUrls(nextBlocks));
+    const removed = previousUrls.filter((url) => !nextUrlSet.has(url));
+    void deleteProductStorageUrls(supabase, removed);
+  }
+
+  return normalizeCanvas(data as Canvas);
+}
+
+function blockHasDataImage(block: Block): boolean {
+  if (block.type === "product") {
+    return isDataImageUrl(block.data.image_url ?? "");
+  }
+  if (block.type === "bento") {
+    return (block.data.children ?? []).some(blockHasDataImage);
+  }
+  return false;
 }
 
 export async function deleteCanvas(id: string): Promise<boolean> {
   const { supabase, userId } = await getServerClient();
   if (!userId) throw new CanvasError("Unauthorized", 401);
+
+  const { data: existing, error: existingError } = await supabase
+    .from("canvases")
+    .select("blocks")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existingError) throw new Error(existingError.message);
+  if (!existing) return false;
+
+  const imageUrls = collectAllProductImageUrls(
+    migrateCanvasBlocks((existing as Canvas).blocks),
+  );
 
   const { error } = await supabase
     .from("canvases")
@@ -296,5 +360,8 @@ export async function deleteCanvas(id: string): Promise<boolean> {
     .eq("id", id)
     .eq("user_id", userId);
 
-  return !error;
+  if (error) return false;
+
+  void deleteProductStorageUrls(supabase, imageUrls);
+  return true;
 }

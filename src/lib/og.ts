@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import sharp from "sharp";
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
@@ -92,6 +94,21 @@ async function readImageBytes(src: string): Promise<Buffer | null> {
     const bytes = Buffer.from(src.slice(comma + 1), "base64");
     if (bytes.byteLength < 32 || bytes.byteLength > MAX_IMAGE_BYTES) return null;
     return bytes;
+  }
+
+  if (src.startsWith("/") && !src.startsWith("//")) {
+    const publicRoot = path.resolve(process.cwd(), "public");
+    const filePath = path.resolve(publicRoot, src.replace(/^\/+/, ""));
+    if (!filePath.startsWith(publicRoot + path.sep)) {
+      return null;
+    }
+    try {
+      const bytes = await readFile(filePath);
+      if (bytes.byteLength < 32 || bytes.byteLength > MAX_IMAGE_BYTES) return null;
+      return bytes;
+    } catch {
+      return null;
+    }
   }
 
   const url = src.startsWith("//") ? `https:${src}` : src;

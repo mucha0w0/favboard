@@ -2,7 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { getClipboardImageFile, imageFileToDataUrl } from "@/lib/image-input";
+import {
+  getClipboardImageFile,
+  imageFileToProductBlob,
+} from "@/lib/image-input";
+import {
+  deleteProductStorageUrls,
+  isProductStorageUrl,
+  uploadProductImageBlob,
+} from "@/lib/product-images";
+import { createClient } from "@/lib/supabase/client";
 import type { Block, ImageCrop } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ImageIcon, Link2, Loader2, Trash2, Upload } from "lucide-react";
@@ -23,6 +32,12 @@ interface ProductImageInputProps {
 function normalizePreviewUrl(url: string): string {
   if (url.startsWith("//")) return `https:${url}`;
   return url;
+}
+
+async function removeStoredImage(url: string) {
+  if (!isProductStorageUrl(url)) return;
+  const supabase = createClient();
+  await deleteProductStorageUrls(supabase, [url]);
 }
 
 export function ProductImageInput({
@@ -67,12 +82,28 @@ export function ProductImageInput({
     if (!file) return;
     setLoading(true);
     setError("");
+    const previous = value.trim();
     try {
-      const dataUrl = await imageFileToDataUrl(file);
+      const image = await imageFileToProductBlob(file);
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("ログインが必要です");
+      }
+      const publicUrl = await uploadProductImageBlob(supabase, user.id, {
+        body: image.blob,
+        contentType: image.contentType,
+        extension: image.extension,
+      });
       onCropChange?.(undefined);
-      onChange(dataUrl);
+      onChange(publicUrl);
       setUrlDraft("");
       setPreviewError(false);
+      if (previous && previous !== publicUrl) {
+        void removeStoredImage(previous);
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "画像の読み込みに失敗しました",
@@ -100,9 +131,13 @@ export function ProductImageInput({
     if (!url) return;
     setError("");
     setPreviewError(false);
+    const previous = value.trim();
     onCropChange?.(undefined);
     onChange(url);
     setUrlDraft("");
+    if (previous && previous !== url) {
+      void removeStoredImage(previous);
+    }
   }
 
   function handleUrlKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -113,10 +148,12 @@ export function ProductImageInput({
   }
 
   function handleClear() {
+    const previous = value.trim();
     onChange("");
     onCropChange?.(undefined);
     setPreviewError(false);
     setError("");
+    if (previous) void removeStoredImage(previous);
   }
 
   return (
