@@ -11,6 +11,7 @@ import {
   type CropResizeHandle,
   type Rect,
 } from "@/lib/image-crop";
+import { shouldUnoptimizeImageSrc } from "@/lib/image-input";
 import type { ImageCrop } from "@/lib/types";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -279,7 +280,8 @@ export function ProductImageCropEditor({
           alt="商品画像プレビュー"
           fill
           className="object-contain"
-          unoptimized
+          sizes="(max-width: 720px) 90vw, 480px"
+          unoptimized={shouldUnoptimizeImageSrc(imageUrl)}
           draggable={false}
           onError={() => onError?.()}
         />

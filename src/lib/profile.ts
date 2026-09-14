@@ -1,6 +1,7 @@
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 24;
 export const DISPLAY_NAME_MAX = 40;
+/** HTTP(S) / Storage URLs are short; legacy data URLs may still exist until migrated. */
 export const AVATAR_URL_MAX = 800_000;
 
 const USERNAME_PATTERN = /^[a-z0-9_]+$/;

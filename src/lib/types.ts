@@ -116,6 +116,18 @@ export interface Canvas {
   updated_at: string;
 }
 
+/** Dashboard list row — omits heavy `blocks` JSON. */
+export interface CanvasListItem {
+  id: string;
+  user_id: string;
+  title: string;
+  slug: string;
+  block_count: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 /** ユーザープロフィール。username はユーザーが決めるユーザーID */
 export interface Profile {
   id: string;

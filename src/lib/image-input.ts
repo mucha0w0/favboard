@@ -1,6 +1,6 @@
-const MAX_DIMENSION = 1200;
-const JPEG_QUALITY = 0.82;
-const WEBP_QUALITY = 0.85;
+const MAX_DIMENSION = 800;
+const JPEG_QUALITY = 0.72;
+const WEBP_QUALITY = 0.75;
 
 function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -11,15 +11,7 @@ function loadImageElement(src: string): Promise<HTMLImageElement> {
   });
 }
 
-async function canvasToDataUrl(
-  canvas: HTMLCanvasElement,
-): Promise<string> {
-  const webp = canvas.toDataURL("image/webp", WEBP_QUALITY);
-  if (webp.startsWith("data:image/webp")) return webp;
-  return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-}
-
-function canvasToProductBlob(
+function canvasToImageBlob(
   canvas: HTMLCanvasElement,
 ): Promise<{ blob: Blob; contentType: string; extension: string }> {
   return new Promise((resolve, reject) => {
@@ -84,21 +76,16 @@ async function resizeImageToCanvas(
   }
 }
 
-export async function imageFileToDataUrl(file: File | Blob): Promise<string> {
-  const canvas = await resizeImageToCanvas(file);
-  return canvasToDataUrl(canvas);
-}
-
 export async function imageFileToProductBlob(
   file: File | Blob,
 ): Promise<{ blob: Blob; contentType: string; extension: string }> {
   const canvas = await resizeImageToCanvas(file);
-  return canvasToProductBlob(canvas);
+  return canvasToImageBlob(canvas);
 }
 
-export async function imageFileToAvatarDataUrl(
+export async function imageFileToAvatarBlob(
   file: File | Blob,
-): Promise<string> {
+): Promise<{ blob: Blob; contentType: string; extension: string }> {
   if (!file.type.startsWith("image/")) {
     throw new Error("画像ファイルを選択してください");
   }
@@ -120,7 +107,7 @@ export async function imageFileToAvatarDataUrl(
     if (!ctx) throw new Error("画像の処理に失敗しました");
     ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
 
-    return canvasToDataUrl(canvas);
+    return canvasToImageBlob(canvas);
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
@@ -138,4 +125,14 @@ export function getClipboardImageFile(
   }
 
   return null;
+}
+
+/** next/image can optimize http(s) and local public paths, not data/blob URLs. */
+export function shouldUnoptimizeImageSrc(src: string): boolean {
+  const trimmed = src.trim();
+  return (
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:") ||
+    trimmed.length === 0
+  );
 }

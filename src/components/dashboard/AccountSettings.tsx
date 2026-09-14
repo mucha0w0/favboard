@@ -4,7 +4,8 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { imageFileToAvatarDataUrl } from "@/lib/image-input";
+import { uploadAvatarImage } from "@/lib/avatar-images";
+import { imageFileToAvatarBlob } from "@/lib/image-input";
 import {
   DISPLAY_NAME_MAX,
   USERNAME_MAX,
@@ -14,6 +15,7 @@ import {
   validateDisplayName,
   validateUsername,
 } from "@/lib/profile";
+import { createClient } from "@/lib/supabase/client";
 import { type Profile } from "@/lib/types";
 import { Loader2, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -55,8 +57,20 @@ export function AccountSettings({ profile, onSaved }: AccountSettingsProps) {
     setError("");
     setSuccess("");
     try {
-      const dataUrl = await imageFileToAvatarDataUrl(file);
-      setAvatarUrl(dataUrl);
+      const image = await imageFileToAvatarBlob(file);
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("ログインが必要です");
+      }
+      const publicUrl = await uploadAvatarImage(supabase, user.id, {
+        body: image.blob,
+        contentType: image.contentType,
+        extension: image.extension,
+      });
+      setAvatarUrl(publicUrl);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "画像の読み込みに失敗しました",

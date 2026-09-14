@@ -53,9 +53,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [publishSuccessOpen, setPublishSuccessOpen] = useState(false);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
-  const productPersistTimer = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
 
   useEffect(() => {
     blocksRef.current = blocks;
@@ -68,14 +65,6 @@ export function useCanvasEditor(initialCanvas: Canvas) {
   useEffect(() => {
     canvasRef.current = canvas;
   }, [canvas]);
-
-  useEffect(() => {
-    return () => {
-      if (productPersistTimer.current) {
-        clearTimeout(productPersistTimer.current);
-      }
-    };
-  }, []);
 
   const isDirty = useMemo(
     () => title !== canvas.title || !blocksEqual(blocks, canvas.blocks),
@@ -319,20 +308,13 @@ export function useCanvasEditor(initialCanvas: Canvas) {
 
     blocksRef.current = nextBlocks;
     setBlocks(nextBlocks);
-
-    if (productPersistTimer.current) {
-      clearTimeout(productPersistTimer.current);
-    }
-    productPersistTimer.current = setTimeout(() => {
-      productPersistTimer.current = null;
-      void persist(blocksRef.current, titleRef.current);
-    }, 400);
   }
 
   function handleDialogClose() {
-    if (productPersistTimer.current) {
-      clearTimeout(productPersistTimer.current);
-      productPersistTimer.current = null;
+    const dirty =
+      titleRef.current !== canvasRef.current.title ||
+      !blocksEqual(blocksRef.current, canvasRef.current.blocks);
+    if (dirty) {
       void persist(blocksRef.current, titleRef.current);
     }
     setIsNewBlock(false);

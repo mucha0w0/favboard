@@ -16,7 +16,8 @@ import {
 } from "@/lib/product-images";
 import { createClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/slug";
-import { type Block, type Canvas } from "@/lib/types";
+import { type Block, type Canvas, type CanvasListItem } from "@/lib/types";
+import { revalidatePath } from "next/cache";
 
 export class CanvasError extends Error {
   constructor(
@@ -51,30 +52,46 @@ export async function getAuthUserId(): Promise<string | null> {
   return userId;
 }
 
-export async function listCanvases(userId: string): Promise<Canvas[]> {
+const CANVAS_LIST_COLUMNS =
+  "id, user_id, title, slug, block_count, is_published, created_at, updated_at";
+
+function mapCanvasListItem(row: CanvasListItem): CanvasListItem {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title,
+    slug: row.slug,
+    block_count: row.block_count ?? 0,
+    is_published: row.is_published,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+export async function listCanvases(userId: string): Promise<CanvasListItem[]> {
   const { supabase } = await getServerClient();
   const { data, error } = await supabase
     .from("canvases")
-    .select("*")
+    .select(CANVAS_LIST_COLUMNS)
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
   if (error) throw new Error(error.message);
 
-  let rows = (data as Canvas[]) ?? [];
+  let rows = (data as CanvasListItem[]) ?? [];
   if (rows.length === 0) {
     // Seeds only for accounts that have never been granted the example.
     await ensureExampleCanvas(userId);
     const { data: again, error: againError } = await supabase
       .from("canvases")
-      .select("*")
+      .select(CANVAS_LIST_COLUMNS)
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
     if (againError) throw new Error(againError.message);
-    rows = (again as Canvas[]) ?? [];
+    rows = (again as CanvasListItem[]) ?? [];
   }
 
-  return rows.map(normalizeCanvas);
+  return rows.map(mapCanvasListItem);
 }
 
 /** Grant the starter example once per account — never again after delete. */
@@ -323,7 +340,14 @@ export async function updateCanvas(
     void deleteProductStorageUrls(supabase, removed);
   }
 
-  return normalizeCanvas(data as Canvas);
+  const canvas = normalizeCanvas(data as Canvas);
+  if (canvas.is_published) {
+    revalidatePath(`/c/${canvas.slug}`);
+    revalidatePath(`/c/${canvas.slug}/opengraph-image`);
+    revalidatePath(`/c/${canvas.slug}/twitter-image`);
+  }
+
+  return canvas;
 }
 
 function blockHasDataImage(block: Block): boolean {

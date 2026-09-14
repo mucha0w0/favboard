@@ -4,6 +4,7 @@ import {
   computeCroppedImageLayout,
   croppedImageLayoutToStyle,
 } from "@/lib/image-crop";
+import { shouldUnoptimizeImageSrc } from "@/lib/image-input";
 import type { ImageCrop } from "@/lib/types";
 import { ExternalLink, Package } from "lucide-react";
 import Image from "next/image";
@@ -66,8 +67,8 @@ function CroppedProductImage({
         width={naturalSize?.width ?? 1}
         height={naturalSize?.height ?? 1}
         style={layout ? croppedImageLayoutToStyle(layout) : { opacity: 0 }}
-        sizes="(max-width: 720px) 100vw, 720px"
-        unoptimized
+        sizes="(max-width: 720px) 50vw, 360px"
+        unoptimized={shouldUnoptimizeImageSrc(imageUrl)}
         onLoad={(e) => {
           const img = e.currentTarget;
           setNaturalSize({
@@ -118,8 +119,8 @@ export function ProductImage({
             alt={title || "商品"}
             fill
             className="object-cover"
-            sizes="(max-width: 720px) 100vw, 720px"
-            unoptimized
+            sizes="(max-width: 720px) 50vw, 360px"
+            unoptimized={shouldUnoptimizeImageSrc(imageUrl)}
             onError={onError}
           />
         )

@@ -1,4 +1,8 @@
 import {
+  deleteAvatarStorageUrl,
+  migrateAvatarDataUrl,
+} from "@/lib/avatar-images";
+import {
   fallbackUsername,
   usernameFromHandle,
   validateAvatarUrl,
@@ -152,6 +156,33 @@ export async function updateProfile(
   }
 
   const supabase = await createClient();
+
+  if (patch.avatar_url !== undefined) {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const previousUrl =
+      (existing as { avatar_url?: string | null } | null)?.avatar_url ?? null;
+
+    patch.avatar_url = await migrateAvatarDataUrl(
+      supabase,
+      userId,
+      patch.avatar_url,
+    );
+
+    if (
+      previousUrl &&
+      previousUrl !== patch.avatar_url &&
+      (!patch.avatar_url ||
+        previousUrl.split("?")[0] !== patch.avatar_url.split("?")[0])
+    ) {
+      void deleteAvatarStorageUrl(supabase, previousUrl);
+    }
+  }
+
   const { data, error } = await supabase
     .from("profiles")
     .update(patch)

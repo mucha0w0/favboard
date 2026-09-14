@@ -1,3 +1,4 @@
+import { deleteAllAvatarsForUser } from "@/lib/avatar-images";
 import { deleteAllProductImagesForUser } from "@/lib/product-images";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -15,7 +16,10 @@ export async function DELETE() {
 
   try {
     const admin = createAdminClient();
-    await deleteAllProductImagesForUser(admin, user.id);
+    await Promise.all([
+      deleteAllProductImagesForUser(admin, user.id),
+      deleteAllAvatarsForUser(admin, user.id),
+    ]);
     const { error } = await admin.auth.admin.deleteUser(user.id);
     if (error) {
       console.error("Failed to delete auth user:", error.message);

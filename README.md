@@ -33,6 +33,7 @@ npm install
 | `supabase/migrations/003_canvas_limit.sql` | 1 アカウントあたりリスト上限 3 |
 | `supabase/migrations/004_example_canvas_granted.sql` | スターター例示リストの付与フラグ |
 | `supabase/migrations/005_product_images_storage.sql` | 商品画像用 Storage バケット `product-images` |
+| `supabase/migrations/006_avatars_and_canvas_list.sql` | アバター用 Storage + 一覧用 `block_count` |
 
 3. Authentication → Providers で **X / Twitter (OAuth 2.0)** を有効化（下記「X ログイン」参照）
 4. Authentication → URL Configuration の Redirect URLs に `http://localhost:3000/auth/callback`（と本番の `/auth/callback`）を追加
@@ -127,10 +128,10 @@ http://localhost:3000 を開く
 | ログイン | X（Twitter）OAuth |
 | ユーザーID | 半角英数字と `_`、3〜24 文字。全体で一意。新規時は自動発行 |
 | ディスプレイネーム | 表示名。40 文字以内 |
-| プロフィール画像 | 正方形にトリミングして保存（data URL または HTTP URL） |
+| プロフィール画像 | 正方形にトリミングし、Supabase Storage（`avatars`）に保存 |
 | リスト上限 | 1 アカウントあたり **3** 件（DB トリガー + API） |
 | スターター例示 | 初回一覧取得時に例示キャンバスを 1 度だけ付与。削除後は再付与しない |
-| アカウント削除 | 商品画像 Storage を掃除したうえで Auth ユーザーを削除 |
+| アカウント削除 | 商品画像・アバター Storage を掃除したうえで Auth ユーザーを削除 |
 
 ## ソース構成（概要）
 
@@ -142,7 +143,8 @@ src/
   data/example-canvas.json
   lib/bento/             # グリッド計算・配置操作・マイグレーション
   lib/canvas-service.ts
-  lib/product-images.ts  # Storage アップロード・掃除
+  lib/product-images.ts  # 商品画像 Storage
+  lib/avatar-images.ts   # アバター Storage
   lib/example-canvas.ts
 supabase/migrations/     # スキーマ・RLS・Storage
 ```

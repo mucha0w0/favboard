@@ -6,7 +6,8 @@ export const alt = "Favboard";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+/** Cache generated OG images; invalidated on publish/update via revalidatePath. */
+export const revalidate = 3600;
 
 export default async function Image({
   params,

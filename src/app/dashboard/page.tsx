@@ -10,14 +10,14 @@ import {
   MAX_CANVASES_PER_USER,
 } from "@/lib/canvas-utils";
 import { createClient } from "@/lib/supabase/client";
-import { type Canvas, type Profile } from "@/lib/types";
+import { type CanvasListItem, type Profile } from "@/lib/types";
 import { ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
-  const [canvases, setCanvases] = useState<Canvas[]>([]);
+  const [canvases, setCanvases] = useState<CanvasListItem[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -215,7 +215,7 @@ export default function DashboardPage() {
                     {canvas.title}
                   </p>
                   <p className="mt-0.5 text-xs text-stone-400">
-                    {canvas.blocks.length} ブロック ·{" "}
+                    {canvas.block_count} ブロック ·{" "}
                     {new Date(canvas.updated_at).toLocaleDateString("ja-JP")}
                     {canvas.is_published && (
                       <span className="text-stone-500"> · 公開中</span>
